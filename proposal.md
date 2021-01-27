@@ -61,7 +61,7 @@ The Algorand Virtual Machine has three type of method invocation:
 
 _in the future, we may need to add special instructions for invoking interface and virtual methods..._
 
-Each time a method is invoked a new local frame and operand stack is created. The Algorand Virtual Machine uses [local frames](#Local) to pass parameters on method invocation. On method invocation, any parameters are passed in consecutive local variables stored in the method's local frame starting from local variable 0. The invoker of a method writes the parameters inside the method's local frame using `arg` instructions.
+Each time a method is invoked a new local frame and operand stack is created. The Algorand Virtual Machine uses [local frames](#local-frame) to pass parameters on method invocation. On method invocation, any parameters are passed in consecutive local variables stored in the method's local frame starting from local variable 0. The invoker of a method writes the parameters inside the method's local frame using `arg` instructions.
 
 
 ### Exceptions
@@ -79,7 +79,7 @@ A thrown exception causes methods in the call stack to complete **abruptly** one
 _By using this feature and `athrow` instruction properly, a programmer can make any method to act like an atomic operation._
 
 ### Heap Allocation Instructions
-....
+...
 
 ## Implementation
 ### Persistence
