@@ -79,9 +79,9 @@ is destroyed when its owner method completes, whether that completion is normal 
 #### Heap
 
 The heap of a segment is a persistent memory area which is divided into pages. Each page can be referenced by an index
-that starts from 0. Memory locations inside every page have a separate address space that starts from 0. In other
-words, the address of every memory location inside a heap is a pair of indices: `(pageIndex, offset)`. Pages of a heap
-do not need to be equally sized.
+that starts from 0. Memory locations inside every page have a separate address space that starts from 0. In other words,
+the address of every memory location inside a heap is a pair of indices: `(pageIndex, offset)`. Pages of a heap do not
+need to be equally sized.
 
 _The reason behind this paged design is that the heap is usually persisted using a block device. A heap with a paged
 structure could expose the underlying block based nature of persistence layer to the application layer. In this way, the
@@ -90,8 +90,8 @@ compiler or the programmer could better optimize the code for the persistence la
 ## Instruction Set Summary
 
 An Algorand Virtual Machine instruction consists of a **one-byte** opcode specifying the operation to be performed,
-followed by zero or more operands supplying arguments or data that are used by the operation. **The number and size of the
-operands are determined solely by the opcode.**
+followed by zero or more operands supplying arguments or data that are used by the operation. **The number and size of
+the operands are determined solely by the opcode.**
 
 ### Method Invocation
 
@@ -132,12 +132,12 @@ including its local frame and operand stack, with the `PC` register appropriatel
 the method invocation instruction. If the invoker was another smart contract, i.e. the invocation was made by
 an `invoke_external` instruction, the current memory segment will be changed to the invoker's segment.
 
-A thrown exception causes methods in the call stack to complete **abruptly** one by one, as long as the next instruction
-is not a `catch` instruction. The `catch` instruction acts like a branch instruction that branches only if an exception
-is caught.  **When an external method invocation completes abruptly, before changing the current segment, all changes
-made to the heap area will be rolled back.**
+A thrown exception causes methods in the call stack to complete **abruptly** one by one, as long as the `PC` register is
+not pointing to a `catch` instruction. The `catch` instruction acts like a branch instruction that branches only if an
+exception is caught.  **When an external method invocation completes abruptly, before changing the current segment, all
+changes made to the heap area will be rolled back.**
 
-_By using this feature and `athrow` instruction, a programmer can make any method act like an atomic operation._
+_By using the `athrow` instruction properly, a programmer can make any method act like an atomic operation._
 
 ### Heap Allocation Instructions
 
@@ -150,39 +150,42 @@ _By using this feature and `athrow` instruction, a programmer can make any metho
 For implementing the persistence layer of the AVM, we assume that we have access to an updatable ZK-EDB with the
 following properties:
 
-- ZK-EDB is a mapping from a set of keys to values.
+- ZK-EDB is a mapping from a set of keys to a set of values.
 - Every state of the database has a commitment C.
 - ZK-EDB has a method (D, p) = DB.get(x), where x is a key and D is the associated value with x and p is a proof.
-- A user can use C and p to verify that D is really associated with x and D in not altered. Hence, a user who can obtain
+- A user can use C and p to verify that D is really associated with x and D is not altered. Hence, a user who can obtain
   C from a trusted source do not need to trust the ZK-EDB.
-- Having p and C a user can compute the commitment C' for the database that in it D' is associated with x instead of D.
+- Having p and C a user can compute the commitment C' for the database that in it, D' is associated with x instead of D.
 
 We use a ZK-EDB for storing the AVM heap. We include the commitment of the current state of this DB in every block of
 the Algorand blockchain, so the ZK-EDB servers need not be trusted servers.
 
-Every page of AVM heap will be stored with a key of the form: `applicationID|pageIndex` (the | is concatenation
-operator). Nodes do not keep a full copy of AVM heap and for validating block certificates or emulating AVM (i.e.
+Every page of AVM heap will be stored with a key of the form: `applicationID|pageIndex` (the `|` operator concatenates
+two numbers). Nodes do not keep a full copy of AVM heap and for validating block certificates or emulating AVM (i.e.
 validating transactions) they need to connect to some ZK-EDB and retrieve the required pages of AVM heap. For better
-performance, nodes keep a cache of heap pages to reduce the amount of ZK-EDB access.
+performance, **nodes keep a cache of heap pages to reduce the amount of ZK-EDB access**.
 
 We also use a ZK-EDB for storing the code area of each segment, and we include the commitment of this DB in every block.
 Every code area will be divided into blocks and every block will be stored in the DB with `applicationID|blockID` as its
-key. Like heap pages, nodes keep a cache of code area blocks too.
+key. Like heap pages, nodes keep a cache of code area blocks.
+
+_Unlike heap pages, the AVM is not aware of code area different blocks._
 
 ### Blockchain
 
-Every block of Algorand blockchain corresponds to a set of transactions. We store the hash of this set in every block,
-but we don't keep the transaction set itself. To be able to detect replay attacks, we require every signature that a
-user creates to have a nonce. This nonce consists of the issuance round of a signature and a sequence
+Every block of the Algorand blockchain corresponds to a set of transactions. We store the hash of this set in every
+block, but we don't keep the transaction set itself. To be able to detect replay attacks, we require every signature
+that a user creates to have a nonce. This nonce consists of the issuance round of a signature and a sequence
 number: `(issuance, sequence)`. When a user creates more than one signature in a round, he needs to sequence his
-signatures starting from 0. We define a maximum lifetime for signatures, so a signature is invalid
-if `currentRound - issuance > maxLifeTime` or if a signature of the same user with a bigger or equal nonce is already
-used (i.e. is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
-nonces have an equal issuance, the nonce with the bigger sequence number will be considered to be bigger.
+signatures starting from 0. (i.e. the sequence number restarts from 0 in every round) We define a maximum lifetime for
+signatures, so a signature is invalid if `currentRound - issuance > maxLifeTime` or if a signature of the same user with
+a bigger or equal nonce is already used (i.e. is recorded in the blockchain). A nonce is bigger than another nonce if it
+has an older issuance. If two nonces have an equal issuance, the nonce with the bigger sequence number will be
+considered to be bigger.
 
 To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. When the
 difference between `issuance` component of this nonce and the current round becomes bigger than the maximum allowed
-lifetime of a signature, this information can be safely deleted. **In this way, we will not have the problem of "
+lifetime of a signature, this information can be safely deleted. **Therefore, we will not have the problem of "
 unremovable empty accounts" like Ethereum.**
 
 The only information that Algorand's nodes are required to store is the Algorand blockchain. Every block of the Algorand
@@ -192,14 +195,14 @@ blockchain contains the following information:
 | ---- |
 | commitment to the ZK-EDB storing heap pages |
 | commitment to the ZK-EDB storing code areas |
-| hash of transactions |
+| hash of transaction set |
 | certificate of the previous block |
 
 For confirming a new block, nodes that are not validators only need to verify the block certificate. For verifying a
 block certificate, a node needs to know the ALGO balances of validators, but it doesn't need to emulate the AVM
 execution. On the other hand, nodes that are chosen to be validators, need to emulate execution of the Algorand virtual
-machine and calculate and confirm the new ZK-EDB commitments. They also need to calculate the hash of new block's
-transactions.
+machine to be able to calculate and confirm the new ZK-EDB commitments. They also need to calculate and confirm the hash
+of transaction set that is included in the new block.
 
 ### Transactions
 
@@ -208,18 +211,17 @@ user broadcasts an `AvmCall` transaction. an `AvmCall` transaction essentially i
 The first `invoke_external` is always a method invocation from Algorand's main smart contract which buys `fuel` by
 sending ALGOs to the fee sink account. The second `invoke_external` invokes the requested method.
 
-Every `AvmCall` transaction is required to exactly specify what heap pages it will access. This will enable validators
-to start retrieving required heap pages from available ZK-EDB servers as soon as they see a transaction, and they don't
+Every `AvmCall` transaction is required to exactly specify what heap pages it will access. This enables validators to
+start retrieving required heap pages from available ZK-EDB servers as soon as they see a transaction, and they won't
 need to wait for receiving the new proposed block. A transaction that tries to access a page that is not included in
-its `pageAccessList` field, will be rejected. Users could use smart contract oracles to find the list of heap pages that
-their transactions need.
+its `pageAccessList` field, will be rejected. Users could use [smart contract oracles](#smart-contract-oracle) to find
+the list of heap pages that their transactions need.
 
 ## Smart Contract Oracle
 
 A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM execution
 without accessing a ZK-EDB. Smart contract oracles can be used for reporting useful information about `AvmCall`
 transactions such as accessed AVM heap pages, exact amount of fuel used, etc.
-
 
 <!---
 h<sub>&theta;</sub>(x) = &pi;<sub>o</sub> x + &theta;<sub>1</sub>x
