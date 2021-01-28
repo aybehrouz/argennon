@@ -76,7 +76,7 @@ When a method completes, whether normally or abruptly, the call stack is used to
 
 A thrown exception causes methods in the call stack to complete **abruptly** one by one, as long as the next instruction is not a `catch` instruction. The `catch` instruction acts like a branch instruction that branches only if an exception is caught.  **When an external method invocation completes abruptly, before changing the current segment, all changes made to the heap area will be rolled back.**
 
-_By using this feature and `athrow` instruction properly, a programmer can make any method to act like an atomic operation._
+_By using this feature and `athrow` instruction, a programmer can make any method act like an atomic operation._
 
 ### Heap Allocation Instructions
 ...
@@ -98,7 +98,7 @@ Every page of AVM heap will be stored with a key of the form: `applicationID|pag
 We also use a ZK-EDB for storing the code area of each segment and we include the commitment of this DB in every block. Every code area will be stored in the DB with `applicationID` as its key. Like heap pages, nodes also keep a cache of code areas.
 
 ### Blockchain
-Every block of the blockchain corresponds to a set of transactions. We store the hash of this set in every block but we don't keep the transaction set itself. To be able to detect replay attacks, we require every signature that a user creates to have a nonce. This nonce consists of the issuance round of a signature and a sequence number: `(issuance, sequence)`. When a user creates more than one signature in a round he needs to sequence his signatures starting from 0. We define a maximum life time for signatures, so a signature is invalid if `currentRound - issuance > maxLifeTime` or if a signature of the same user with a bigger or equal nonce is already used (i.e. is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two nonces have an equal issuance the nonce with the bigger sequence number will be considered to be bigger.
+Every block of Algorand blockchain corresponds to a set of transactions. We store the hash of this set in every block but we don't keep the transaction set itself. To be able to detect replay attacks, we require every signature that a user creates to have a nonce. This nonce consists of the issuance round of a signature and a sequence number: `(issuance, sequence)`. When a user creates more than one signature in a round, he needs to sequence his signatures starting from 0. We define a maximum life time for signatures, so a signature is invalid if `currentRound - issuance > maxLifeTime` or if a signature of the same user with a bigger or equal nonce is already used (i.e. is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two nonces have an equal issuance the nonce with the bigger sequence number will be considered to be bigger.
 
 To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. When the difference between `issuance` component of this nonce and the current round becomes bigger than the maximum allowed life time of a signature, this information can be safely deleted. **In this way, we will not have the problem of "unremovable empty accounts" like Ethereum.**
 
@@ -111,7 +111,7 @@ The only information that Algorand's nodes are required to store is the Algorand
 | hash of transactions |
 | certificate of the previous block |
 
-For confirming a new block, nodes that are not validators only need to verify the block certificate. For verifying a block certificate nodes need to know ALGO balances of validators but they don't need to emulate the AVM execution. On the other hand, nodes that are chosen to be validators need to emulate execution of the Algorand virtual machine and calculate and confirm the new ZK-EDB commitments and hash of the new block's transactions
+For confirming a new block, nodes that are not validators only need to verify the block certificate. For verifying a block certificate, a node needs to know the ALGO balances of validators, but it doesn't need to emulate the AVM execution. On the other hand, nodes that are chosen to be validators, need to emulate execution of the Algorand virtual machine and calculate and confirm the new ZK-EDB commitments. They also need to calculate the hash of new block's transactions.
 
 ### Transactions
 
