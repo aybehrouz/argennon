@@ -169,7 +169,7 @@ We also use a ZK-EDB for storing the code area of each segment, and we include t
 Every code area will be divided into blocks and every block will be stored in the DB with `applicationID|blockID` as its
 key. Like heap pages, nodes keep a cache of code area blocks.
 
-_Unlike heap pages, the AVM is not aware of code area different blocks._
+_Unlike heap pages, the AVM is not aware of different blocks of code area._
 
 ### Blockchain
 
@@ -188,15 +188,16 @@ difference between `issuance` component of this nonce and the current round beco
 lifetime of a signature, this information can be safely deleted. **Therefore, we will not have the problem of "
 unremovable empty accounts" like Ethereum.**
 
-The only information that Algorand's nodes are required to store is the Algorand blockchain. Every block of the Algorand
-blockchain contains the following information:
+The only information that Algorand's nodes are required to store is the **last block** of Algorand blockchain. Every 
+block of Algorand blockchain contains the following information:
 
 | Block |
 | ---- |
 | commitment to the ZK-EDB storing heap pages |
 | commitment to the ZK-EDB storing code areas |
-| hash of transaction set |
-| certificate of the previous block |
+| transaction set hash |
+| previous block hash |
+| next block seed |
 
 For confirming a new block, nodes that are not validators only need to verify the block certificate. For verifying a
 block certificate, a node needs to know the ALGO balances of validators, but it doesn't need to emulate the AVM
