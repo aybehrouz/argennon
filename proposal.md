@@ -19,12 +19,6 @@ operate on values of specific types. For instance, `iadd` assumes that its opera
 
 ...
 
-### The `fuelTank` Register
-
-Before executing an instruction the Algorand virtual machine subtracts the predefined cost of that instruction from
-the `fuelTank` register. A negative value in this register will cause the AVM to throw an exception. The AVM has no
-instruction for directly manipulating the `fuelTank` register.
-
 ### Call Stack
 
 A call stack contains the information that is needed for restoring the state of the invoker of a method.
@@ -113,7 +107,8 @@ a method writes the parameters in the local frame of the invoked method using `a
 ### Exceptions
 
 An exception is thrown programmatically using the `athrow` instruction. Exceptions can also be thrown by various
-Algorand Virtual Machine instructions if they detect an abnormal condition.
+Algorand Virtual Machine instructions if they detect an abnormal condition. Some exceptions are unchecked and will
+always abort the execution of the smart contract.
 
 ### Method Invocation Completion
 
@@ -187,16 +182,23 @@ _Unlike heap pages, the AVM is not aware of different blocks of a code area._
 
 ### Transactions
 
-Transferring all assets, including ALGOs, is done by AVM smart contracts. For Interacting with an AVM smart contract a
-user broadcasts an `avmCall` transaction. an `avmCall` transaction essentially is two `invoke_external` instructions.
-The first `invoke_external` is always a method invocation from Algorand's main smart contract which buys `fuel` by
-sending ALGOs to the fee sink account. The second `invoke_external` invokes the requested method.
+Algorand has three type of transaction:
 
-Every `avmCall` transaction is required to exactly specify what heap pages it will access. This enables validators to
-start retrieving required heap pages from available ZK-EDB servers as soon as they see a transaction, and they won't
-need to wait for receiving the new proposed block. A transaction that tries to access a page that is not included in
-its `pageAccessList` field, will be rejected. Users could use [smart contract oracles](#smart-contract-oracle) to find
-the list of heap pages their transactions need.
+- `avmCall` essentially is an `invoke_external` instructions that invokes a method from an AVM smart contract. Users
+  interact with AVM smart contracts using these transactions. Transferring all assets, including ALGOs, is done by these
+  transactions.
+- `installApp` installs an AVM smart contract.
+- `unInstallApp` removes an AVM smart contract.
+
+All type of Algorand transactions contain an `invoke_external` instruction which calls a special method from ALGO smart
+contract. This method will transfer the proposed fee of the transaction in ALGOs from a sender account to the fee sink
+accounts.
+
+Every transaction is required to exactly specify what heap pages or code area blocks it will access. This enables
+validators to start retrieving required heap pages from available ZK-EDB servers as soon as they see a transaction, and
+they won't need to wait for receiving the new proposed block. A transaction that tries to access a memory block that is
+not included in its access lists, will be rejected. Users could use [smart contract oracles](#smart-contract-oracle) to
+find the list of memory blocks their transactions need.
 
 ### Blockchain
 
@@ -224,7 +226,7 @@ blockchain. Every block of the Algorand blockchain contains the following inform
 | commitment to the ZK-EDB storing code areas |
 | commitment to the set of transactions |
 | previous block hash |
-| next block seed |
+| random seed |
 
 For confirming a new block, nodes that are not validators only need to verify the block certificate. For verifying a
 block certificate, a node needs to know the ALGO balances of validators, but it doesn't need to emulate the AVM
@@ -239,6 +241,133 @@ new block. Validators also calculate and verify the commitment to the new block'
 _Validators do not need to write the modified pages back to ZK-EDBs. ZK-EDBs will receive the new block, and they will
 update their database by emulating the AVM execution._
 
+### Incentive mechanism
+
+#### Transaction Fee
+
+Every transaction in the Algorand blockchain contains an `invoke_external` instruction which calls a special method from
+ALGO smart contract. This method will transfer the proposed fee of the transaction in ALGOs from a sender account to the
+fee sink accounts. There are two fee sink accounts: `execFees` collects execution fees and `dbFees` collects fees for
+ZK-EDBs. The Protocol decides how to distribute the transaction fee between these two fee sink accounts.
+
+_For many circumstances, dividing the fee based on a constant ratio between the two fee sinks seems to be a reasonable
+choice._
+
+When a block is added to the blockchain, the proposer of that block will receive a share of the block fees.
+Consequently, a block proposer is always incentivized to include more transactions in the block. However, if he puts too
+many transactions in his block and the validation of the block becomes too difficult, some validators may not be able to
+validate all transactions in the required time. In this case, the network may reach consensus on an empty block, and the
+proposer will not receive any fees. So a proposer is incentivized to use network transaction capacity optimally.
+
+On the other hand, we believe that the proposer does not have enough incentives for optimizing the storage size of the
+transaction set. Therefore, we require that **the size of the transaction set of every block in bytes be lower than a
+certain threshold.**
+
+Validators need to spend resources for validating transactions. When a validator starts emulation of the AVM to validate
+a transactions, solely from the code he can't predict the time the execution will finish. This will give an adversary an
+opportunity to attack the network by broadcasting transactions that never ends. Since, validators can not finish the
+execution of these transactions, the network will not be able to charge the attacker any fees, and he can waste
+validators resources for free.
+
+To mitigate this problem, we require that every transaction specify a cap for all the resources it needs. This will
+include memory, network and processor related resources.
+
+Every AVM instruction will have a protocol-defined execution cost that reflects the amount of resources needed for its
+emulation. This will define a standard way for measuring the execution cost of any `avmCall` transaction.
+Every `avmCall` transaction needs to specify a maximum execution cost. If during emulation it reaches this maximum cost,
+the transaction will be considered failed and the network can receive the proposed fee of that transaction.
+
+Every `avmCall` transaction is required to provide the following information as an upper bound for the resources it
+needs:
+
+- Execution cost
+- A list of heap/code-area pages for reading
+- A list of heap pages for writing
+- A list of heap pages it will deallocate
+- Number and size of heap pages it will allocate
+
+If a transaction tries to violate any of these predefined limitations, for example, if it tries to read a memory
+location that is not included in its reading list, it will be considered failed and the network can receive the proposed
+fee of that transaction.
+
+_A transaction always pays all of its proposed fee, no matter how much of its predefined resources has not been used in
+the final emulation._
+
+#### ZK-EDB Servers
+
+The incentive mechanism for ZK-EDB servers should have the following properties:
+
+- It incentivizes storing all memory blocks, whether a heap page or a code area block, and not only those that are used
+  more frequently.
+- It incentivizes the ZK-EDB servers to actively provide the required memory blocks for validators.
+- Making more accounts will not provide any advantages for a ZK-EDB sever.
+
+For our incentive mechanism, we require that every time a validator receives a memory block from a ZK-EDB, after
+validating the data, he gives a receipt to the ZK-EDB. In this receipt the validator signs the following information:
+
+- `ownerAddr` the ALGO address of the ZK-EDB
+- `receivedBlockID` the ID of the received memory block
+- `round` the current round number
+
+_In a round, an honest validator never gives a receipt for an identical memory block to two different ZK-EDBs._
+
+To incentivize ZK-EDB servers, every round a lottery will be held and a predefined amount of ALGOs from `DbFeeSink`
+account will be paid as a prize. This prize will be divided equally between all the winners of the lottery.
+
+To run this lottery, In every round, based on the current block seed, a collection of *valid* receipts will be selected
+randomly as the *winning* receipts. A receipt is *valid* in the round `r` if:
+
+- The signer was a validator in the **previous** round and voted for the agreed-upon block
+- The data block in the receipt was needed for validating the **previous** block
+- The receipt round number is `r-1`
+- The signer did not sign a receipt for the same data block for two different ZK-EDBs in the previous round
+
+For selecting the winning receipts we could use a random generator:
+
+```
+if random(seed|validatorPK|receivedBlockID) < winProbability
+    the receipt issued by validatorPK for receivedBlockID is a winner
+```
+
+- `random()` produces uniform random numbers between 0 and 1, using its input argument as a seed.
+- `validatorPK` is the public key of the signer of the receipt.
+- `receivedBlockID` is the ID of the memory block that the receipt was issued for.
+- `winProbability` is the probability of winning in every round.
+- `seed` is the current block seed.
+- `|` is a concatenation operator.
+
+_The winners of the lottery were validators one round before the lottery round._
+
+Also, based on the current block seed, a random memory block, whether a heap page or a code area block, is selected as
+the challenge of the round. A ZK-EDB that owns a winning receipt needs to broadcast a *winning ticket* to claim his
+prize. The winning ticket consists of a winning receipt and a *solution* to the round challenge. Solving a round
+challenge requires the content of the memory block which was selected as the round challenge. This will encourage
+ZK-EDBs to store all memory blocks.
+
+A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge memory
+block combined with the ZK-EDB ALGO address: `hash(data|ownerAddr)`
+
+The winning tickets of the lottery of the round `r` need to be included in the block of the round `r`, otherwise they
+will be considered expired. Validation and prize distribution for the winning tickets of the round `r` will be done in
+the round `r+1`. This way, **the content of the challenge memory block could be kept secret during the lottery round.**
+
+#### Memory Allocation and De-allocation
+
+Every k round the protocol chooses a price per byte for the AVM memory. When a smart contract executes a heap allocation
+instruction, the protocol will automatically deduce the cost of the allocated memory from the ALGO address of the smart
+contract.
+
+To determine the price of AVM memory, Every k round, the protocol calculates `dbFee` and `memTraffic` values. `dbFee` is
+the aggregate amount of collected database fees and `memTraffic` is the total memory traffic of the system. For
+calculating the memory traffic of the system the protocol considers the total size of all memory pages that were
+accessed for either reading or writing. These two values will be calculated for the last k rounds and the price per byte
+of the AVM memory will be a linear function of `dbFee/memTraffic`
+
+When a smart contract executes a heap de-allocation instruction, the protocol will refund the cost of de-allocated
+memory to the smart contract. Here, the current price of AVM memory does not matter and the protocol calculates the
+refunded amount based on the average price the smart had paid for the allocated memory. This will prevent smart
+contracts from profit taking by trading memory with the protocol.
+
 ## Smart Contract Oracle
 
 A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM execution
@@ -248,3 +377,31 @@ transactions such as accessed AVM heap pages, exact amount of fuel used, and so 
 <!---
 h<sub>&theta;</sub>(x) = &pi;<sub>o</sub> x + &theta;<sub>1</sub>x
 --->
+
+<!---
+selected and a lottery is run for ZK-EDBs based on it. Every ZK-EDB that owns a *winning ticket* will be a winner of the
+lottery, and the prize of the lottery will be divided between all the winners equally. A *winning ticket* is a *valid*
+receipt that solves the lottery challenge.
+
+A receipt solves a lottery challenge if the combination of the receipt's signer public key and the ID of the received
+data block and the content of the challenge data block forms the *winner property*. The *winner property* is defined in
+such a way that the probability of winning equals to some desired value.
+
+One suggestion for the *winner property* could be this condition:
+
+```
+if sha256(data|validatorPK|receivedBlockID) mod 2^difficulty == seed mod 2^difficulty
+  ownerAddr is a winner
+```
+
+- `data` is the content of the data block that was selected using `seed `for the lottery challenge.
+- `validatorPK` is the public key of the signer of the receipt.
+- `receivedBlockID` is the ID of the data block that the receipt was issued for.
+- `difficulty` is an integer that controls the difficulty of winning in every round.
+- `seed` is the current block seed.
+- `|` is the concatenation operator.
+
+The winning tickets of the lottery of the round `r` need to be included in the block of the round `r+1`. Otherwise, they
+will be considered expired and no prize will be given to their owners.
+--->
+
