@@ -1,3 +1,5 @@
+# The Algorand Virtual Machine Specification
+
 ## Introduction
 
 The Algorand Virtual Machine (AVM) is an abstract computing machine for executing Algorand's smart contracts. It is
@@ -255,14 +257,13 @@ to the fee sink accounts. Algorand has two fee sink accounts: `execFeeSink` coll
 collects fees for ZK-EDBs. The Protocol decides how to distribute the transaction fee between these two fee sink
 accounts.
 
-_For many circumstances, dividing the fee based on a constant ratio between the two fee sinks seems to be a reasonable
-choice._
-
 When a block is added to the blockchain, the proposer of that block will receive a share of the block fees.
 Consequently, a block proposer is always incentivized to include more transactions in his block. However, if he puts too
 many transactions in his block and the validation of the block becomes too difficult, some validators may not be able to
-validate all transactions in the required time. In this case, the network may reach consensus on an empty block, and the
-proposer will not receive any fees. So a proposer is incentivized to use network transaction capacity optimally.
+validate all transactions in the required time. If a validator can not validate a block in the required time, he will
+consider the block invalid. So, when a block contains too many transactions the network may reach consensus on another
+block, and the proposer of that block will not receive any fees. As a result, a proposer is always incentivized to use
+network transaction capacity optimally.
 
 On the other hand, we believe that the proposer does not have enough incentives for optimizing the storage size of the
 transaction set. Therefore, we require that **the size of the transaction set of every block in bytes be lower than a
