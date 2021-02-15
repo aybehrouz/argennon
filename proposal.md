@@ -1,5 +1,3 @@
-# The Algorand Virtual Machine Specification
-
 ## Introduction
 
 The Algorand Virtual Machine (AVM) is an abstract computing machine for executing Algorand's smart contracts. It is
@@ -260,24 +258,24 @@ accounts.
 When a block is added to the blockchain, the proposer of that block will receive a share of the block fees.
 Consequently, a block proposer is always incentivized to include more transactions in his block. However, if he puts too
 many transactions in his block and the validation of the block becomes too difficult, some validators may not be able to
-validate all transactions in the required time. If a validator can not validate a block in the required time, he will
-consider the block invalid. So, when a block contains too many transactions the network may reach consensus on another
-block, and the proposer of that block will not receive any fees. As a result, a proposer is always incentivized to use
-network transaction capacity optimally.
+validate all transactions on time. If a validator can not validate a block in the required time, he will consider the
+block invalid. So, when a proposed block contains too many transactions, the network may reach consensus on another
+block, and the proposer of that block will not receive any fees. As a result, a proposer is incentivized to use network
+transaction capacity optimally.
 
 On the other hand, we believe that the proposer does not have enough incentives for optimizing the storage size of the
 transaction set. Therefore, we require that **the size of the transaction set of every block in bytes be lower than a
 certain threshold.**
 
 Validators need to spend resources for validating transactions. When a validator starts the emulation of the AVM to
-validate a transactions, solely from the code he can't predict the time the execution will finish. This will give an
+validate a transaction, solely from the code he can't predict the time the execution will finish. This will give an
 adversary an opportunity to attack the network by broadcasting transactions that never ends. Since, validators can not
 finish the execution of these transactions, the network will not be able to charge the attacker any fees, and he would
 be able to waste validators resources for free.
 
 To mitigate this problem, we require that every transaction specify a cap for all the resources it needs. This will
 include memory, network and processor related resources. Also, the protocol defines an execution cost for every AVM
-instruction reflecting the amount of resources it needs for emulation. This will define a standard way for measuring the
+instruction reflecting the amount of resources its emulation needs. This will define a standard way for measuring the
 execution cost of any `avmCall` transaction. Every `avmCall` transaction is required to specify a maximum execution
 cost. If during emulation it reaches this maximum cost, the transaction will be considered failed and the network can
 receive the proposed fee of that transaction.
@@ -377,6 +375,37 @@ memory to the smart contract. Here, the current price of AVM memory does not mat
 refunded amount based on the average price the smart had paid for that allocated memory. This will prevent smart
 contracts from profit taking by trading memory with the protocol.
 
+### Concurrency
+
+Every block of the Algorand blockchain contains a list of transactions. This list is an ordered list and the effect of
+its contained transactions must be applied to the AVM state sequentially as they appear in the ordered list. The
+ordering of transactions in a block is solely chosen by the block proposer.
+
+_Users should not have any assumption about the ordering of transactions in a block._
+
+The fact that block transactions constitute a sequential list, does not mean they can not be validated concurrently.
+Many transactions are actually independent and the order of their execution does not matter. These transactions can be
+safely validated in parallel by validators.
+
+A transaction can change the AVM state by modifying either the code area or the AVM heap. In Algorand, all transactions
+declare the list of memory blocks they want to read or write. This will enable us to determine the independent sets of
+transactions which can be validated in parallel. To do so, we define the *memory dependency graph* as follows:
+
+- G is an undirected graph
+- Every vertex in G corresponds to a transaction
+- Vertices u and v are adjacent in G if and only if u has a memory block B in its writing list and v has B in either its
+  writing list or reading list
+
+If we consider a proper vertex coloring of G, every color class will give us an independent set of transactions that can
+be validated concurrently. To achieve the highest parallelization, we need to color G with minimum number of colors.
+Thus, the chromatic number of the memory dependency graph shows how good a transaction set could be run concurrently.
+
+Graph coloring is computationally NP-hard. However, in our use case we don't need to necessarily find an optimal
+solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is
+responsible for solving the graph coloring problem and a proposed block must determine the independent sets of
+transactions which can be run in parallel safely. Since with better parallelization a block can contain more
+transactions, a proposer is incentivized enough to find a good graph coloring.
+
 ## Smart Contract Oracle
 
 A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM execution
@@ -384,5 +413,6 @@ without accessing a ZK-EDB. Smart contract oracles can be used for reporting use
 transactions such as accessed AVM heap pages or code area blocks, exact amount of execution cost, and so on.
 
 <!---
+<img src="https://render.githubusercontent.com/render/math?math=e^{i \pi} = -1">
 h<sub>&theta;</sub>(x) = &pi;<sub>o</sub> x + &theta;<sub>1</sub>x
 --->
