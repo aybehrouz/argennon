@@ -325,9 +325,9 @@ _One ZK-EDB server could own multiple winning tickets in a round._
 To run this lottery, In every round, based on the current block seed, a collection of *valid* receipts will be selected
 randomly as the *winning* receipts. A receipt is *valid* in the round *r* if:
 
-- The signer was a validator in the round *r - 1* and voted for the agreed-upon block
+- The signer was a validator in the round *r* - 1 and voted for the agreed-upon block
 - The data block in the receipt was needed for validating the **previous** block
-- The receipt round number is *r - 1*
+- The receipt round number is *r* - 1
 - The signer did not sign a receipt for the same data block for two different ZK-EDBs in the previous round
 
 For selecting the winning receipts we could use a random generator:
@@ -357,7 +357,7 @@ block combined with the ZK-EDB ALGO address: `hash(challenge.content|ownerAddr)`
 
 The winning tickets of the lottery of the round *r* need to be included in the block of the round *r*, otherwise they
 will be considered expired. Validation and prize distribution for the winning tickets of the round *r* will be done in
-the round *r + 1*. This way, **the content of the challenge memory block could be kept secret during the lottery
+the round *r* + 1. This way, **the content of the challenge memory block could be kept secret during the lottery
 round.**
 Every winning ticket will get an equal share of the lottery prize.
 
@@ -415,26 +415,26 @@ transactions, a proposer is incentivized enough to find a good graph coloring.
 #### Estimating A User's Stake
 
 In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount of
-stake the user has in the system. Conventionally, for estimating a user's stake in a proof of stake system we use the
-amount of native system tokens that user is holding. Unfortunately, one problem with this approach is that a strong
-attacker may be able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application,
-and use this stake to attack the system.
+stake the user has in the system. Conventionally in these systems, for estimating a user's stake, we use the amount of
+native system tokens the user is holding. Unfortunately, one problem with this approach is that a strong attacker may be
+able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
+stake to attack the system.
 
-To mitigate this problem, for calculating a user's stake, instead of using raw ALGO balance, we use the minimum of a
+To mitigate this problem, for calculating a user's stake, instead of using the raw ALGO balance, we use the minimum of a
 *trust value* that the system has calculated for the user and the user's ALGO balance:
 
 <!---
 \[Stake_{user} = \min (Balance_{user},Trust_{user})\]
 *Stake<sub>user</sub>* = Min{ *Balance<sub>user</sub> , Trust<sub>user</sub>* }
 --->
-![equation](https://latex.codecogs.com/gif.latex?Stake_{user}&space;=&space;\min&space;(Balance_{user},Trust_{user}))
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Stake_{user}&space;=&space;\min&space;(Balance_{user},Trust_{user}))
 
 For estimating the value of *Trust<sub>user</sub>* we use the exponential moving average of the user's ALGO balance.
-With this approach, a user that held ALGOs and participated in the consensus for a long time is more trusted than a new
-user with higher balance. Consequently, an attacker needs to obtain a large amount of ALGOs and also holds them for a
-long time before he can attack the system using them. This will make this type of attacks less likely.
+Therefore, in our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a
+new user with a higher balance. An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long
+period of time before being able to attack our system.
 
-For calculating the exponential moving average of a time series in the step *t*, we can use the following recursive
+For calculating the exponential moving average of a time series in the time step *t*, we can use the following recursive
 formula:
 
 <!---
@@ -442,14 +442,14 @@ formula:
 *M*<sub>*t*</sub> = (1 − *α*)*M*<sub>*t* − 1</sub> + *α**X*<sub>*t*</sub> = *M*<sub>*t* − 1</sub> +
 *α*(*X*<sub>*t*</sub> − *M*<sub>*t* − 1</sub>)
 --->
-![equation](https://latex.codecogs.com/gif.latex?M_t&space;=&space;(1&space;-&space;\alpha)&space;M_{t&space;-&space;1}&space;&plus;&space;\alpha&space;X_t&space;=&space;M_{t&space;-&space;1}&space;&plus;&space;\alpha&space;(X_t&space;-&space;M_{t&space;-&space;1}))
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;M_t&space;=&space;(1&space;-&space;\alpha)&space;M_{t&space;-&space;1}&space;&plus;&space;\alpha&space;X_t&space;=&space;M_{t&space;-&space;1}&space;&plus;&space;\alpha&space;(X_t&space;-&space;M_{t&space;-&space;1}))
 
 Where:
 
 - The coefficient *α* is a constant smoothing factor between 0 and 1 which represents the degree of weighting decrease,
   A higher *α* discounts older observations faster.
 - *X<sub>t</sub>* is the value of the time series at the time step t.
-- *M<sub>t</sub>* is the value of the EMA at any time step t.
+- *M<sub>t</sub>* is the value of the EMA at the time step t.
 
 Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
 *M<sub>t</sub>*:
@@ -458,9 +458,9 @@ Usually an account balance will not change in every time step, and we can use ol
 \[M_t = (1 - \alpha)^{t - k}M_k + [1 - (1 - \alpha)^{t - k}]X\]
 *M*<sub>*t*</sub> = (1 − *α*)<sup>*t* − *k*</sup>*M*<sub>*k*</sub> + [1 − (1 − *α*)<sup>*t* − *k*</sup>]*X*
 --->
-![equation](https://latex.codecogs.com/gif.latex?M_t&space;=&space;(1&space;-&space;\alpha)^{t&space;-&space;k}M_k&space;&plus;&space;[1&space;-&space;(1&space;-&space;\alpha)^{t&space;-&space;k}]X)
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;M_t&space;=&space;(1&space;-&space;\alpha)^{t&space;-&space;k}M_k&space;&plus;&space;[1&space;-&space;(1&space;-&space;\alpha)^{t&space;-&space;k}]X)
 
-When (*t* - *k*)*α* &ll; 1 we can use the binomial approximation (1 + *x*)<sup>*n*</sup> ≈ 1 + *nx* to furthur simplify
+When (*t* - *k*)*α* &ll; 1 we can use the binomial approximation (1 + *x*)<sup>*n*</sup> ≈ 1 + *nx* to further simplify
 this formula:
 
 <!---
@@ -469,19 +469,20 @@ $|nx| \ll 1$
 \[M_t = M_k + (t - k) \alpha (X - M_k)\]
 *M*<sub>*t*</sub> = *M*<sub>*k*</sub> + (*t* − *k*)*α*(*X* − *M*<sub>*k*</sub>)
 --->
-![equation](https://latex.codecogs.com/gif.latex?M_t&space;=&space;M_k&space;&plus;&space;(t&space;-&space;k)&space;\alpha&space;(X&space;-&space;M_k))
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;M_t&space;=&space;M_k&space;&plus;&space;(t&space;-&space;k)&space;\alpha&space;(X&space;-&space;M_k))
 
-For choosing the value of *α* we can consider the number of time steps that the trust value of a user needs to reach a
-specified fraction of his account balance. We know that for large *n* and *|x|* < 1 we have (1 + *x*)<sup>*n*</sup> ≈
+For choosing the value of *α* we can consider the number of time steps that the trust value of a user needs for reaching
+a specified fraction of his account balance. We know that for large *n* and |*x*| < 1 we have (1 + *x*)<sup>*n*</sup> ≈
 *e*<sup>*nx*</sup>, so we can write:
 
 <!---
 \[\alpha =- \frac{\ln(1 - \frac{M_n}{X})}{n}\]
 --->
-![equation](https://latex.codecogs.com/gif.latex?\alpha&space;=-&space;\frac{\ln(1&space;-&space;\frac{M_n}{X})}{n})
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;\alpha&space;=-&space;\frac{\ln(1&space;-&space;\frac{M_n}{X})}{n})
 
-For instance a good configuration could be obtained by letting *M*<sub>*n*</sub> = 0.8*X* and *n* equal to the number of
-steps for 10 years.
+The value of *α* for a desired configuration can be calculated by this equation. For instance, we could calculate the
+*α* for a relatively good configuration in which *M*<sub>*n*</sub> = 0.8*X* and *n* equals to the number of time steps
+of 10 years.
 
 ## Smart Contract Oracle
 
