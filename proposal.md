@@ -161,11 +161,13 @@ For implementing the persistence layer of the AVM, we assume that we have access
 elementary database (ZK-EDB) with the following properties:
 
 - ZK-EDB contains a mapping from a set of keys to a set of values.
-- Every state of the database has a commitment C.
-- ZK-EDB has a method (D, p) = DB.get(x), where x is a key and D is the associated value with x and p is a proof.
-- A user can use C and p to verify that D is really associated with x, and D is not altered. Consequently, a user who
-  can obtain C from a trusted source do not need to trust the ZK-EDB.
-- Having p and C a user can compute the commitment C' for the database in which D' is associated with x instead of D.
+- Every state of the database has a commitment *C*.
+- ZK-EDB has a method *(D, p) = DB.get(x)*, where *x* is a key and *D* is the associated value with *x* and *p* is a
+  proof.
+- A user can use *C* and *p* to verify that *D* is really associated with *x*, and *D* is not altered. Consequently, a
+  user who can obtain *C* from a trusted source do not need to trust the ZK-EDB.
+- Having *p* and *C* a user can compute the commitment *C'* for the database in which *D'* is associated with *x*
+  instead of *D*.
 
 We use a ZK-EDB for storing the AVM heap. We include the commitment of the current state of this DB in every block of
 the Algorand blockchain, so ZK-EDB servers need not be trusted servers.
@@ -179,7 +181,7 @@ We also use a ZK-EDB for storing the code area of each segment, and we include t
 Every code area will be divided into blocks and every block will be stored in the DB with `applicationID|blockID` as its
 key. Like heap pages, nodes keep a cache of code area blocks.
 
-_Unlike heap pages, the AVM is not aware of different blocks of a code area._
+_Unlike heap pages, the AVM is not aware of different blocks of the code area._
 
 ### Transactions
 
@@ -242,8 +244,8 @@ block. This will modify some pages of the AVM memory, so they update the ZK-EDB 
 and verify the commitments included in the new block. Validators also calculate and verify the commitment to the new
 block's transaction set.
 
-_Validators do not need to write the modified pages back to ZK-EDBs. ZK-EDBs will receive the new block, and they will
-update their database by emulating the AVM execution._
+_Validators do not need to write the modified pages back to ZK-EDB servers. ZK-EDBs will receive the new block, and they
+will update their database by emulating the AVM execution._
 
 ### Incentive mechanism
 
@@ -321,11 +323,11 @@ tickets* of the lottery.
 _One ZK-EDB server could own multiple winning tickets in a round._
 
 To run this lottery, In every round, based on the current block seed, a collection of *valid* receipts will be selected
-randomly as the *winning* receipts. A receipt is *valid* in the round `r` if:
+randomly as the *winning* receipts. A receipt is *valid* in the round *r* if:
 
-- The signer was a validator in the round `r-1` and voted for the agreed-upon block
+- The signer was a validator in the round *r - 1* and voted for the agreed-upon block
 - The data block in the receipt was needed for validating the **previous** block
-- The receipt round number is `r-1`
+- The receipt round number is *r - 1*
 - The signer did not sign a receipt for the same data block for two different ZK-EDBs in the previous round
 
 For selecting the winning receipts we could use a random generator:
@@ -353,9 +355,10 @@ ZK-EDBs to store all memory blocks.
 A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge memory
 block combined with the ZK-EDB ALGO address: `hash(challenge.content|ownerAddr)`
 
-The winning tickets of the lottery of the round `r` need to be included in the block of the round `r`, otherwise they
-will be considered expired. Validation and prize distribution for the winning tickets of the round `r` will be done in
-the round `r+1`. This way, **the content of the challenge memory block could be kept secret during the lottery round.**
+The winning tickets of the lottery of the round *r* need to be included in the block of the round *r*, otherwise they
+will be considered expired. Validation and prize distribution for the winning tickets of the round *r* will be done in
+the round *r + 1*. This way, **the content of the challenge memory block could be kept secret during the lottery
+round.**
 Every winning ticket will get an equal share of the lottery prize.
 
 #### Memory Allocation and De-allocation
@@ -391,20 +394,94 @@ A transaction can change the AVM state by modifying either the code area or the 
 declare the list of memory blocks they want to read or write. This will enable us to determine the independent sets of
 transactions which can be validated in parallel. To do so, we define the *memory dependency graph* as follows:
 
-- G is an undirected graph
-- Every vertex in G corresponds to a transaction
-- Vertices u and v are adjacent in G if and only if u has a memory block B in its writing list and v has B in either its
-  writing list or reading list
+- *G* is an undirected graph
+- Every vertex in *G* corresponds to a transaction
+- Vertices *u* and *v* are adjacent in *G* if and only if u has a memory block *B* in its writing list and *v* has *B*
+  in either its writing list or reading list
 
-If we consider a proper vertex coloring of G, every color class will give us an independent set of transactions that can
-be validated concurrently. To achieve the highest parallelization, we need to color G with minimum number of colors.
-Thus, the chromatic number of the memory dependency graph shows how good a transaction set could be run concurrently.
+If we consider a proper vertex coloring of *G*, every color class will give us an independent set of transactions that
+can be validated concurrently. To achieve the highest parallelization, we need to color *G* with minimum number of
+colors. Thus, the chromatic number of the memory dependency graph shows how good a transaction set could be run
+concurrently.
 
 Graph coloring is computationally NP-hard. However, in our use case we don't need to necessarily find an optimal
 solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is
 responsible for solving the graph coloring problem and a proposed block must determine the independent sets of
 transactions which can be run in parallel safely. Since with better parallelization a block can contain more
 transactions, a proposer is incentivized enough to find a good graph coloring.
+
+### Consensus
+
+#### Estimating A User's Stake
+
+In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount of
+stake the user has in the system. Conventionally, for estimating a user's stake in a proof of stake system we use the
+amount of native system tokens that user is holding. Unfortunately, one problem with this approach is that a strong
+attacker may be able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application,
+and use this stake to attack the system.
+
+To mitigate this problem, for calculating a user's stake, instead of using raw ALGO balance, we use the minimum of a
+*trust value* that the system has calculated for the user and the user's ALGO balance:
+
+<!---
+\[Stake_{user} = \min (Balance_{user},Trust_{user})\]
+*Stake<sub>user</sub>* = Min{ *Balance<sub>user</sub> , Trust<sub>user</sub>* }
+--->
+![equation](https://latex.codecogs.com/gif.latex?Stake_{user}&space;=&space;\min&space;(Balance_{user},Trust_{user}))
+
+For estimating the value of *Trust<sub>user</sub>* we use the exponential moving average of the user's ALGO balance.
+With this approach, a user that held ALGOs and participated in the consensus for a long time is more trusted than a new
+user with higher balance. Consequently, an attacker needs to obtain a large amount of ALGOs and also holds them for a
+long time before he can attack the system using them. This will make this type of attacks less likely.
+
+For calculating the exponential moving average of a time series in the step *t*, we can use the following recursive
+formula:
+
+<!---
+\[M_t = (1 - \alpha) M_{t - 1} + \alpha X_t = M_{t - 1} + \alpha (X_t - M_{t - 1})\]
+*M*<sub>*t*</sub> = (1 − *α*)*M*<sub>*t* − 1</sub> + *α**X*<sub>*t*</sub> = *M*<sub>*t* − 1</sub> +
+*α*(*X*<sub>*t*</sub> − *M*<sub>*t* − 1</sub>)
+--->
+![equation](https://latex.codecogs.com/gif.latex?M_t&space;=&space;(1&space;-&space;\alpha)&space;M_{t&space;-&space;1}&space;&plus;&space;\alpha&space;X_t&space;=&space;M_{t&space;-&space;1}&space;&plus;&space;\alpha&space;(X_t&space;-&space;M_{t&space;-&space;1}))
+
+Where:
+
+- The coefficient *α* is a constant smoothing factor between 0 and 1 which represents the degree of weighting decrease,
+  A higher *α* discounts older observations faster.
+- *X<sub>t</sub>* is the value of the time series at the time step t.
+- *M<sub>t</sub>* is the value of the EMA at any time step t.
+
+Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
+*M<sub>t</sub>*:
+
+<!---
+\[M_t = (1 - \alpha)^{t - k}M_k + [1 - (1 - \alpha)^{t - k}]X\]
+*M*<sub>*t*</sub> = (1 − *α*)<sup>*t* − *k*</sup>*M*<sub>*k*</sub> + [1 − (1 − *α*)<sup>*t* − *k*</sup>]*X*
+--->
+![equation](https://latex.codecogs.com/gif.latex?M_t&space;=&space;(1&space;-&space;\alpha)^{t&space;-&space;k}M_k&space;&plus;&space;[1&space;-&space;(1&space;-&space;\alpha)^{t&space;-&space;k}]X)
+
+When (*t* - *k*)*α* &ll; 1 we can use the binomial approximation (1 + *x*)<sup>*n*</sup> ≈ 1 + *nx* to furthur simplify
+this formula:
+
+<!---
+$(1 + x)^n \approx 1 + nx$
+$|nx| \ll 1$
+\[M_t = M_k + (t - k) \alpha (X - M_k)\]
+*M*<sub>*t*</sub> = *M*<sub>*k*</sub> + (*t* − *k*)*α*(*X* − *M*<sub>*k*</sub>)
+--->
+![equation](https://latex.codecogs.com/gif.latex?M_t&space;=&space;M_k&space;&plus;&space;(t&space;-&space;k)&space;\alpha&space;(X&space;-&space;M_k))
+
+For choosing the value of *α* we can consider the number of time steps that the trust value of a user needs to reach a
+specified fraction of his account balance. We know that for large *n* and *|x|* < 1 we have (1 + *x*)<sup>*n*</sup> ≈
+*e*<sup>*nx*</sup>, so we can write:
+
+<!---
+\[\alpha =- \frac{\ln(1 - \frac{M_n}{X})}{n}\]
+--->
+![equation](https://latex.codecogs.com/gif.latex?\alpha&space;=-&space;\frac{\ln(1&space;-&space;\frac{M_n}{X})}{n})
+
+For instance a good configuration could be obtained by letting *M*<sub>*n*</sub> = 0.8*X* and *n* equal to the number of
+steps for 10 years.
 
 ## Smart Contract Oracle
 
