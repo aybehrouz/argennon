@@ -434,7 +434,7 @@ Therefore, in our system a user who held ALGOs and participated in the consensus
 new user with a higher balance. An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long
 period of time before being able to attack our system.
 
-For calculating the exponential moving average of a time series in the time step *t*, we can use the following recursive
+For calculating the exponential moving average of a time series at the time step *t*, we can use the following recursive
 formula:
 
 <!---
@@ -452,7 +452,7 @@ Where:
 - *M<sub>t</sub>* is the value of the EMA at the time step t.
 
 Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
-*M<sub>t</sub>* when *X*<sub>*k* + 1</sub> = *X*<sub>*k* + 2</sub> = ... = *X*<sub>*t*</sub> = *X*:
+*M<sub>t</sub>*:
 
 <!---
 $X_{k+1} = X_{k+2} = ... = X_t = X$
