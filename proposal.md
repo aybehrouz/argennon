@@ -452,9 +452,10 @@ Where:
 - *M<sub>t</sub>* is the value of the EMA at the time step t.
 
 Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
-*M<sub>t</sub>*:
+*M<sub>t</sub>* when *X*<sub>*k* + 1</sub> = *X*<sub>*k* + 2</sub> = ... = *X*<sub>*t*</sub> = *X*:
 
 <!---
+$X_{k+1} = X_{k+2} = ... = X_t = X$
 \[M_t = (1 - \alpha)^{t - k}M_k + [1 - (1 - \alpha)^{t - k}]X\]
 *M*<sub>*t*</sub> = (1 − *α*)<sup>*t* − *k*</sup>*M*<sub>*k*</sub> + [1 − (1 − *α*)<sup>*t* − *k*</sup>]*X*
 --->
@@ -472,8 +473,9 @@ $|nx| \ll 1$
 ![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;M_t&space;=&space;M_k&space;&plus;&space;(t&space;-&space;k)&space;\alpha&space;(X&space;-&space;M_k))
 
 For choosing the value of *α* we can consider the number of time steps that the trust value of a user needs for reaching
-a specified fraction of his account balance. We know that for large *n* and |*x*| < 1 we have (1 + *x*)<sup>*n*</sup> ≈
-*e*<sup>*nx*</sup>, so we can write:
+a specified fraction of his account balance. We know that for large *n* and | *x* | < 1 we have (1 + *x*)<sup>*n*</sup>
+≈
+*e*<sup>*nx*</sup>, so by letting *k* = 0 and *t* = *n* we can write:
 
 <!---
 \[\alpha =- \frac{\ln(1 - \frac{M_n}{X})}{n}\]
