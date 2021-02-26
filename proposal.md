@@ -475,16 +475,16 @@ $|nx| \ll 1$
 For choosing the value of *α* we can consider the number of time steps that the trust value of a user needs for reaching
 a specified fraction of his account balance. We know that for large *n* and | *x* | < 1 we have (1 + *x*)<sup>*n*</sup>
 ≈
-*e*<sup>*nx*</sup>, so by letting *k* = 0 and *t* = *n* we can write:
+*e*<sup>*nx*</sup>, so by letting *M<sub>k</sub>* = 0 and *n* = *t - k* we can write:
 
 <!---
 \[\alpha =- \frac{\ln(1 - \frac{M_n}{X})}{n}\]
 --->
-![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;\alpha&space;=-&space;\frac{\ln(1&space;-&space;\frac{M_n}{X})}{n})
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}\alpha=-\frac{\ln(1-\frac{M_{n+k}}{X})}{n})
 
 The value of *α* for a desired configuration can be calculated by this equation. For instance, we could calculate the
-*α* for a relatively good configuration in which *M*<sub>*n*</sub> = 0.8*X* and *n* equals to the number of time steps
-of 10 years.
+*α* for a relatively good configuration in which *M*<sub>*n* + *k*</sub> = 0.8*X* and *n* equals to the number of time
+steps of 10 years.
 
 ## Smart Contract Oracle
 
