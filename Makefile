@@ -1,4 +1,6 @@
 
+PANDOC = pandoc --columns=120 -s -f latex
+
 TEX_DIR = tex/
 MD_DIR = md/
 GFM_DIR = gfm/
@@ -17,7 +19,7 @@ ${MD_DIR}%.md: ${TEX_DIR}%.tex
 	mkdir -p ${MD_DIR}
 	cp $< $@.tmp
 	sed -i 's/\\\[/\n\\\[/; s/\\\]/\\\]\n/;' $@.tmp
-	pandoc -s -f latex -t markdown_strict $@.tmp -o $@
+	${PANDOC} -t markdown_strict $@.tmp -o $@
 	sed -i '/[^ ]\*\*[^ ]/s/\*\*//g' $@
 	rm $@.tmp
 
@@ -29,7 +31,7 @@ END_EQ = \)
 ${GFM_DIR}%.md: ${TEX_DIR}%.tex
 	mkdir -p ${GFM_DIR}
 	cp $< $@.tmp
-	pandoc -s -f latex -t gfm $@.tmp -o $@
+	${PANDOC} -t gfm $@.tmp -o $@
 	sed -i 's/\\\[/\n\\\[/g; s/\\\]/\\\]\n/g; s/\\(/\n\\(/g; s/\\)/\\)\n/g' $@
 	sed -i '/\\(\|\\\[/s/ /${SPACE}/g;' $@
 	sed -i -z 's/\n\\(/${INLINE_EQ}/g; s/\\)\n/${END_EQ}/g' $@
