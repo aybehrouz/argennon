@@ -310,22 +310,27 @@
     \subsection{Estimating A User's Stake}\label{subsec:estimating-a-user's-stake}
 
     In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount
-    of stake the user has in the system.
-    Conventionally in these systems, for estimating a user's stake, we use the amount of native system tokens the
-    user is holding.
-    Unfortunately, one problem with this approach is that a strong attacker may be able to obtain a considerable
-    amount of system tokens, for example by borrowing from a DEFI application, and use this stake to attack the system.
+    of stake the user has in the system. Conventionally in these systems, for estimating a user's stake, we use the
+    amount of native system tokens the user is holding. Unfortunately, one problem with this approach is that a
+    strong attacker may be able to obtain a considerable amount of system tokens, for example by borrowing from a
+    DEFI application, and use this stake to attack the system.
 
-    To mitigate this problem, for calculating a user's stake, instead of using the raw ALGO balance, we use the
-    minimum of a \emph{trust value} that the system has calculated for the user and the user's ALGO balance:
+    To mitigate this problem, for calculating a user's stake at the round \(n\), instead of using the raw ALGO
+    balance, we use the minimum of a \emph{trust value} the system has calculated for the user and the user's
+    ALGO balance:
     \[
-        Stake_{user} = \min (Balance_{user},Trust_{user})
+        Stake_{user,n} = \min (Balance_{user,n}, Trust_{user,n})
     \]
-    For estimating the value of \(Trust_{user}\) we use the exponential moving average of the user's ALGO balance.
-    Therefore, in our system a user who held ALGOs and participated in the consensus for a long time is more trusted
-    than a new user with a higher balance.
-    An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long period of time before
-    being able to attack our system.
+    For estimating the value of \(Trust_{user,n}\) we use the following formula:
+    \[
+        Trust_{user,n} = \max (M_n, \beta Balance_{user,n})
+    \]
+    Where \(M_n\) is the exponential moving average of the user's ALGO balance at the round \(n\) and \(\beta\) is a
+    constant between \(0\) and \(1\) determining the initial trust value of new users.
+
+    In our system a user who held ALGOs and participated in the consensus for a long time is more trusted
+    than a new user with a higher balance. An attacker who has obtained a large amount of ALGOs, also needs to hold
+    them for a long period of time before being able to attack our system.
 
     For calculating the exponential moving average of a time series at the time step \(t\), we can use the following
     recursive formula:
@@ -334,8 +339,8 @@
     \]
     Where:
     \begin{itemize}
-        \item The coefficient \(\alpha\) is a constant smoothing factor between 0 and 1 which represents the degree of
-        weighting decrease, A higher \(\alpha\) discounts older observations faster.
+        \item The coefficient \(\alpha\) is a constant smoothing factor between \(0\) and\(1\) which represents the
+        degree of weighting decrease, A higher \(\alpha\) discounts older observations faster.
         \item \(X_t\) is the value of the time series at the time step \(t\).
         \item \(M_t\) is the value of the EMA at the time step \(t\).
     \end{itemize}
@@ -356,16 +361,16 @@
     \]
 
     For choosing the value of \(\alpha\) we can consider the number of time steps that the trust value of a user needs
-    for reaching a specified fraction of his account balance.
-    We know that for large \(n\) and \(|x| < 1\) we have \((1 + x)^n \approx e^{nx}\), so by letting \(M_k = 0\) and
+    for reaching a specified fraction of his account balance. We know that for large \(n\) and \(|x| < 1\) we have \(
+    (1 + x)^n \approx e^{nx}\), so by letting \(M_k = 0\) and
     \(n = t - k\)
     we can write:
     \[
         \alpha =- \frac{\ln\left(1 - \frac{M_{n+k}}{X}\right)}{n}
     \]
-    The value of \(\alpha\) for a desired configuration can be calculated by this equation.
-    For instance, we could calculate the \(\alpha\) for a relatively good configuration in which \(M_{n+k} = 0.8X\)
-    and \(n\) equals to the number of time steps of 10 years.
+    The value of \(\alpha\) for a desired configuration can be calculated by this equation. For instance, we could
+    calculate the \(\alpha\) for a relatively good configuration in which \(M_{n+k} = 0.8X\) and \(n\) equals to the
+    number of time steps of 10 years.
 
 
     \section{Smart Contract Oracle}\label{sec:smart-contract-oracle}

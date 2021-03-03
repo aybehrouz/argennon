@@ -313,15 +313,21 @@ native system tokens the user is holding. Unfortunately, one problem with this a
 able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
 stake to attack the system.
 
-To mitigate this problem, for calculating a user’s stake, instead of using the raw ALGO balance, we use the minimum of a
-*trust value* that the system has calculated for the user and the user’s ALGO balance:
+To mitigate this problem, for calculating a user’s stake at the round *n*, instead of using the raw ALGO balance, we use
+the minimum of a *trust value* the system has calculated for the user and the user’s ALGO balance:
 
-*Stake*<sub>*user*</sub> = min (*Balance*<sub>*user*</sub>, *Trust*<sub>*user*</sub>)
+*Stake*<sub>*user*, *n*</sub> = min (*Balance*<sub>*user*, *n*</sub>, *Trust*<sub>*user*, *n*</sub>)
 
-For estimating the value of *Trust*<sub>*user*</sub> we use the exponential moving average of the user’s
-ALGO balance. Therefore, in our system a user who held ALGOs and participated in the consensus for a long time is more
-trusted than a new user with a higher balance. An attacker who has obtained a large amount of ALGOs, also needs to hold
-them for a long period of time before being able to attack our system.
+For estimating the value of *Trust*<sub>*user*, *n*</sub> we use the following formula:
+
+*Trust*<sub>*user*, *n*</sub> = max (*M*<sub>*n*</sub>, *βBalance*<sub>*user*, *n*</sub>)
+
+Where *M*<sub>*n*</sub> is the exponential moving average of the user’s ALGO balance at the round *n* and *β* is a
+constant between 0 and 1 determining the initial trust value of new users.
+
+In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a new user
+with a higher balance. An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long period
+of time before being able to attack our system.
 
 For calculating the exponential moving average of a time series at the time step *t*, we can use the following recursive
 formula:
@@ -330,8 +336,8 @@ formula:
 
 Where:
 
--   The coefficient *α* is a constant smoothing factor between 0 and 1 which represents the degree of weighting
-    decrease, A higher *α* discounts older observations faster.
+-   The coefficient *α* is a constant smoothing factor between 0 and1 which represents the degree of weighting decrease,
+    A higher *α* discounts older observations faster.
 
 -   *X*<sub>*t*</sub> is the value of the time series at the time step *t*.
 

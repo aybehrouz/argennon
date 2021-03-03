@@ -420,17 +420,19 @@ native system tokens the user is holding. Unfortunately, one problem with this a
 able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
 stake to attack the system.
 
-To mitigate this problem, for calculating a user's stake, instead of using the raw ALGO balance, we use the minimum of a
-*trust value* that the system has calculated for the user and the user's ALGO balance:
+To mitigate this problem, for calculating a user’s stake at the round *n*, instead of using the raw ALGO balance, we use
+the minimum of a *trust value* the system has calculated for the user and the user’s ALGO balance:
 
-<!---
-\[Stake_{user} = \min (Balance_{user},Trust_{user})\]
-*Stake<sub>user</sub>* = Min{ *Balance<sub>user</sub> , Trust<sub>user</sub>* }
---->
-![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Stake_{user}&space;=&space;\min&space;(Balance_{user},Trust_{user}))
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Stake_{user,n}&space;=&space;\min&space;(Balance_{user,n},&space;Trust_{user,n}))
 
-For estimating the value of *Trust<sub>user</sub>* we use the exponential moving average of the user's ALGO balance.
-Therefore, in our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a
+For estimating the value of *Trust*<sub>*user*, *n*</sub> we use the following formula:
+
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Trust_{user,n}&space;=&space;\max&space;(M_n,&space;\beta&space;Balance_{user,n}))
+
+Where *M*<sub>*n*</sub> is the exponential moving average of the user’s ALGO balance at the round *n* and *β* is a
+constant between 0 and 1 determining the initial trust value of new users.
+
+In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a
 new user with a higher balance. An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long
 period of time before being able to attack our system.
 

@@ -286,16 +286,24 @@ native system tokens the user is holding. Unfortunately, one problem with this a
 able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
 stake to attack the system.
 
-To mitigate this problem, for calculating a user’s stake, instead of using the raw ALGO balance, we use the minimum of a
-*trust value* that the system has calculated for the user and the user’s ALGO balance:
+To mitigate this problem, for calculating a user’s stake at the round ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n), instead of using the raw ALGO balance, we
+use the minimum of a *trust value* the system has calculated for the user and the user’s ALGO balance:
 
 
-![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Stake_{user}&space;=&space;\min&space;(Balance_{user},Trust_{user}))
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Stake_{user,n}&space;=&space;\min&space;(Balance_{user,n},&space;Trust_{user,n}))
 
- For estimating the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{user}) we use the
-exponential moving average of the user’s ALGO balance. Therefore, in our system a user who held ALGOs and participated
-in the consensus for a long time is more trusted than a new user with a higher balance. An attacker who has obtained a
-large amount of ALGOs, also needs to hold them for a long period of time before being able to attack our system.
+ For estimating the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{user,n}) we use the
+following formula: 
+
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Trust_{user,n}&space;=&space;\max&space;(M_n,&space;\beta&space;Balance_{user,n}))
+
+ Where ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_n) is the exponential moving
+average of the user’s ALGO balance at the round ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta) is a constant between ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;1) determining
+the initial trust value of new users.
+
+In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a new user
+with a higher balance. An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long period
+of time before being able to attack our system.
 
 For calculating the exponential moving average of a time series at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), we can use the following
 recursive formula: 
@@ -304,8 +312,8 @@ recursive formula:
 
  Where:
 
-  - The coefficient ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is a constant smoothing factor between 0 and 1 which represents the degree of weighting
-    decrease, A higher ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) discounts older observations faster.
+  - The coefficient ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is a constant smoothing factor between ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) and![equation](https://latex.codecogs.com/gif.latex?\inline&space;1) which represents the degree of
+    weighting decrease, A higher ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) discounts older observations faster.
 
   - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;X_t) is the value of the time series at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
