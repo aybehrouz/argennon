@@ -420,16 +420,16 @@ native system tokens the user is holding. Unfortunately, one problem with this a
 able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
 stake to attack the system.
 
-To mitigate this problem, for calculating a user’s stake at the round *n*, instead of using the raw ALGO balance, we use
+To mitigate this problem, for calculating a user’s stake at the time step *t*, instead of using the raw ALGO balance, we use
 the minimum of a *trust value* the system has calculated for the user and the user’s ALGO balance:
 
-![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Stake_{user,n}&space;=&space;\min&space;(Balance_{user,n},&space;Trust_{user,n}))
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Stake_{user,t}&space;=&space;\min&space;(Balance_{user,t},&space;Trust_{user,t}))
 
-For estimating the value of *Trust*<sub>*user*, *n*</sub> we use the following formula:
+For estimating the value of *Trust*<sub>*user*, *t*</sub> we use the following formula:
 
-![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Trust_{user,n}&space;=&space;\max&space;(M_n,&space;\beta&space;Balance_{user,n}))
+![equation](https://latex.codecogs.com/png.latex?\dpi{120}&space;Trust_{user,t}&space;=&space;\max&space;(M_t,&space;\beta&space;Balance_{user,t}))
 
-Where *M*<sub>*n*</sub> is the exponential moving average of the user’s ALGO balance at the round *n* and *β* is a
+Where *M*<sub>*t*</sub> is the exponential moving average of the user’s ALGO balance at the time step *t* and *β* is a
 constant between 0 and 1 determining the initial trust value of new users.
 
 In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a
