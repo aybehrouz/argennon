@@ -1,5 +1,175 @@
+Specification
+=============
+
+Introduction
+------------
+
+The Algorand Virtual Machine (AVM) is an abstract computing machine for executing Algorand’s smart contracts. It is
+designed in a way that it could be efficiently implemented in either hardware or software.
+
+The Structure of the Algorand Virtual Machine
+---------------------------------------------
+
+...
+
+### Data Types
+
+The Algorand Virtual Machine expects that all type checking is done prior to run time, typically by a compiler, and does
+not have to be done by the Algorand Virtual Machine itself.
+
+The instruction set of the Algorand Virtual Machine distinguishes its operand types using instructions intended to
+operate on values of specific types. For instance, `iadd` assumes that its operands are two 64-bit integers.
+
+### The `PC` Register
+
+...
+
+### Call Stack
+
+A call stack contains the information that is needed for restoring the state of the invoker of a method.
+
+### Memory Unit
+
+The Algorand Virtual Machine has a byte addressable memory which is divided into separate segments. Every segment
+belongs to a smart contract that has a unique `applicationID`. The AVM always has a single working memory segment and
+memory locations outside its current working segment can not be accessed. The only instructions which can change the
+current working segment are `invoke_external`, `athrow` and return instructions.
+
+Every smart contract has its own memory segment. Hence, there is no way for a smart contract to access another smart
+contract’s memory. Interaction between smart contracts is done using `invoke_external` instruction, and A smart contract
+can invoke methods of another smart contract by this instruction.
+
+A memory segment consists of five data areas:
+
+-   Code Area
+
+-   Constant Area
+
+-   Local Frame
+
+-   Operand Stack
+
+-   Heap
+
+All data areas except operand stack, have their own address space which starts from 0. Operand stack is a
+last-in-first-out (LIFO) stack and is not addressable. Every memory access instruction operates on its specific data
+areas.
+
+#### Code Area
+
+The code area of a segment contains the byte-code of the smart contract which owns that segment. The AVM has no
+instructions for manipulating the code area. **Installing, removing and updating smart contracts need to be done
+externally.**
+
+#### Constant Area
+
+The constant area of a segment contains several kinds of constants, ranging from user defined constants to method
+address tables. A method address table stores method locations in the code area and their access type. The access type
+of a method can be either `public` or `private`. The AVM has no instructions for modifying the constant area.
+
+*Only public methods can be invoked by `invoke_external` instruction.*
+
+#### Local Frame
+
+A local frame is used to store methods parameters and local variables. A new frame is created each time a method is
+invoked. A frame is destroyed when its method invocation completes, whether the completion is normal or abrupt.
+
+#### Operand Stack
+
+Every time a local frame is created, a corresponding empty last-in-first-out (LIFO) stack is created too. AVM
+instructions take operands from the operand stack, operate on them, and push the result back onto the operand stack. An
+operand stack is destroyed when its owner method completes, whether that completion is normal or abrupt.
+
+#### Heap
+
+The heap of a segment is a persistent memory area which is divided into pages. Each page can be referenced by an index
+that starts from 0. Memory locations inside every page have a separate address space that starts from 0. In other words,
+the address of every memory location inside a heap is a pair of indices: `(pageIndex, offset) `. Pages of a heap do not
+need to be equally sized.
+
+*The reason behind this paged design is that the heap is usually persisted using a block device. A heap with a paged
+structure could expose the underlying block based nature of the persistence layer to the application layer. In this way,
+the compiler or the programmer could better optimize the code for the persistence layer.*
+
+Instruction Set Summary
+-----------------------
+
+An Algorand Virtual Machine instruction consists of a **one-byte** opcode specifying the operation to be performed,
+followed by zero or more operands supplying arguments or data that are used by the operation. **The number and size of
+the operands are determined solely by the opcode.**
+
+### Method Invocation
+
+The Algorand Virtual Machine has three types of method invocation:
+
+-   `invoke_internal` invokes a method from the current running smart contract.
+
+-   `invoke_external` invokes a `public` method from another smart contract. It will change the current memory segment
+    to the segment of the invoked smart contract.
+
+-   `invoke_native` invokes a method that is not hosted by the Algorand virtual machine. By this instruction, high
+    performance native methods of a hosting machine could become available to AVM smart contracts.
+
+*In the future, we may need to add special instructions for invoking interface and virtual methods...*
+
+Each time a method is invoked a new local frame and operand stack is created. The Algorand Virtual Machine uses local
+frames to pass parameters on method invocation. On method invocation, any parameters are passed in consecutive local
+variables stored in the method’s local frame starting from local variable 0. The invoker of a method writes the
+parameters in the local frame of the invoked method using `arg` instructions.
+
+#### Exceptions
+
+An exception is thrown programmatically using the `athrow` instruction. Exceptions can also be thrown by various
+Algorand Virtual Machine instructions if they detect an abnormal condition. Some exceptions are not catchable and will
+always abort the execution of the smart contract.
+
+#### Method Invocation Completion
+
+A method invocation completes normally if that invocation does not cause an exception to be thrown, either directly from
+the AVM or as a result of executing an explicit throw statement. If the invocation of the current method completes
+normally, then a value may be returned to the invoking method. This occurs when the invoked method executes one of the
+return instructions, the choice of which must be appropriate for the type of the value being returned (if any).
+Execution then continues normally in the invoking method’s local frame with the returned value (if any) pushed onto the
+operand stack.
+
+A method invocation completes abruptly if an exceptions is thrown and is not caught by the current method. A method
+invocation that completes abruptly never returns a value to its invoker.
+
+When a method completes, whether normally or abruptly, the call stack is used to restore the state of the invoker,
+including its local frame and operand stack, with the `PC` register appropriately restored and incremented to skip past
+the method invocation instruction. If the invoker was another smart contract, i.e. the invocation was made by an
+`invoke_external` instruction, the current memory segment will be changed to the invoker’s segment.
+
+A thrown exception causes methods in the call stack to complete **abruptly** one by one, as long as the `PC` register is
+not pointing to a `catch` instruction. The `catch` instruction acts like a branch instruction that branches only if an
+exception is caught. **When an external method invocation completes abruptly, before changing the current segment, all
+changes made to the heap area will be rolled back.**
+
+*By using the `athrow` instruction properly, a programmer can make any method act like an atomic operation.*
+
+#### Authorizing Operations
+
+In blockchain applications, we usually need to authorize certain operations. For example, for sending an asset from a
+user to another user, first we need to make sure that the sender has authorized this operation. The Algorand virtual
+machine has no built in mechanism for authorizing operations, but it provides a rich set of cryptographic instructions
+for validating signatures and cryptographic entities. By using these instructions and passing signatures as parameters
+to methods a programmer can implement the required logic for authorizing any operation.
+
+*The Algorand virtual machine has no instructions for issuing cryptographic signatures.*
+
+In addition to signatures, a method can verify its invoker by using `get_parent` instruction. This instruction gets the
+`applicationID` of the smart contract that is one level deeper than the current smart contract in the call stack. In
+other words, it gives the smart contract that has invoked the current smart contract. (if any)
+
+#### Heap Allocation Instructions
+
+...
+
+Implementation
+==============
+
 Persistence
-===========
+-----------
 
 For implementing the persistence layer of the AVM, we assume that we have access to an updatable zero-knowledge
 elementary database (ZK-EDB) with the following properties:
@@ -32,7 +202,7 @@ key. Like heap pages, nodes keep a cache of code area blocks.
 *Unlike heap pages, the AVM is not aware of different blocks of the code area.*
 
 Transactions
-============
+------------
 
 Algorand has four types of transaction:
 
@@ -55,11 +225,11 @@ validators to start retrieving the required memory blocks from available ZK-EDB 
 transaction, and they won’t need to wait for receiving the new proposed block. A transaction that tries to access a
 memory block that is not included in its access lists, will be rejected. Users could use smart contract oracles to
 predict the list of memory blocks their transactions need. See
-Section <a href="#sec:smart-contract-oracle" data-reference-type="ref" data-reference="sec:smart-contract-oracle">7</a>
+Section <a href="#sec:smart-contract-oracle" data-reference-type="ref" data-reference="sec:smart-contract-oracle">2.7</a>
 for more details.
 
 Blockchain
-==========
+----------
 
 Every block of the Algorand blockchain corresponds to a set of transactions. We store the commitment of this transaction
 set in every block, but we don’t keep the set itself. To be able to detect replay attacks, we require every signature
@@ -119,10 +289,9 @@ block’s transaction set.
 will update their database by emulating the AVM execution.*
 
 Incentive mechanism
-===================
+-------------------
 
-Transaction Fee
----------------
+### Transaction Fee
 
 Every transaction in the Algorand blockchain starts with an `invoke_external` instruction which calls a special method
 from ALGO smart contract. This method will transfer the proposed fee of the transaction in ALGOs from a sender account
@@ -175,8 +344,7 @@ fee of that transaction.
 *A transaction always pays all of its proposed fee, no matter how much of its predefined resources were not used in the
 final emulation.*
 
-ZK-EDB Servers
---------------
+### ZK-EDB Servers
 
 The incentive mechanism for ZK-EDB servers should have the following properties:
 
@@ -248,8 +416,7 @@ will be considered expired. Validation and prize distribution for the winning ti
 the round *r* + 1. This way, **the content of the challenge memory block could be kept secret during the lottery
 round.** Every winning ticket will get an equal share of the lottery prize.
 
-Memory Allocation and De-allocation
------------------------------------
+### Memory Allocation and De-allocation
 
 Every k round the protocol chooses a price per byte for the AVM memory. When a smart contract executes a heap allocation
 instruction, the protocol will automatically deduce the cost of the allocated memory from the ALGO address of the smart
@@ -267,7 +434,7 @@ refunded amount based on the average price the smart had paid for that allocated
 contracts from profit taking by trading memory with the protocol.
 
 Concurrency
-===========
+-----------
 
 Every block of the Algorand blockchain contains a list of transactions. This list is an ordered list and the effect of
 its contained transactions must be applied to the AVM state sequentially as they appear in the ordered list. The
@@ -302,10 +469,9 @@ transactions which can be run in parallel safely. Since with better parallelizat
 transactions, a proposer is incentivized enough to find a good graph coloring.
 
 Consensus
-=========
+---------
 
-Estimating A User’s Stake
--------------------------
+### Estimating A User’s Stake
 
 In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount of
 stake the user has in the system. Conventionally in these systems, for estimating a user’s stake, we use the amount of
@@ -313,21 +479,34 @@ native system tokens the user is holding. Unfortunately, one problem with this a
 able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
 stake to attack the system.
 
-To mitigate this problem, for calculating a user’s stake at the round *n*, instead of using the raw ALGO balance, we use
-the minimum of a *trust value* the system has calculated for the user and the user’s ALGO balance:
+To mitigate this problem, for calculating a user’s stake at the time step *t*, instead of using the raw ALGO balance, we
+use the minimum of a *trust value* the system has calculated for the user and the user’s ALGO balance:
 
-*Stake*<sub>*user*, *n*</sub> = min (*Balance*<sub>*user*, *n*</sub>, *Trust*<sub>*user*, *n*</sub>)
+*Stake*<sub>*u*, *t*</sub> = min (*Balance*<sub>*u*, *t*</sub>, *Trust*<sub>*u*, *t*</sub>)
 
-For estimating the value of *Trust*<sub>*user*, *n*</sub> we use the following formula:
+For estimating the value of *Trust*<sub>*u*, *t*</sub> we use the following formula:
 
-*Trust*<sub>*user*, *n*</sub> = max (*M*<sub>*n*</sub>, *βBalance*<sub>*user*, *n*</sub>)
+*Trust*<sub>*u*, *t*</sub> = max (*M*<sub>*u*, *t*</sub>, *βBalance*<sub>*u*, *t*</sub>)
 
-Where *M*<sub>*n*</sub> is the exponential moving average of the user’s ALGO balance at the round *n* and *β* is a
-constant between 0 and 1 determining the initial trust value of new users.
+Where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ALGO balance of the user *u* at the time step *t*,
+and *β* is a constant between 0 and 1 determining the minimum trust value of a user.
 
-In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a new user
-with a higher balance. An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long period
-of time before being able to attack our system.
+The agreement protocol, at the time step *t*, will use ∑<sub>*u*</sub>*Stake*<sub>*u*, *t*</sub> to determine
+the required number of votes for the confirmation of a block. At the start of the agreement protocol, *β* is initialized
+to 0. If after confirming a block we have:
+
+∑<sub>*u*</sub>*Stake*<sub>*u*</sub> &lt; *γ*∑<sub>*u*</sub>*Balance*<sub>*u*</sub>
+
+The protocol will increase the value of *β* to make sure that the total stake of the system goes high enough. If after
+confirming a block we have *β* &gt; 0 and:
+
+∑<sub>*u*</sub>*Stake*<sub>*u*</sub> &gt; *λ*∑<sub>*u*</sub>*Balance*<sub>*u*</sub>
+
+The protocol will decrease the value of *β* until it eventually reaches 0 again.
+
+In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a user with a
+higher balance whose balance has increased recently. An attacker who has obtained a large amount of ALGOs, also needs to
+hold them for a long period of time before being able to attack our system.
 
 For calculating the exponential moving average of a time series at the time step *t*, we can use the following recursive
 formula:
@@ -368,8 +547,8 @@ The value of *α* for a desired configuration can be calculated by this equation
 steps of 10 years.
 
 Smart Contract Oracle
-=====================
+---------------------
 
 A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM execution
-without accessing aZK-EDB. Smart contract oracles can be used for reporting useful information about `avmCall`
+without accessing a ZK-EDB. Smart contract oracles can be used for reporting useful information about `avmCall`
 transactions such as accessed AVM heap pages or code area blocks, exact amount of execution cost, and soon.
