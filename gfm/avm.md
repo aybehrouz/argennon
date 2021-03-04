@@ -170,23 +170,16 @@ elementary database (ZK-EDB) with the following properties:
 
   - The ZK-EDB contains a mapping from a set of keys to a set of values.
 
-  - Every state of the database has a commitment ![C](https://latex.codecogs.com/png.latex?C "C").
+  - Every state of the database has a commitment ![equation](https://latex.codecogs.com/gif.latex?\inline&space;C).
 
-  - The ZK-EDB has a method ![(D, p) = get(x)](https://latex.codecogs.com/png.latex?%28D%2C%20p%29%20%3D%20get%28x%29
-    "(D, p) = get(x)"), where ![x](https://latex.codecogs.com/png.latex?x "x") is a key and
-    ![D](https://latex.codecogs.com/png.latex?D "D") is the associated value with
-    ![x](https://latex.codecogs.com/png.latex?x "x") and ![p](https://latex.codecogs.com/png.latex?p "p") is a proof.
+  - The ZK-EDB has a method ![equation](https://latex.codecogs.com/gif.latex?\inline&space;(D,&space;p)&space;=&space;get(x)), where ![equation](https://latex.codecogs.com/gif.latex?\inline&space;x) is a key and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;D) is the associated value with ![equation](https://latex.codecogs.com/gif.latex?\inline&space;x) and
+    ![equation](https://latex.codecogs.com/gif.latex?\inline&space;p) is a proof.
 
-  - A user can use ![C](https://latex.codecogs.com/png.latex?C "C") and ![p](https://latex.codecogs.com/png.latex?p "p")
-    to verify that ![D](https://latex.codecogs.com/png.latex?D "D") is really associated with
-    ![x](https://latex.codecogs.com/png.latex?x "x"), and ![D](https://latex.codecogs.com/png.latex?D "D") is not
-    altered. Consequently, a user who can obtain ![C](https://latex.codecogs.com/png.latex?C "C") from a trusted source
-    does not need to trust the ZK-EDB.
+  - A user can use ![equation](https://latex.codecogs.com/gif.latex?\inline&space;C) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;p) to verify that ![equation](https://latex.codecogs.com/gif.latex?\inline&space;D) is really associated with ![equation](https://latex.codecogs.com/gif.latex?\inline&space;x), and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;D) is not altered.
+    Consequently, a user who can obtain ![equation](https://latex.codecogs.com/gif.latex?\inline&space;C) from a trusted source does not need to trust the ZK-EDB.
 
-  - Having ![p](https://latex.codecogs.com/png.latex?p "p") and ![C](https://latex.codecogs.com/png.latex?C "C") a user
-    can compute the commitment ![C'](https://latex.codecogs.com/png.latex?C%27 "C'") for the database in which
-    ![D'](https://latex.codecogs.com/png.latex?D%27 "D'") is associated with ![x](https://latex.codecogs.com/png.latex?x
-    "x") instead of ![D](https://latex.codecogs.com/png.latex?D "D").
+  - Having ![equation](https://latex.codecogs.com/gif.latex?\inline&space;p) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;C) a user can compute the commitment ![equation](https://latex.codecogs.com/gif.latex?\inline&space;C') for the database in which ![equation](https://latex.codecogs.com/gif.latex?\inline&space;D') is associated with
+    ![equation](https://latex.codecogs.com/gif.latex?\inline&space;x) instead of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;D).
 
 We use a ZK-EDB for storing the AVM heap. We include the commitment of the current state of this DB in every block of
 the Algorand blockchain, so ZK-EDB servers need not be trusted servers.
@@ -234,15 +227,15 @@ set in every block, but we don’t keep the set itself. To be able to detect rep
 that a user creates to have a nonce. This nonce consists of the issuance round of the signature and a sequence number:
 `(issuance, sequence)`. When a user creates more than one signature in a round, he must sequence his signatures starting
 from 0 (i.e. the sequence number restarts from 0 in every round). We define a maximum lifetime for signatures, so a
-signature is invalid if `currentRound - issuance > maxLifeTime` or if a signature of the same user with a bigger or
-equal nonce is already used (i.e . is recorded in the blockchain). A nonce is bigger than another nonce if it has an
+signature is invalid if `currentRound - issuance > maxLifeTime` or if a signature of the same user with a bigger or
+equal nonce is already used (i.e. is recorded in the blockchain). A nonce is bigger than another nonce if it has an
 older issuance. If two nonces have an equal issuance, the nonce with the bigger sequence number will be considered
 bigger.
 
 To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. When the
 difference between `issuance` component of this nonce and the current round becomes bigger than the maximum allowed
-lifetime of a signature, this information can be safely deleted. **As a result, we will not have the problem of "
-unremovable empty accounts" like Ethereum.**
+lifetime of a signature, this information can be safely deleted. **As a result, we will not have the problem of
+"un-removable empty accounts" like Ethereum.**
 
 The only information that Algorand nodes are required to store is **the most recent block** of the Algorand blockchain.
 Every block of the Algorand blockchain contains the following information:
@@ -353,15 +346,13 @@ tickets* of the lottery.
 *One ZK-EDB server could own multiple winning tickets in a round.*
 
 To run this lottery, In every round, based on the current block seed, a collection of *valid* receipts will be selected
-randomly as the *winning* receipts. A receipt is *valid* in the round ![r](https://latex.codecogs.com/png.latex?r "r")
-if:
+randomly as the *winning* receipts. A receipt is *valid* in the round ![equation](https://latex.codecogs.com/gif.latex?\inline&space;r) if:
 
-  - The signer was a validator in the round ![r - 1](https://latex.codecogs.com/png.latex?r%20-%201 "r - 1") and voted
-    for the agreed-upon block.
+  - The signer was a validator in the round ![equation](https://latex.codecogs.com/gif.latex?\inline&space;r&space;-&space;1) and voted for the agreed-upon block.
 
   - The data block in the receipt was needed for validating the **previous** block.
 
-  - The receipt round number is ![r - 1](https://latex.codecogs.com/png.latex?r%20-%201 "r - 1").
+  - The receipt round number is ![equation](https://latex.codecogs.com/gif.latex?\inline&space;r&space;-&space;1).
 
   - The signer did not sign a receipt for the same data block for two different ZK-EDBs in the previous round.
 
@@ -395,12 +386,10 @@ ZK-EDBs to store all memory blocks.
 A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge memory
 block combined with the ZK-EDB ALGO address: `hash(challenge.content|ownerAddr)`
 
-The winning tickets of the lottery of the round ![r](https://latex.codecogs.com/png.latex?r "r") need to be included in
-the block of the round ![r](https://latex.codecogs.com/png.latex?r "r"), otherwise they will be considered expired.
-Validation and prize distribution for the winning tickets of the round ![r](https://latex.codecogs.com/png.latex?r "r")
-will be done in the round ![r + 1](https://latex.codecogs.com/png.latex?r%20%2B%201 "r + 1"). This way, **the content of
-the challenge memory block could be kept secret during the lottery round.** Every winning ticket will get an equal share
-of the lottery prize.
+The winning tickets of the lottery of the round ![equation](https://latex.codecogs.com/gif.latex?\inline&space;r) need to be included in the block of the round ![equation](https://latex.codecogs.com/gif.latex?\inline&space;r), otherwise
+they will be considered expired. Validation and prize distribution for the winning tickets of the round ![equation](https://latex.codecogs.com/gif.latex?\inline&space;r) will be
+done in the round ![equation](https://latex.codecogs.com/gif.latex?\inline&space;r&space;+&space;1). This way, **the content of the challenge memory block could be kept secret during the
+lottery round.** Every winning ticket will get an equal share of the lottery prize.
 
 ### Memory Allocation and De-allocation
 
@@ -435,19 +424,17 @@ A transaction can change the AVM state by modifying either the code area or the 
 declare the list of memory blocks they want to read or write. This will enable us to determine the independent sets of
 transactions which can be validated in parallel. To do so, we define the *memory dependency graph* as follows:
 
-  - ![G](https://latex.codecogs.com/png.latex?G "G") is an undirected graph.
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G) is an undirected graph.
 
-  - Every vertex in ![G](https://latex.codecogs.com/png.latex?G "G") corresponds to a transaction.
+  - Every vertex in ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G) corresponds to a transaction.
 
-  - Vertices ![u](https://latex.codecogs.com/png.latex?u "u") and ![v](https://latex.codecogs.com/png.latex?v "v") are
-    adjacent in ![G](https://latex.codecogs.com/png.latex?G "G") if and only if u has a memory block
-    ![B](https://latex.codecogs.com/png.latex?B "B") in its writing list and ![v](https://latex.codecogs.com/png.latex?v
-    "v") has ![B](https://latex.codecogs.com/png.latex?B "B") in either its writing list or reading list.
+  - Vertices ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;v) are adjacent in ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G) if and only if ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) has a memory block ![equation](https://latex.codecogs.com/gif.latex?\inline&space;B) in its writing list and
+    ![equation](https://latex.codecogs.com/gif.latex?\inline&space;v) has ![equation](https://latex.codecogs.com/gif.latex?\inline&space;B) in either its writing list or reading list.
 
-If we consider a proper vertex coloring of ![G](https://latex.codecogs.com/png.latex?G "G"), every color class will give
-us an independent set of transactions that can be validated concurrently. To achieve the highest parallelization, we
-need to color ![G](https://latex.codecogs.com/png.latex?G "G") with minimum number of colors. Thus, the chromatic number
-of the memory dependency graph shows how good a transaction set could be run concurrently.
+If we consider a proper vertex coloring of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G), every color class will give us an independent set of transactions
+which can be validated concurrently. To achieve the highest parallelization, we need to color ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G) with minimum number
+of colors. Thus, the chromatic number of the memory dependency graph shows how good a transaction set could be run
+concurrently.
 
 Graph coloring is computationally NP-hard. However, in our use case we don’t need to necessarily find an optimal
 solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is
@@ -465,119 +452,108 @@ native system tokens the user is holding. Unfortunately, one problem with this a
 able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
 stake to attack the system.
 
-To mitigate this problem, for calculating a user’s stake at the time step ![t](https://latex.codecogs.com/png.latex?t
-"t"), instead of using the raw ALGO balance, we use the minimum of a *trust value* the system has calculated for the
-user and the user’s ALGO balance:
+To mitigate this problem, for calculating a user’s stake at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), instead of using the raw ALGO balance,
+we use the minimum of a *trust value* the system has calculated for the user and the user’s ALGO balance:
 
-  
-![Stake\_{u,t} = \\min (Balance\_{u,t},
-Trust\_{u,t})](https://latex.codecogs.com/png.latex?Stake_%7Bu%2Ct%7D%20%3D%20%5Cmin%20%28Balance_%7Bu%2Ct%7D%2C%20Trust_%7Bu%2Ct%7D%29
-"Stake_{u,t} = \\min (Balance_{u,t}, Trust_{u,t})")  
 
-For estimating the value of ![Trust\_{u,t}](https://latex.codecogs.com/png.latex?Trust_%7Bu%2Ct%7D "Trust_{u,t}") we use
-the following formula:
 
-  
-![Trust\_{u,t} = \\max (M\_{u,t}, \\beta
-Balance\_{u,t})](https://latex.codecogs.com/png.latex?Trust_%7Bu%2Ct%7D%20%3D%20%5Cmax%20%28M_%7Bu%2Ct%7D%2C%20%5Cbeta%20Balance_%7Bu%2Ct%7D%29
-"Trust_{u,t} = \\max (M_{u,t}, \\beta Balance_{u,t})")  
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;Stake_{u,t}&space;=&space;\min&space;(Balance_{u,t},&space;Trust_{u,t}))
 
-Where ![M\_{u,t}](https://latex.codecogs.com/png.latex?M_%7Bu%2Ct%7D "M_{u,t}") is the exponential moving average of the
-ALGO balance of the user ![u](https://latex.codecogs.com/png.latex?u "u") at the time step
-![t](https://latex.codecogs.com/png.latex?t "t"), and ![\\beta](https://latex.codecogs.com/png.latex?%5Cbeta "\\beta")
-is a constant between ![0](https://latex.codecogs.com/png.latex?0 "0") and ![1](https://latex.codecogs.com/png.latex?1
-"1") determining the minimum trust value of a user.
 
-The agreement protocol, at the time step ![t](https://latex.codecogs.com/png.latex?t "t"), will use
-![\\sum\_{u}Stake\_{u,t}](https://latex.codecogs.com/png.latex?%5Csum_%7Bu%7DStake_%7Bu%2Ct%7D "\\sum_{u}Stake_{u,t}")
-to determine the required number of votes for the confirmation of a block. At the start of the agreement protocol,
-![\\beta](https://latex.codecogs.com/png.latex?%5Cbeta "\\beta") is initialized to
-![0](https://latex.codecogs.com/png.latex?0 "0"). If after confirming a block we have:
 
-  
-![\\sum\_{u}Stake\_u \< \\gamma \\sum\_{u}
-Balance\_u](https://latex.codecogs.com/png.latex?%5Csum_%7Bu%7DStake_u%20%3C%20%5Cgamma%20%5Csum_%7Bu%7D%20Balance_u
-"\\sum_{u}Stake_u \< \\gamma \\sum_{u} Balance_u")  
+For estimating the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{u,t}) we use the following formula:
 
-The protocol will increase the value of ![\\beta](https://latex.codecogs.com/png.latex?%5Cbeta "\\beta") to make sure
-that the total stake of the system goes high enough. If after confirming a block we have ![\\beta
-\> 0](https://latex.codecogs.com/png.latex?%5Cbeta%20%3E%200 "\\beta \> 0") and:
 
-  
-![\\sum\_{u}Stake\_u \> \\lambda \\sum\_{u}
-Balance\_u](https://latex.codecogs.com/png.latex?%5Csum_%7Bu%7DStake_u%20%3E%20%5Clambda%20%5Csum_%7Bu%7D%20Balance_u
-"\\sum_{u}Stake_u \> \\lambda \\sum_{u} Balance_u")  
 
-The protocol will decrease the value of ![\\beta](https://latex.codecogs.com/png.latex?%5Cbeta "\\beta") until it
-eventually reaches ![0](https://latex.codecogs.com/png.latex?0 "0") again.
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;Trust_{u,t}&space;=&space;\max&space;(M_{u,t},&space;\beta&space;Balance_{u,t}))
+
+
+
+Where ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}) is the exponential moving average of the ALGO balance of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), and
+![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta) is a constant between ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;1) determining the minimum trust value of a user.
+
+The agreement protocol, at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), will use ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\sum_{u}Stake_{u,t}) to determine the required number of
+votes for the confirmation of a block. At the start of the agreement protocol, ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta) is initialized to ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0). If
+after confirming a block we have:
+
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\sum_{u}Stake_u&space;<&space;\gamma&space;\sum_{u}&space;Balance_u)
+
+
+
+The protocol will increase the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta) to make sure that the total stake of the system is not too low.
+
+If after confirming a block we have ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta&space;>&space;0) and:
+
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\sum_{u}Stake_u&space;>&space;\lambda&space;\sum_{u}&space;Balance_u)
+
+
+
+The protocol will decrease the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta) until it eventually reaches ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) again.
 
 In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a user with a
 higher balance whose balance has increased recently. An attacker who has obtained a large amount of ALGOs, also needs to
 hold them for a long period of time before being able to attack our system.
 
-For calculating the exponential moving average of a time series at the time step
-![t](https://latex.codecogs.com/png.latex?t "t"), we can use the following recursive formula:
+For calculating the exponential moving average of a time series at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), we can use the following
+recursive formula:
 
-  
-![M\_t = (1 - \\alpha) M\_{t-1} + \\alpha X\_t = M\_{t-1} + \\alpha (X\_t - M\_{t-1})](https://latex.codecogs.com/png.latex?M_t%20%3D%20%281%20-%20%5Calpha%29%20M_%7Bt-1%7D%20%2B%20%5Calpha%20X_t%20%3D%20M_%7Bt-1%7D%20%2B%20%5Calpha%20%28X_t%20-%20M_%7Bt-1%7D%29 "M_t = (1 - \\alpha) M_{t-1} + \\alpha X_t = M_{t-1} + \\alpha (X_t - M_{t-1})")  
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;M_t&space;=&space;(1&space;-&space;\alpha)&space;M_{t-1}&space;+&space;\alpha&space;X_t&space;=&space;M_{t-1}&space;+&space;\alpha&space;(X_t&space;-&space;M_{t-1}))
+
 
 
 Where:
 
-  - The coefficient ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha") is a constant smoothing factor
-    between ![0](https://latex.codecogs.com/png.latex?0 "0") and![1](https://latex.codecogs.com/png.latex?1 "1") which
-    represents the degree of weighting decrease, A higher ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha
-    "\\alpha") discounts older observations faster.
+  - The coefficient ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is a constant smoothing factor between ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) and![equation](https://latex.codecogs.com/gif.latex?\inline&space;1) which represents the degree of
+    weighting decrease, A higher ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) discounts older observations faster.
 
-  - ![X\_t](https://latex.codecogs.com/png.latex?X_t "X_t") is the value of the time series at the time step
-    ![t](https://latex.codecogs.com/png.latex?t "t").
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;X_t) is the value of the time series at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
-  - ![M\_t](https://latex.codecogs.com/png.latex?M_t "M_t") is the value of the EMA at the time step
-    ![t](https://latex.codecogs.com/png.latex?t "t").
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_t) is the value of the EMA at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
 Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
-![M\_t](https://latex.codecogs.com/png.latex?M_t "M_t"):
+![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_t):
 
-  
-![M\_t = (1 - \\alpha)^{t-k}M\_k + \[1 - (1 - \\alpha)^{t -
-k}\]X](https://latex.codecogs.com/png.latex?M_t%20%3D%20%281%20-%20%5Calpha%29%5E%7Bt-k%7DM_k%20%2B%20%5B1%20-%20%281%20-%20%5Calpha%29%5E%7Bt%20-%20k%7D%5DX
-"M_t = (1 - \\alpha)^{t-k}M_k + [1 - (1 - \\alpha)^{t - k}]X")  
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;M_t&space;=&space;(1&space;-&space;\alpha)^{t-k}M_k&space;+&space;[1&space;-&space;(1&space;-&space;\alpha)^{t&space;-&space;k}]X)
+
+
 
 Where:
 
-  
-![X = X\_{k+1} = X\_{k+2} = \\dots =
-X\_t](https://latex.codecogs.com/png.latex?X%20%3D%20X_%7Bk%2B1%7D%20%3D%20X_%7Bk%2B2%7D%20%3D%20%5Cdots%20%3D%20X_t
-"X = X_{k+1} = X_{k+2} = \\dots = X_t")  
 
-When ![|nx| \\ll 1](https://latex.codecogs.com/png.latex?%7Cnx%7C%20%5Cll%201 "|nx| \\ll 1") we can use the binomial
-approximation ![(1 + x)^n \\approx 1 +
-nx](https://latex.codecogs.com/png.latex?%281%20%2B%20x%29%5En%20%5Capprox%201%20%2B%20nx "(1 + x)^n \\approx 1 + nx")
-to further simplify this formula:
 
-  
-![M\_t = M\_k + (t - k) \\alpha (X -
-M\_k)](https://latex.codecogs.com/png.latex?M_t%20%3D%20M_k%20%2B%20%28t%20-%20k%29%20%5Calpha%20%28X%20-%20M_k%29
-"M_t = M_k + (t - k) \\alpha (X - M_k)")  
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;X&space;=&space;X_{k+1}&space;=&space;X_{k+2}&space;=&space;\dots&space;=&space;X_t)
 
-For choosing the value of ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha") we can consider the number
-of time steps that the trust value of a user needs for reaching a specified fraction of his account balance. We know
-that for large ![n](https://latex.codecogs.com/png.latex?n "n") and ![|x|
-\< 1](https://latex.codecogs.com/png.latex?%7Cx%7C%20%3C%201 "|x| \< 1") we have ![(1 + x)^n \\approx
-e^{nx}](https://latex.codecogs.com/png.latex?%281%20%2B%20x%29%5En%20%5Capprox%20e%5E%7Bnx%7D
-"(1 + x)^n \\approx e^{nx}"), so by letting ![M\_k = 0](https://latex.codecogs.com/png.latex?M_k%20%3D%200 "M_k = 0")
-and ![n = t - k](https://latex.codecogs.com/png.latex?n%20%3D%20t%20-%20k "n = t - k") we can write:
 
-  
-![\\alpha =- \\frac{\\ln\\left(1 -
-\\frac{M\_{n+k}}{X}\\right)}{n}](https://latex.codecogs.com/png.latex?%5Calpha%20%3D-%20%5Cfrac%7B%5Cln%5Cleft%281%20-%20%5Cfrac%7BM_%7Bn%2Bk%7D%7D%7BX%7D%5Cright%29%7D%7Bn%7D
-"\\alpha =- \\frac{\\ln\\left(1 - \\frac{M_{n+k}}{X}\\right)}{n}")  
 
-The value of ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha") for a desired configuration can be
-calculated by this equation. For instance, we could calculate the
-![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha") for a relatively good configuration in which
-![M\_{n+k} = 0.8X](https://latex.codecogs.com/png.latex?M_%7Bn%2Bk%7D%20%3D%200.8X "M_{n+k} = 0.8X") and
-![n](https://latex.codecogs.com/png.latex?n "n") equals to the number of time steps of 10 years.
+When ![equation](https://latex.codecogs.com/gif.latex?\inline&space;|nx|&space;\ll&space;1) we can use the binomial approximation ![equation](https://latex.codecogs.com/gif.latex?\inline&space;(1&space;+&space;x)^n&space;\approx&space;1&space;+&space;nx) to further simplify this formula:
+
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;M_t&space;=&space;M_k&space;+&space;(t&space;-&space;k)&space;\alpha&space;(X&space;-&space;M_k))
+
+
+
+For choosing the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) we can consider the number of time steps that the trust value of a user needs for
+reaching a specified fraction of his account balance. We know that for large ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;|x|&space;<&space;1) we have
+![equation](https://latex.codecogs.com/gif.latex?\inline&space;(1&space;+&space;x)^n&space;\approx&space;e^{nx}), so by letting ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_k&space;=&space;0) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n&space;=&space;t&space;-&space;k) we can write:
+
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\alpha&space;=-&space;\frac{\ln\left(1&space;-&space;\frac{M_{n+k}}{X}\right)}{n})
+
+
+
+The value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) for a desired configuration can be calculated by this equation. For instance, we could calculate
+the ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) for a relatively good configuration in which ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{n+k}&space;=&space;0.8X) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n) equals to the number of time
+steps of 10 years.
 
 ## Smart Contract Oracle
 

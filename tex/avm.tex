@@ -109,7 +109,7 @@
     layer. In this way, the compiler or the programmer could better optimize the code for the persistence layer.}
 
 
-    \section{Instruction Set Summary}\label{subsec:instruction-set-summary}
+    \section{Instruction Set Summary}\label{sec:instruction-set-summary}
 
     An Algorand Virtual Machine instruction consists of a \textbf{one-byte} opcode specifying the operation to be
     performed, followed by zero or more operands supplying arguments or data that are used by the operation.
@@ -255,16 +255,15 @@
     every signature that a user creates to have a nonce. This nonce consists of the issuance round of the signature
     and a sequence number: \texttt{(issuance,\ sequence)}. When a user creates more than one signature in a round, he
     must sequence his signatures starting from 0 (i.e.~the sequence number restarts from 0 in every round). We define
-    a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound\ -\ issuance\
-        \textgreater{}\ maxLifeTime} or if a signature of the same user with a bigger or equal nonce is already used
-    (i.e
-    .~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two nonces
-    have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
+    a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound - issuance \textgreater{}\
+        maxLifeTime} or if a signature of the same user with a bigger or equal nonce is already used
+    (i.e.~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
+    nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
 
     To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. When the
     difference between \texttt{issuance} component of this nonce and the current round becomes bigger than the
     maximum allowed lifetime of a signature, this information can be safely deleted. \textbf{As a result, we will not
-    have the problem of " unremovable empty accounts" like Ethereum.}
+    have the problem of "un-removable empty accounts" like Ethereum.}
 
     The only information that Algorand nodes are required to store is \textbf{the most recent block} of the Algorand
     blockchain. Every block of the Algorand blockchain contains the following information:
@@ -298,7 +297,7 @@
     block, and they will update their database by emulating the AVM execution.}
 
 
-    \section{Incentive mechanism}\label{incentive-mechanism}
+    \section{Incentive mechanism}\label{sec:incentive-mechanism}
 
     \subsection{Transaction Fee}\label{subsec:transaction-fee}
 
@@ -460,12 +459,12 @@
     \begin{itemize}
         \item \(G\) is an undirected graph.
         \item Every vertex in \(G\) corresponds to a transaction.
-        \item Vertices \(u\) and \(v\) are adjacent in \(G\) if and only if u has a memory block \(B\) in its writing
-        list and \(v\) has \(B\) in either its writing list or reading list.
+        \item Vertices \(u\) and \(v\) are adjacent in \(G\) if and only if \(u\) has a memory block \(B\) in its
+        writing list and \(v\) has \(B\) in either its writing list or reading list.
     \end{itemize}
 
     If we consider a proper vertex coloring of \(G\), every color class will give us an independent set of
-    transactions that can be validated concurrently. To achieve the highest parallelization, we need to color \(G\)
+    transactions which can be validated concurrently. To achieve the highest parallelization, we need to color \(G\)
     with minimum number of colors. Thus, the chromatic number of the memory dependency graph shows how good a
     transaction set could be run concurrently.
 
@@ -505,7 +504,8 @@
     \[
         \sum_{u}Stake_u < \gamma \sum_{u} Balance_u
     \]
-    The protocol will increase the value of \(\beta\) to make sure that the total stake of the system goes high enough.
+    The protocol will increase the value of \(\beta\) to make sure that the total stake of the system is not too low.
+
     If after confirming a block we have \(\beta > 0\) and:
     \[
         \sum_{u}Stake_u > \lambda \sum_{u} Balance_u
