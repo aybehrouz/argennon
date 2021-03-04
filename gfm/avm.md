@@ -519,9 +519,8 @@ For calculating the exponential moving average of a time series at the time step
 ![t](https://latex.codecogs.com/png.latex?t "t"), we can use the following recursive formula:
 
   
-![M\_t = (1 - \\alpha) M\_{t-1} + \\alpha X\_t = M\_{t-1} + \\alpha (X\_t -
-M\_{t-1})](https://latex.codecogs.com/png.latex?M_t%20%3D%20%281%20-%20%5Calpha%29%20M_%7Bt-1%7D%20%2B%20%5Calpha%20X_t%20%3D%20M_%7Bt-1%7D%20%2B%20%5Calpha%20%28X_t%20-%20M_%7Bt-1%7D%29
-"M_t = (1 - \\alpha) M_{t-1} + \\alpha X_t = M_{t-1} + \\alpha (X_t - M_{t-1})")  
+![M\_t = (1 - \\alpha) M\_{t-1} + \\alpha X\_t = M\_{t-1} + \\alpha (X\_t - M\_{t-1})](https://latex.codecogs.com/png.latex?M_t%20%3D%20%281%20-%20%5Calpha%29%20M_%7Bt-1%7D%20%2B%20%5Calpha%20X_t%20%3D%20M_%7Bt-1%7D%20%2B%20%5Calpha%20%28X_t%20-%20M_%7Bt-1%7D%29 "M_t = (1 - \\alpha) M_{t-1} + \\alpha X_t = M_{t-1} + \\alpha (X_t - M_{t-1})")  
+
 
 Where:
 

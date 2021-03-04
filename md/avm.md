@@ -540,7 +540,7 @@ For choosing the value of *α* we can consider the number of time steps that the
 a specified fraction of his account balance. We know that for large *n* and |*x*| &lt; 1 we have
 (1 + *x*)<sup>*n*</sup> ≈ *e*<sup>*nx*</sup>, so by letting *M*<sub>*k*</sub> = 0 and *n* = *t* − *k* we can write:
 
-$$\\alpha =- \\frac{\\ln\\left(1 - \\frac{M\_{n+k}}{X}\\right)}{n}$$
+*α* =  − ln (1 − *M*<sub>*n* + *k*</sub>/*X*) / *n*
 
 The value of *α* for a desired configuration can be calculated by this equation. For instance, we could calculate the
 *α* for a relatively good configuration in which *M*<sub>*n* + *k*</sub> = 0.8*X* and *n* equals to the number of time
