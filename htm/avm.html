@@ -211,34 +211,38 @@
 <h3 id="subsec:estimating-a-user&#39;s-stake">Estimating A User’s Stake</h3>
 <p>In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount of stake the user has in the system. Conventionally in these systems, for estimating a user’s stake, we use the amount of native system tokens the user is holding. Unfortunately, one problem with this approach is that a strong attacker may be able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this stake to attack the system.</p>
 <p>To mitigate this problem, for calculating a user’s stake at the time step <span class="math inline">\(t\)</span>, instead of using the raw ALGO balance, we use the minimum of a <em>trust value</em> the system has calculated for the user and the user’s ALGO balance:</p>
-<p><span class="math display">\[Stake_{u,t} = \min (Balance_{u,t}, Trust_{u,t})\]</span></p>
-<p>For estimating the value of <span class="math inline">\(Trust_{u,t}\)</span> we use the following formula:</p>
-<p><span class="math display">\[Trust_{u,t} = \max (M_{u,t}, \beta Balance_{u,t})\]</span></p>
-<p>Where <span class="math inline">\(M_{u,t}\)</span> is the exponential moving average of the ALGO balance of the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>, and <span class="math inline">\(\beta\)</span> is a constant between <span class="math inline">\(0\)</span> and <span class="math inline">\(1\)</span> determining the minimum trust value of a user.</p>
-<p>The agreement protocol, at the time step <span class="math inline">\(t\)</span>, will use <span class="math inline">\(\sum_{u}Stake_{u,t}\)</span> to determine the required number of votes for the confirmation of a block. At the start of the agreement protocol, <span class="math inline">\(\beta\)</span> is initialized to <span class="math inline">\(0\)</span>. If after confirming a block we have:</p>
-<p><span class="math display">\[\sum_{u}Stake_u &lt; \gamma \sum_{u} Balance_u\]</span></p>
-<p>The protocol will increase the value of <span class="math inline">\(\beta\)</span> to make sure that the total stake of the system is not too low.</p>
-<p>If after confirming a block we have <span class="math inline">\(\beta &gt; 0\)</span> and:</p>
-<p><span class="math display">\[\sum_{u}Stake_u &gt; \lambda \sum_{u} Balance_u\]</span></p>
-<p>The protocol will decrease the value of <span class="math inline">\(\beta\)</span> until it eventually reaches <span class="math inline">\(0\)</span> again.</p>
-<p>In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a user with a higher balance whose balance has increased recently. An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long period of time before being able to attack our system.</p>
-<p>For calculating the exponential moving average of a time series at the time step <span class="math inline">\(t\)</span>, we can use the following recursive formula:</p>
-<p><span class="math display">\[M_t = (1 - \alpha) M_{t-1} + \alpha X_t = M_{t-1} + \alpha (X_t - M_{t-1})\]</span></p>
+<p><span class="math display">\[S_{u,t} = \min (B_{u,t}, Trust_{u,t})\]</span></p>
+<p>The agreement protocol, at the time step <span class="math inline">\(t\)</span>, will use <span class="math inline">\(\sum_{u}S_{u,t}\)</span> to determine the required number of votes for the confirmation of a block, and we let <span class="math inline">\(Trust_{u,t} = M_{u,t}\)</span>, where <span class="math inline">\(M_{u,t}\)</span> is the exponential moving average of the ALGO balance of the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>.</p>
+<p>In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a user with a higher balance whose balance has increased recently. An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long period of time before being able to attack the system.</p>
+<p>For calculating the exponential moving average of a user’s balance at the time step <span class="math inline">\(t\)</span>, we can use the following recursive formula:</p>
+<p><span class="math display">\[M_{u,t} = (1 - \alpha) M_{u,t-1} + \alpha B_{u,t} = M_{u,t-1} + \alpha (B_{u,t} - M_{u,t-1})\]</span></p>
 <p>Where:</p>
 <ul>
-<li><p>The coefficient <span class="math inline">\(\alpha\)</span> is a constant smoothing factor between <span class="math inline">\(0\)</span> and<span class="math inline">\(1\)</span> which represents the degree of weighting decrease, A higher <span class="math inline">\(\alpha\)</span> discounts older observations faster.</p></li>
-<li><p><span class="math inline">\(X_t\)</span> is the value of the time series at the time step <span class="math inline">\(t\)</span>.</p></li>
-<li><p><span class="math inline">\(M_t\)</span> is the value of the EMA at the time step <span class="math inline">\(t\)</span>.</p></li>
+<li><p>The coefficient <span class="math inline">\(\alpha\)</span> is a constant smoothing factor between <span class="math inline">\(0\)</span> and <span class="math inline">\(1\)</span> which represents the degree of weighting decrease, A higher <span class="math inline">\(\alpha\)</span> discounts older observations faster.</p></li>
+<li><p><span class="math inline">\(B_{u,t}\)</span> is the balance of the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>.</p></li>
+<li><p><span class="math inline">\(M_{u,t}\)</span> is the EMA for the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>.</p></li>
 </ul>
-<p>Usually an account balance will not change in every time step, and we can use older values of EMA for calculating <span class="math inline">\(M_t\)</span>:</p>
-<p><span class="math display">\[M_t = (1 - \alpha)^{t-k}M_k + [1 - (1 - \alpha)^{t - k}]X\]</span></p>
+<p>Usually an account balance will not change in every time step, and we can use older values of EMA for calculating <span class="math inline">\(M_{u,t}\)</span>: (In the following equations the <span class="math inline">\(u\)</span> subscript is dropped for simplicity)</p>
+<p><span class="math display">\[M_{t} = (1 - \alpha)^{t-k}M_{k} + [1 - (1 - \alpha)^{t - k}]B\]</span></p>
 <p>Where:</p>
-<p><span class="math display">\[X = X_{k+1} = X_{k+2} = \dots = X_t\]</span></p>
-<p>When <span class="math inline">\(|nx| \ll 1\)</span> we can use the binomial approximation <span class="math inline">\((1 + x)^n \approx 1 + nx\)</span> to further simplify this formula:</p>
-<p><span class="math display">\[M_t = M_k + (t - k) \alpha (X - M_k)\]</span></p>
-<p>For choosing the value of <span class="math inline">\(\alpha\)</span> we can consider the number of time steps that the trust value of a user needs for reaching a specified fraction of his account balance. We know that for large <span class="math inline">\(n\)</span> and <span class="math inline">\(|x| &lt; 1\)</span> we have <span class="math inline">\((1 + x)^n \approx e^{nx}\)</span>, so by letting <span class="math inline">\(M_k = 0\)</span> and <span class="math inline">\(n = t - k\)</span> we can write:</p>
-<p><span class="math display">\[\alpha =- \frac{\ln\left(1 - \frac{M_{n+k}}{X}\right)}{n}\]</span></p>
-<p>The value of <span class="math inline">\(\alpha\)</span> for a desired configuration can be calculated by this equation. For instance, we could calculate the <span class="math inline">\(\alpha\)</span> for a relatively good configuration in which <span class="math inline">\(M_{n+k} = 0.8X\)</span> and <span class="math inline">\(n\)</span> equals to the number of time steps of 10 years.</p>
+<p><span class="math display">\[B = B_{k+1} = B_{k+2} = \dots = B_{t}\]</span></p>
+<p>We know that when <span class="math inline">\(|nx| \ll 1\)</span> we can use the binomial approximation <span class="math inline">\({(1 + x)^n \approx 1 + nx}\)</span>. So, we can further simplify this formula:</p>
+<p><span class="math display">\[M_{t} = M_{k} + (t - k) \alpha (B - M_{k})\]</span></p>
+<p>For choosing the value of <span class="math inline">\(\alpha\)</span> we can consider the number of time steps that the trust value of a user needs for reaching a specified fraction of his account balance. We know that for large <span class="math inline">\(n\)</span> and <span class="math inline">\(|x| &lt; 1\)</span> we have <span class="math inline">\((1 + x)^n \approx e^{nx}\)</span>, so by letting <span class="math inline">\(M_{u,k} = 0\)</span> and <span class="math inline">\(n = t - k\)</span> we can write:</p>
+<p><span class="math display">\[\alpha =- \frac{\ln\left(1 - \frac{M_{n+k}}{B}\right)}{n}\]</span></p>
+<p>The value of <span class="math inline">\(\alpha\)</span> for a desired configuration can be calculated by this equation. For instance, we could calculate the <span class="math inline">\(\alpha\)</span> for a relatively good configuration in which <span class="math inline">\(M_{n+k} = 0.8B\)</span> and <span class="math inline">\(n\)</span> equals to the number of time steps of 10 years.</p>
+<p>In our system a newly created account will not have voting power for some time, no matter how high its balance is. While this is a desirable property, in case a large proportion of total system tokens are transferred to newly created accounts, it can result in too much voting power for older accounts. This may decrease the degree of decentralization in our system.</p>
+<p>However, this situation is easily detectable by comparing the total stake of the system with the total balance of users. If after confirming a block the total stake of the system goes too low and we have:</p>
+<p><span class="math display">\[\sum_{u}S_{u,t} &lt; \gamma \sum_{u}B_{u,t}\]</span></p>
+<p>The protocol will perform a <em>time shift</em> in the system: the time step of the system will be incremented for <span class="math inline">\(m\)</span> steps while no blocks will be confirmed. This will increase the value of <span class="math inline">\(M_{u,t}\)</span> for new accounts with a non-zero balance, giving them more influence in the agreement protocol.</p>
+<p>For calculating the value of <span class="math inline">\(m\)</span> which determines the amount of time shift in the system, we should note that when <span class="math inline">\(B_{u,t} = B_{u, t-1} = B_u\)</span>, we can derive a simple recursive rule for the stake of a user:</p>
+<p><span class="math display">\[S_{u,t} = (1 - \alpha) S_{u,t-1} + \alpha B_u\]</span></p>
+<p>Therefore, we have:</p>
+<p><span class="math display">\[\sum_{u}S_{u,t} = (1 - \alpha) \sum_{u}S_{u,t - 1} + \alpha \sum_{u}B_u\]</span></p>
+<p>This equation shows that when the balance of users is not changing over time the total stake of the system is the exponential average of the total ALGOs of the system. Consequently, when we shift the time for <span class="math inline">\(m\)</span> steps, we can calculate the new total stake of the system from the following equation:</p>
+<p><span class="math display">\[\sum_{u}S_{u,t+m} = (1 - \alpha)^{m}\sum_{u}S_{u,t} + [1 - (1 - \alpha)^{m}]\sum_{u}B_u\]</span></p>
+<p>Hence, if we want to increase the total stake of the system from <span class="math inline">\(\gamma \sum_{u}B_u\)</span> to <span class="math inline">\(\lambda \sum_{u}B_u\)</span>, we can obtain <span class="math inline">\(m\)</span> from the following formula, when <span class="math inline">\(\alpha\)</span> is small:</p>
+<p><span class="math display">\[m = \frac{1}{\alpha} \ln \left(\frac{\gamma - 1}{\lambda - 1}\right)\]</span></p>
 <h2 id="sec:smart-contract-oracle">Smart Contract Oracle</h2>
 <p>A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM execution without accessing a ZK-EDB. Smart contract oracles can be used for reporting useful information about <code>avmCall</code> transactions such as accessed AVM heap pages or code area blocks, exact amount of execution cost, and soon.</p>
 </body>

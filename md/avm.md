@@ -482,70 +482,89 @@ stake to attack the system.
 To mitigate this problem, for calculating a user’s stake at the time step *t*, instead of using the raw ALGO balance, we
 use the minimum of a *trust value* the system has calculated for the user and the user’s ALGO balance:
 
-*Stake*<sub>*u*, *t*</sub> = min (*Balance*<sub>*u*, *t*</sub>, *Trust*<sub>*u*, *t*</sub>)
+*S*<sub>*u*, *t*</sub> = min (*B*<sub>*u*, *t*</sub>, *Trust*<sub>*u*, *t*</sub>)
 
-For estimating the value of *Trust*<sub>*u*, *t*</sub> we use the following formula:
-
-*Trust*<sub>*u*, *t*</sub> = max (*M*<sub>*u*, *t*</sub>, *βBalance*<sub>*u*, *t*</sub>)
-
-Where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ALGO balance of the user *u* at the time step *t*,
-and *β* is a constant between 0 and 1 determining the minimum trust value of a user.
-
-The agreement protocol, at the time step *t*, will use ∑<sub>*u*</sub>*Stake*<sub>*u*, *t*</sub> to determine
-the required number of votes for the confirmation of a block. At the start of the agreement protocol, *β* is initialized
-to 0. If after confirming a block we have:
-
-∑<sub>*u*</sub>*Stake*<sub>*u*</sub> &lt; *γ*∑<sub>*u*</sub>*Balance*<sub>*u*</sub>
-
-The protocol will increase the value of *β* to make sure that the total stake of the system is not too low.
-
-If after confirming a block we have *β* &gt; 0 and:
-
-∑<sub>*u*</sub>*Stake*<sub>*u*</sub> &gt; *λ*∑<sub>*u*</sub>*Balance*<sub>*u*</sub>
-
-The protocol will decrease the value of *β* until it eventually reaches 0 again.
+The agreement protocol, at the time step *t*, will use ∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> to determine the required
+number of votes for the confirmation of a block, and we let *Trust*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t*</sub>,
+where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ALGO balance of the user *u* at the time step *t*.
 
 In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a user with a
 higher balance whose balance has increased recently. An attacker who has obtained a large amount of ALGOs, also needs to
-hold them for a long period of time before being able to attack our system.
+hold them for a long period of time before being able to attack the system.
 
-For calculating the exponential moving average of a time series at the time step *t*, we can use the following recursive
-formula:
+For calculating the exponential moving average of a user’s balance at the time step *t*, we can use the following
+recursive formula:
 
-*M*<sub>*t*</sub> = (1 − *α*)*M*<sub>*t* − 1</sub> + *αX*<sub>*t*</sub> = *M*<sub>*t* − 1</sub> + *α*(*X*<sub>*t*</sub> − *M*<sub>*t* − 1</sub>)
+*M*<sub>*u*, *t*</sub> = (1 − *α*)*M*<sub>*u*, *t* − 1</sub> + *αB*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t* − 1</sub> + *α*(*B*<sub>*u*, *t*</sub> − *M*<sub>*u*, *t* − 1</sub>)
 
 Where:
 
--   The coefficient *α* is a constant smoothing factor between 0 and1 which represents the degree of weighting decrease,
-    A higher *α* discounts older observations faster.
+-   The coefficient *α* is a constant smoothing factor between 0 and 1 which represents the degree of weighting
+    decrease, A higher *α* discounts older observations faster.
 
--   *X*<sub>*t*</sub> is the value of the time series at the time step *t*.
+-   *B*<sub>*u*, *t*</sub> is the balance of the user *u* at the time step *t*.
 
--   *M*<sub>*t*</sub> is the value of the EMA at the time step *t*.
+-   *M*<sub>*u*, *t*</sub> is the EMA for the user *u* at the time step *t*.
 
 Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
-*M*<sub>*t*</sub>:
+*M*<sub>*u*, *t*</sub>: (In the following equations the *u* subscript is dropped for simplicity)
 
-*M*<sub>*t*</sub> = (1 − *α*)<sup>*t* − *k*</sup>*M*<sub>*k*</sub> + \[1 − (1 − *α*)<sup>*t* − *k*</sup>\]*X*
+*M*<sub>*t*</sub> = (1 − *α*)<sup>*t* − *k*</sup>*M*<sub>*k*</sub> + \[1 − (1 − *α*)<sup>*t* − *k*</sup>\]*B*
 
 Where:
 
-*X* = *X*<sub>*k* + 1</sub> = *X*<sub>*k* + 2</sub> = … = *X*<sub>*t*</sub>
+*B* = *B*<sub>*k* + 1</sub> = *B*<sub>*k* + 2</sub> = … = *B*<sub>*t*</sub>
 
-When |*nx*| ≪ 1 we can use the binomial approximation (1 + *x*)<sup>*n*</sup> ≈ 1 + *nx* to further simplify this
-formula:
+We know that when |*nx*| ≪ 1 we can use the binomial approximation (1 + *x*)<sup>*n*</sup> ≈ 1 + *nx*. So, we can
+further simplify this formula:
 
-*M*<sub>*t*</sub> = *M*<sub>*k*</sub> + (*t* − *k*)*α*(*X* − *M*<sub>*k*</sub>)
+*M*<sub>*t*</sub> = *M*<sub>*k*</sub> + (*t* − *k*)*α*(*B* − *M*<sub>*k*</sub>)
 
 For choosing the value of *α* we can consider the number of time steps that the trust value of a user needs for reaching
 a specified fraction of his account balance. We know that for large *n* and |*x*| &lt; 1 we have
-(1 + *x*)<sup>*n*</sup> ≈ *e*<sup>*nx*</sup>, so by letting *M*<sub>*k*</sub> = 0 and *n* = *t* − *k* we can write:
+(1 + *x*)<sup>*n*</sup> ≈ *e*<sup>*nx*</sup>, so by letting *M*<sub>*u*, *k*</sub> = 0 and *n* = *t* − *k* we can
+write:
 
-$$\\alpha =- \\frac{\\ln\\left(1 - \\frac{M\_{n+k}}{X}\\right)}{n}$$
+$$\\alpha =- \\frac{\\ln\\left(1 - \\frac{M\_{n+k}}{B}\\right)}{n}$$
 
 The value of *α* for a desired configuration can be calculated by this equation. For instance, we could calculate the
-*α* for a relatively good configuration in which *M*<sub>*n* + *k*</sub> = 0.8*X* and *n* equals to the number of time
+*α* for a relatively good configuration in which *M*<sub>*n* + *k*</sub> = 0.8*B* and *n* equals to the number of time
 steps of 10 years.
+
+In our system a newly created account will not have voting power for some time, no matter how high its balance is. While
+this is a desirable property, in case a large proportion of total system tokens are transferred to newly created
+accounts, it can result in too much voting power for older accounts. This may decrease the degree of decentralization in
+our system.
+
+However, this situation is easily detectable by comparing the total stake of the system with the total balance of users.
+If after confirming a block the total stake of the system goes too low and we have:
+
+∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> &lt; *γ*∑<sub>*u*</sub>*B*<sub>*u*, *t*</sub>
+
+The protocol will perform a *time shift* in the system: the time step of the system will be incremented for *m* steps
+while no blocks will be confirmed. This will increase the value of *M*<sub>*u*, *t*</sub> for new accounts with a
+non-zero balance, giving them more influence in the agreement protocol.
+
+For calculating the value of *m* which determines the amount of time shift in the system, we should note that when
+*B*<sub>*u*, *t*</sub> = *B*<sub>*u*, *t* − 1</sub> = *B*<sub>*u*</sub>, we can derive a simple recursive rule for the
+stake of a user:
+
+*S*<sub>*u*, *t*</sub> = (1 − *α*)*S*<sub>*u*, *t* − 1</sub> + *αB*<sub>*u*</sub>
+
+Therefore, we have:
+
+∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> = (1 − *α*)∑<sub>*u*</sub>*S*<sub>*u*, *t* − 1</sub> + *α*∑<sub>*u*</sub>*B*<sub>*u*</sub>
+
+This equation shows that when the balance of users is not changing over time the total stake of the system is the
+exponential average of the total ALGOs of the system. Consequently, when we shift the time for *m* steps, we can
+calculate the new total stake of the system from the following equation:
+
+∑<sub>*u*</sub>*S*<sub>*u*, *t* + *m*</sub> = (1 − *α*)<sup>*m*</sup>∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> + \[1 − (1 − *α*)<sup>*m*</sup>\]∑<sub>*u*</sub>*B*<sub>*u*</sub>
+
+Hence, if we want to increase the total stake of the system from *γ*∑<sub>*u*</sub>*B*<sub>*u*</sub> to
+*λ*∑<sub>*u*</sub>*B*<sub>*u*</sub>, we can obtain *m* from the following formula, when *α* is small:
+
+$$m = \\frac{1}{\\alpha} \\ln \\left(\\frac{\\gamma - 1}{\\lambda - 1}\\right)$$
 
 Smart Contract Oracle
 ---------------------

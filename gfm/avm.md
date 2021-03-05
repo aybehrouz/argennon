@@ -457,71 +457,42 @@ we use the minimum of a *trust value* the system has calculated for the user and
 
 
 
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;Stake_{u,t}&space;=&space;\min&space;(Balance_{u,t},&space;Trust_{u,t}))
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;S_{u,t}&space;=&space;\min&space;(B_{u,t},&space;Trust_{u,t}))
 
 
 
-For estimating the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{u,t}) we use the following formula:
-
-
-
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;Trust_{u,t}&space;=&space;\max&space;(M_{u,t},&space;\beta&space;Balance_{u,t}))
-
-
-
-Where ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}) is the exponential moving average of the ALGO balance of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), and
-![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta) is a constant between ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;1) determining the minimum trust value of a user.
-
-The agreement protocol, at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), will use ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\sum_{u}Stake_{u,t}) to determine the required number of
-votes for the confirmation of a block. At the start of the agreement protocol, ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta) is initialized to ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0). If
-after confirming a block we have:
-
-
-
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\sum_{u}Stake_u&space;<&space;\gamma&space;\sum_{u}&space;Balance_u)
-
-
-
-The protocol will increase the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta) to make sure that the total stake of the system is not too low.
-
-If after confirming a block we have ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta&space;>&space;0) and:
-
-
-
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\sum_{u}Stake_u&space;>&space;\lambda&space;\sum_{u}&space;Balance_u)
-
-
-
-The protocol will decrease the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\beta) until it eventually reaches ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) again.
+The agreement protocol, at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), will use ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\sum_{u}S_{u,t}) to determine the required number of votes
+for the confirmation of a block, and we let ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{u,t}&space;=&space;M_{u,t}), where ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}) is the exponential moving
+average of the ALGO balance of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
 In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a user with a
 higher balance whose balance has increased recently. An attacker who has obtained a large amount of ALGOs, also needs to
-hold them for a long period of time before being able to attack our system.
+hold them for a long period of time before being able to attack the system.
 
-For calculating the exponential moving average of a time series at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), we can use the following
+For calculating the exponential moving average of a user’s balance at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), we can use the following
 recursive formula:
 
 
 
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;M_t&space;=&space;(1&space;-&space;\alpha)&space;M_{t-1}&space;+&space;\alpha&space;X_t&space;=&space;M_{t-1}&space;+&space;\alpha&space;(X_t&space;-&space;M_{t-1}))
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;M_{u,t}&space;=&space;(1&space;-&space;\alpha)&space;M_{u,t-1}&space;+&space;\alpha&space;B_{u,t}&space;=&space;M_{u,t-1}&space;+&space;\alpha&space;(B_{u,t}&space;-&space;M_{u,t-1}))
 
 
 
 Where:
 
-  - The coefficient ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is a constant smoothing factor between ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) and![equation](https://latex.codecogs.com/gif.latex?\inline&space;1) which represents the degree of
+  - The coefficient ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is a constant smoothing factor between ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;1) which represents the degree of
     weighting decrease, A higher ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) discounts older observations faster.
 
-  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;X_t) is the value of the time series at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;B_{u,t}) is the balance of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
-  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_t) is the value of the EMA at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}) is the EMA for the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
 Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
-![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_t):
+![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}): (In the following equations the ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) subscript is dropped for simplicity)
 
 
 
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;M_t&space;=&space;(1&space;-&space;\alpha)^{t-k}M_k&space;+&space;[1&space;-&space;(1&space;-&space;\alpha)^{t&space;-&space;k}]X)
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;M_{t}&space;=&space;(1&space;-&space;\alpha)^{t-k}M_{k}&space;+&space;[1&space;-&space;(1&space;-&space;\alpha)^{t&space;-&space;k}]B)
 
 
 
@@ -529,31 +500,86 @@ Where:
 
 
 
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;X&space;=&space;X_{k+1}&space;=&space;X_{k+2}&space;=&space;\dots&space;=&space;X_t)
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;B&space;=&space;B_{k+1}&space;=&space;B_{k+2}&space;=&space;\dots&space;=&space;B_{t})
 
 
 
-When ![equation](https://latex.codecogs.com/gif.latex?\inline&space;|nx|&space;\ll&space;1) we can use the binomial approximation ![equation](https://latex.codecogs.com/gif.latex?\inline&space;(1&space;+&space;x)^n&space;\approx&space;1&space;+&space;nx) to further simplify this formula:
+We know that when ![equation](https://latex.codecogs.com/gif.latex?\inline&space;|nx|&space;\ll&space;1) we can use the binomial approximation ![equation](https://latex.codecogs.com/gif.latex?\inline&space;{(1&space;+&space;x)^n&space;\approx&space;1&space;+&space;nx}). So, we can
+further simplify this formula:
 
 
 
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;M_t&space;=&space;M_k&space;+&space;(t&space;-&space;k)&space;\alpha&space;(X&space;-&space;M_k))
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;M_{t}&space;=&space;M_{k}&space;+&space;(t&space;-&space;k)&space;\alpha&space;(B&space;-&space;M_{k}))
 
 
 
 For choosing the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) we can consider the number of time steps that the trust value of a user needs for
 reaching a specified fraction of his account balance. We know that for large ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;|x|&space;<&space;1) we have
-![equation](https://latex.codecogs.com/gif.latex?\inline&space;(1&space;+&space;x)^n&space;\approx&space;e^{nx}), so by letting ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_k&space;=&space;0) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n&space;=&space;t&space;-&space;k) we can write:
+![equation](https://latex.codecogs.com/gif.latex?\inline&space;(1&space;+&space;x)^n&space;\approx&space;e^{nx}), so by letting ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,k}&space;=&space;0) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n&space;=&space;t&space;-&space;k) we can write:
 
 
 
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\alpha&space;=-&space;\frac{\ln\left(1&space;-&space;\frac{M_{n+k}}{X}\right)}{n})
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\alpha&space;=-&space;\frac{\ln\left(1&space;-&space;\frac{M_{n+k}}{B}\right)}{n})
 
 
 
 The value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) for a desired configuration can be calculated by this equation. For instance, we could calculate
-the ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) for a relatively good configuration in which ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{n+k}&space;=&space;0.8X) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n) equals to the number of time
+the ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) for a relatively good configuration in which ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{n+k}&space;=&space;0.8B) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;n) equals to the number of time
 steps of 10 years.
+
+In our system a newly created account will not have voting power for some time, no matter how high its balance is. While
+this is a desirable property, in case a large proportion of total system tokens are transferred to newly created
+accounts, it can result in too much voting power for older accounts. This may decrease the degree of decentralization in
+our system.
+
+However, this situation is easily detectable by comparing the total stake of the system with the total balance of users.
+If after confirming a block the total stake of the system goes too low and we have:
+
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\sum_{u}S_{u,t}&space;<&space;\gamma&space;\sum_{u}B_{u,t})
+
+
+
+The protocol will perform a *time shift* in the system: the time step of the system will be incremented for ![equation](https://latex.codecogs.com/gif.latex?\inline&space;m) steps
+while no blocks will be confirmed. This will increase the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}) for new accounts with a non-zero balance,
+giving them more influence in the agreement protocol.
+
+For calculating the value of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;m) which determines the amount of time shift in the system, we should note that when
+![equation](https://latex.codecogs.com/gif.latex?\inline&space;B_{u,t}&space;=&space;B_{u,&space;t-1}&space;=&space;B_u), we can derive a simple recursive rule for the stake of a user:
+
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;S_{u,t}&space;=&space;(1&space;-&space;\alpha)&space;S_{u,t-1}&space;+&space;\alpha&space;B_u)
+
+
+
+Therefore, we have:
+
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\sum_{u}S_{u,t}&space;=&space;(1&space;-&space;\alpha)&space;\sum_{u}S_{u,t&space;-&space;1}&space;+&space;\alpha&space;\sum_{u}B_u)
+
+
+
+This equation shows that when the balance of users is not changing over time the total stake of the system is the
+exponential average of the total ALGOs of the system. Consequently, when we shift the time for ![equation](https://latex.codecogs.com/gif.latex?\inline&space;m) steps, we can
+calculate the new total stake of the system from the following equation:
+
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;\sum_{u}S_{u,t+m}&space;=&space;(1&space;-&space;\alpha)^{m}\sum_{u}S_{u,t}&space;+&space;[1&space;-&space;(1&space;-&space;\alpha)^{m}]\sum_{u}B_u)
+
+
+
+Hence, if we want to increase the total stake of the system from ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\gamma&space;\sum_{u}B_u) to ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\lambda&space;\sum_{u}B_u), we
+can obtain ![equation](https://latex.codecogs.com/gif.latex?\inline&space;m) from the following formula, when ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is small:
+
+
+
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;m&space;=&space;\frac{1}{\alpha}&space;\ln&space;\left(\frac{\gamma&space;-&space;1}{\lambda&space;-&space;1}\right))
+
+
 
 ## Smart Contract Oracle
 
