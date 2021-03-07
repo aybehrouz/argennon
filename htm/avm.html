@@ -205,23 +205,24 @@
 <li><p>Every vertex in <span class="math inline">\(G\)</span> corresponds to a transaction.</p></li>
 <li><p>Vertices <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span> are adjacent in <span class="math inline">\(G\)</span> if and only if <span class="math inline">\(u\)</span> has a memory block <span class="math inline">\(B\)</span> in its writing list and <span class="math inline">\(v\)</span> has <span class="math inline">\(B\)</span> in either its writing list or reading list.</p></li>
 </ul>
-<p>If we consider a proper vertex coloring of <span class="math inline">\(G\)</span>, every color class will give us an independent set of transactions which can be validated concurrently. To achieve the highest parallelization, we need to color <span class="math inline">\(G\)</span> with minimum number of colors. Thus, the chromatic number of the memory dependency graph shows how good a transaction set could be run concurrently.</p>
-<p>Graph coloring is computationally NP-hard. However, in our use case we don’t need to necessarily find an optimal solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is responsible for solving the graph coloring problem anda proposed block must determine the independent sets of transactions which can be run in parallel safely. Since with better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good graph coloring.</p>
+<p>If we consider a proper vertex coloring of <span class="math inline">\(G\)</span>, every color class will give us an independent set of transactions which can be validated concurrently. To achieve the highest parallelization, we need to color <span class="math inline">\(G\)</span> with minimum number of colors. Thus, the <em>chromatic number</em> of the memory dependency graph shows how good a transaction set could be run concurrently.</p>
+<p>Graph coloring is computationally NP-hard. However, in our use case we don’t need to necessarily find an optimal solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is the one who is responsible for solving the graph coloring problem and a proposed block must determine the independent sets of transactions which can be run in parallel safely. Since with better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good graph coloring.</p>
 <h2 id="sec:consensus">Consensus</h2>
 <h3 id="subsec:estimating-a-user&#39;s-stake">Estimating A User’s Stake</h3>
 <p>In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount of stake the user has in the system. Conventionally in these systems, for estimating a user’s stake, we use the amount of native system tokens the user is holding. Unfortunately, one problem with this approach is that a strong attacker may be able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this stake to attack the system.</p>
 <p>To mitigate this problem, for calculating a user’s stake at the time step <span class="math inline">\(t\)</span>, instead of using the raw ALGO balance, we use the minimum of a <em>trust value</em> the system has calculated for the user and the user’s ALGO balance:</p>
 <p><span class="math display">\[S_{u,t} = \min (B_{u,t}, Trust_{u,t})\]</span></p>
+<p>Where:</p>
+<ul>
+<li><p><span class="math inline">\(S_{u,t}\)</span> is the stake of the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>.</p></li>
+<li><p><span class="math inline">\(B_{u,t}\)</span> is the ALGO balance of the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>.</p></li>
+<li><p><span class="math inline">\(Trust_{u,t}\)</span> is an estimated trust value for the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>.</p></li>
+</ul>
 <p>The agreement protocol, at the time step <span class="math inline">\(t\)</span>, will use <span class="math inline">\(\sum_{u}S_{u,t}\)</span> to determine the required number of votes for the confirmation of a block, and we let <span class="math inline">\(Trust_{u,t} = M_{u,t}\)</span>, where <span class="math inline">\(M_{u,t}\)</span> is the exponential moving average of the ALGO balance of the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>.</p>
 <p>In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a user with a higher balance whose balance has increased recently. An attacker who has obtained a large amount of ALGOs, also needs to hold them for a long period of time before being able to attack the system.</p>
 <p>For calculating the exponential moving average of a user’s balance at the time step <span class="math inline">\(t\)</span>, we can use the following recursive formula:</p>
 <p><span class="math display">\[M_{u,t} = (1 - \alpha) M_{u,t-1} + \alpha B_{u,t} = M_{u,t-1} + \alpha (B_{u,t} - M_{u,t-1})\]</span></p>
-<p>Where:</p>
-<ul>
-<li><p>The coefficient <span class="math inline">\(\alpha\)</span> is a constant smoothing factor between <span class="math inline">\(0\)</span> and <span class="math inline">\(1\)</span> which represents the degree of weighting decrease, A higher <span class="math inline">\(\alpha\)</span> discounts older observations faster.</p></li>
-<li><p><span class="math inline">\(B_{u,t}\)</span> is the balance of the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>.</p></li>
-<li><p><span class="math inline">\(M_{u,t}\)</span> is the EMA for the user <span class="math inline">\(u\)</span> at the time step <span class="math inline">\(t\)</span>.</p></li>
-</ul>
+<p>Where the coefficient <span class="math inline">\(\alpha\)</span> is a constant smoothing factor between <span class="math inline">\(0\)</span> and <span class="math inline">\(1\)</span> which represents the degree of weighting decrease, A higher <span class="math inline">\(\alpha\)</span> discounts older observations faster.</p>
 <p>Usually an account balance will not change in every time step, and we can use older values of EMA for calculating <span class="math inline">\(M_{u,t}\)</span>: (In the following equations the <span class="math inline">\(u\)</span> subscript is dropped for simplicity)</p>
 <p><span class="math display">\[M_{t} = (1 - \alpha)^{t-k}M_{k} + [1 - (1 - \alpha)^{t - k}]B\]</span></p>
 <p>Where:</p>
@@ -241,8 +242,8 @@
 <p><span class="math display">\[\sum_{u}S_{u,t} = (1 - \alpha) \sum_{u}S_{u,t - 1} + \alpha \sum_{u}B_u\]</span></p>
 <p>This equation shows that when the balance of users is not changing over time the total stake of the system is the exponential average of the total ALGOs of the system. Consequently, when we shift the time for <span class="math inline">\(m\)</span> steps, we can calculate the new total stake of the system from the following equation:</p>
 <p><span class="math display">\[\sum_{u}S_{u,t+m} = (1 - \alpha)^{m}\sum_{u}S_{u,t} + [1 - (1 - \alpha)^{m}]\sum_{u}B_u\]</span></p>
-<p>Hence, if we want to increase the total stake of the system from <span class="math inline">\(\gamma \sum_{u}B_u\)</span> to <span class="math inline">\(\lambda \sum_{u}B_u\)</span>, we can obtain <span class="math inline">\(m\)</span> from the following formula, when <span class="math inline">\(\alpha\)</span> is small:</p>
-<p><span class="math display">\[m = \frac{1}{\alpha} \ln \left(\frac{\gamma - 1}{\lambda - 1}\right)\]</span></p>
+<p>Hence, if we want to increase the total stake of the system from <span class="math inline">\(\gamma \sum_{u}B_u\)</span> to <span class="math inline">\(\lambda \sum_{u}B_u\)</span>, we can obtain <span class="math inline">\(m\)</span> from the following formula, assuming <span class="math inline">\(\alpha\)</span> is small enough:</p>
+<p><span class="math display">\[m = \frac{1}{\alpha} \ln \left(\frac{1 - \gamma}{1 - \lambda}\right)\]</span></p>
 <h2 id="sec:smart-contract-oracle">Smart Contract Oracle</h2>
 <p>A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM execution without accessing a ZK-EDB. Smart contract oracles can be used for reporting useful information about <code>avmCall</code> transactions such as accessed AVM heap pages or code area blocks, exact amount of execution cost, and soon.</p>
 </body>

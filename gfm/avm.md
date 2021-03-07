@@ -433,12 +433,12 @@ transactions which can be validated in parallel. To do so, we define the *memory
 
 If we consider a proper vertex coloring of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G), every color class will give us an independent set of transactions
 which can be validated concurrently. To achieve the highest parallelization, we need to color ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G) with minimum number
-of colors. Thus, the chromatic number of the memory dependency graph shows how good a transaction set could be run
+of colors. Thus, the *chromatic number* of the memory dependency graph shows how good a transaction set could be run
 concurrently.
 
 Graph coloring is computationally NP-hard. However, in our use case we don’t need to necessarily find an optimal
-solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is
-responsible for solving the graph coloring problem anda proposed block must determine the independent sets of
+solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is the one
+who is responsible for solving the graph coloring problem and a proposed block must determine the independent sets of
 transactions which can be run in parallel safely. Since with better parallelization a block can contain more
 transactions, a proposer is incentivized enough to find a good graph coloring.
 
@@ -461,6 +461,14 @@ we use the minimum of a *trust value* the system has calculated for the user and
 
 
 
+Where:
+
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;S_{u,t}) is the stake of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;B_{u,t}) is the ALGO balance of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{u,t}) is an estimated trust value for the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+
 The agreement protocol, at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), will use ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\sum_{u}S_{u,t}) to determine the required number of votes
 for the confirmation of a block, and we let ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{u,t}&space;=&space;M_{u,t}), where ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}) is the exponential moving
 average of the ALGO balance of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
@@ -478,14 +486,8 @@ recursive formula:
 
 
 
-Where:
-
-  - The coefficient ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is a constant smoothing factor between ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;1) which represents the degree of
-    weighting decrease, A higher ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) discounts older observations faster.
-
-  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;B_{u,t}) is the balance of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
-
-  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}) is the EMA for the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+Where the coefficient ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is a constant smoothing factor between ![equation](https://latex.codecogs.com/gif.latex?\inline&space;0) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;1) which represents the degree of
+weighting decrease, A higher ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) discounts older observations faster.
 
 Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
 ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}): (In the following equations the ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) subscript is dropped for simplicity)
@@ -573,11 +575,11 @@ calculate the new total stake of the system from the following equation:
 
 
 Hence, if we want to increase the total stake of the system from ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\gamma&space;\sum_{u}B_u) to ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\lambda&space;\sum_{u}B_u), we
-can obtain ![equation](https://latex.codecogs.com/gif.latex?\inline&space;m) from the following formula, when ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is small:
+can obtain ![equation](https://latex.codecogs.com/gif.latex?\inline&space;m) from the following formula, assuming ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\alpha) is small enough:
 
 
 
-![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;m&space;=&space;\frac{1}{\alpha}&space;\ln&space;\left(\frac{\gamma&space;-&space;1}{\lambda&space;-&space;1}\right))
+![equation](https://latex.codecogs.com/gif.latex?\dpi{120}&space;m&space;=&space;\frac{1}{\alpha}&space;\ln&space;\left(\frac{1&space;-&space;\gamma}{1&space;-&space;\lambda}\right))
 
 
 

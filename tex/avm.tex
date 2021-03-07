@@ -466,13 +466,13 @@
 
     If we consider a proper vertex coloring of \(G\), every color class will give us an independent set of
     transactions which can be validated concurrently. To achieve the highest parallelization, we need to color \(G\)
-    with minimum number of colors. Thus, the chromatic number of the memory dependency graph shows how good a
+    with minimum number of colors. Thus, the \emph{chromatic number} of the memory dependency graph shows how good a
     transaction set could be run concurrently.
 
     Graph coloring is computationally NP-hard. However, in our use case we don't need to necessarily find an optimal
-    solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is
-    responsible for solving the graph coloring problem anda proposed block must determine the independent sets of
-    transactions which can be run in parallel safely. Since with better parallelization a block can contain more
+    solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is the
+    one who is responsible for solving the graph coloring problem and a proposed block must determine the independent
+    sets of transactions which can be run in parallel safely. Since with better parallelization a block can contain more
     transactions, a proposer is incentivized enough to find a good graph coloring.
 
 
@@ -492,6 +492,13 @@
     \[
         S_{u,t} = \min (B_{u,t}, Trust_{u,t})
     \]
+    Where:
+    \begin{itemize}
+        \item \(S_{u,t}\) is the stake of the user \(u\) at the time step \(t\).
+        \item \(B_{u,t}\) is the ALGO balance of the user \(u\) at the time step \(t\).
+        \item \(Trust_{u,t}\) is an estimated trust value for the user \(u\) at the time step \(t\).
+    \end{itemize}
+
     The agreement protocol, at the time step \(t\), will use \(\sum_{u}S_{u,t}\) to determine the required
     number of votes for the confirmation of a block, and we let \(Trust_{u,t} = M_{u,t}\), where \(M_{u,t}\) is the
     exponential moving average of the ALGO balance of the user \(u\) at the time step \(t\).
@@ -505,13 +512,9 @@
     \[
         M_{u,t} = (1 - \alpha) M_{u,t-1} + \alpha B_{u,t} = M_{u,t-1} + \alpha (B_{u,t} - M_{u,t-1})
     \]
-    Where:
-    \begin{itemize}
-        \item The coefficient \(\alpha\) is a constant smoothing factor between \(0\) and \(1\) which represents the
-        degree of weighting decrease, A higher \(\alpha\) discounts older observations faster.
-        \item \(B_{u,t}\) is the balance of the user \(u\) at the time step \(t\).
-        \item \(M_{u,t}\) is the EMA for the user \(u\) at the time step \(t\).
-    \end{itemize}
+    Where the coefficient \(\alpha\) is a constant smoothing factor between \(0\) and \(1\) which represents the
+    degree of
+    weighting decrease, A higher \(\alpha\) discounts older observations faster.
 
     Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
     \(M_{u,t}\): (In the following equations the \(u\) subscript is dropped for simplicity)
@@ -569,9 +572,9 @@
         \sum_{u}S_{u,t+m} = (1 - \alpha)^{m}\sum_{u}S_{u,t} + [1 - (1 - \alpha)^{m}]\sum_{u}B_u
     \]
     Hence, if we want to increase the total stake of the system from \(\gamma \sum_{u}B_u\) to \(\lambda \sum_{u}B_u\),
-    we can obtain \(m\) from the following formula, when \(\alpha\) is small:
+    we can obtain \(m\) from the following formula, assuming \(\alpha\) is small enough:
     \[
-        m = \frac{1}{\alpha} \ln \left(\frac{\gamma - 1}{\lambda - 1}\right)
+        m = \frac{1}{\alpha} \ln \left(\frac{1 - \gamma}{1 - \lambda}\right)
     \]
 
 

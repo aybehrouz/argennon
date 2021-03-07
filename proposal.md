@@ -459,12 +459,12 @@ transactions which can be validated in parallel. To do so, we define the *memory
 
 If we consider a proper vertex coloring of *G*, every color class will give us an independent set of transactions which
 can be validated concurrently. To achieve the highest parallelization, we need to color *G* with minimum number of
-colors. Thus, the chromatic number of the memory dependency graph shows how good a transaction set could be run
+colors. Thus, the *chromatic number* of the memory dependency graph shows how good a transaction set could be run
 concurrently.
 
 Graph coloring is computationally NP-hard. However, in our use case we don’t need to necessarily find an optimal
-solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is
-responsible for solving the graph coloring problem anda proposed block must determine the independent sets of
+solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is the one
+who is responsible for solving the graph coloring problem and a proposed block must determine the independent sets of
 transactions which can be run in parallel safely. Since with better parallelization a block can contain more
 transactions, a proposer is incentivized enough to find a good graph coloring.
 
@@ -484,6 +484,14 @@ use the minimum of a *trust value* the system has calculated for the user and th
 
 *S*<sub>*u*, *t*</sub> = min (*B*<sub>*u*, *t*</sub>, *Trust*<sub>*u*, *t*</sub>)
 
+Where:
+
+-   *S*<sub>*u*, *t*</sub> is the stake of the user *u* at the time step *t*.
+
+-   *B*<sub>*u*, *t*</sub> is the ALGO balance of the user *u* at the time step *t*.
+
+-   *Trust*<sub>*u*, *t*</sub> is an estimated trust value for the user *u* at the time step *t*.
+
 The agreement protocol, at the time step *t*, will use ∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> to determine the required
 number of votes for the confirmation of a block, and we let *Trust*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t*</sub>,
 where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ALGO balance of the user *u* at the time step *t*.
@@ -497,14 +505,8 @@ recursive formula:
 
 *M*<sub>*u*, *t*</sub> = (1 − *α*)*M*<sub>*u*, *t* − 1</sub> + *αB*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t* − 1</sub> + *α*(*B*<sub>*u*, *t*</sub> − *M*<sub>*u*, *t* − 1</sub>)
 
-Where:
-
--   The coefficient *α* is a constant smoothing factor between 0 and 1 which represents the degree of weighting
-    decrease, A higher *α* discounts older observations faster.
-
--   *B*<sub>*u*, *t*</sub> is the balance of the user *u* at the time step *t*.
-
--   *M*<sub>*u*, *t*</sub> is the EMA for the user *u* at the time step *t*.
+Where the coefficient *α* is a constant smoothing factor between 0 and 1 which represents the degree of weighting
+decrease, A higher *α* discounts older observations faster.
 
 Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
 *M*<sub>*u*, *t*</sub>: (In the following equations the *u* subscript is dropped for simplicity)
@@ -562,9 +564,9 @@ calculate the new total stake of the system from the following equation:
 ∑<sub>*u*</sub>*S*<sub>*u*, *t* + *m*</sub> = (1 − *α*)<sup>*m*</sup>∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> + \[1 − (1 − *α*)<sup>*m*</sup>\]∑<sub>*u*</sub>*B*<sub>*u*</sub>
 
 Hence, if we want to increase the total stake of the system from *γ*∑<sub>*u*</sub>*B*<sub>*u*</sub> to
-*λ*∑<sub>*u*</sub>*B*<sub>*u*</sub>, we can obtain *m* from the following formula, when *α* is small:
+*λ*∑<sub>*u*</sub>*B*<sub>*u*</sub>, we can obtain *m* from the following formula, assuming *α* is small enough:
 
-$$m = \\frac{1}{\\alpha} \\ln \\left(\\frac{\\gamma - 1}{\\lambda - 1}\\right)$$
+$$m = \\frac{1}{\\alpha} \\ln \\left(\\frac{1 - \\gamma}{1 - \\lambda}\\right)$$
 
 Smart Contract Oracle
 ---------------------
