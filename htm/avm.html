@@ -34,7 +34,7 @@
 <p>A call stack contains the information that is needed for restoring the state of the invoker of a method.</p>
 <h3 id="subsec:memory-unit">Memory Unit</h3>
 <p>The Algorand Virtual Machine has a byte addressable memory which is divided into separate segments. Every segment belongs to a smart contract that has a unique <code>applicationID</code>. The AVM always has a single working memory segment and memory locations outside its current working segment can not be accessed. The only instructions which can change the current working segment are <code>invoke_external</code>, <code>athrow</code> and return instructions.</p>
-<p>Every smart contract has its own memory segment. Hence, there is no way for a smart contract to access another smart contract’s memory. Interaction between smart contracts is done using <code>invoke_external</code> instruction, and A smart contract can invoke methods of another smart contract by this instruction.</p>
+<p>Every smart contract has its own memory segment. Hence, there is no way for a smart contract to access another smart contract’s memory. Interaction between smart contracts is done using <code>invoke_external</code> instruction, and a smart contract can invoke methods of another smart contract by this instruction.</p>
 <p>A memory segment consists of five data areas:</p>
 <ul>
 <li><p>Code Area</p></li>
@@ -50,11 +50,11 @@
 <p>The constant area of a segment contains several kinds of constants, ranging from user defined constants to method address tables. A method address table stores method locations in the code area and their access type. The access type of a method can be either <code>public</code> or <code>private</code>. The AVM has no instructions for modifying the constant area.</p>
 <p><em>Only public methods can be invoked by <code>invoke_external</code> instruction.</em></p>
 <h4 id="local-frame">Local Frame</h4>
-<p>A local frame is used to store methods parameters and local variables. A new frame is created each time a method is invoked. A frame is destroyed when its method invocation completes, whether the completion is normal or abrupt.</p>
+<p>A local frame is used to store methods parameters and local variables. A new frame is created each time a method is invoked, and it is destroyed when its method invocation completes, whether the completion is normal or abrupt.</p>
 <h4 id="operand-stack">Operand Stack</h4>
 <p>Every time a local frame is created, a corresponding empty last-in-first-out (LIFO) stack is created too. AVM instructions take operands from the operand stack, operate on them, and push the result back onto the operand stack. An operand stack is destroyed when its owner method completes, whether that completion is normal or abrupt.</p>
 <h4 id="heap">Heap</h4>
-<p>The heap of a segment is a persistent memory area which is divided into pages. Each page can be referenced by an index that starts from 0. Memory locations inside every page have a separate address space that starts from 0. In other words, the address of every memory location inside a heap is a pair of indices: <code>(pageIndex, offset) </code>. Pages of a heap do not need to be equally sized.</p>
+<p>The heap of a segment is a persistent memory area which is divided into pages. Memory locations inside every page have a separate address space that starts from 0, and each page can be referenced by an index that starts from 0. In other words, the address of every memory location inside a heap is a pair of indices: <code>(pageIndex, offset)</code>. Different pages of a heap do not need to be equally sized.</p>
 <p><em>The reason behind this paged design is that the heap is usually persisted using a block device. A heap with a paged structure could expose the underlying block based nature of the persistence layer to the application layer. In this way, the compiler or the programmer could better optimize the code for the persistence layer.</em></p>
 <h2 id="sec:instruction-set-summary">Instruction Set Summary</h2>
 <p>An Algorand Virtual Machine instruction consists of a <strong>one-byte</strong> opcode specifying the operation to be performed, followed by zero or more operands supplying arguments or data that are used by the operation. <strong>The number and size of the operands are determined solely by the opcode.</strong></p>
@@ -63,7 +63,7 @@
 <ul>
 <li><p><code>invoke_internal</code> invokes a method from the current running smart contract.</p></li>
 <li><p><code>invoke_external</code> invokes a <code>public</code> method from another smart contract. It will change the current memory segment to the segment of the invoked smart contract.</p></li>
-<li><p><code>invoke_native</code> invokes a method that is not hosted by the Algorand virtual machine. By this instruction, high performance native methods of a hosting machine could become available to AVM smart contracts.</p></li>
+<li><p><code>invoke_native</code> invokes a method that is not hosted by the Algorand virtual machine. By this instruction, high performance native methods of the hosting machine could become available to AVM smart contracts.</p></li>
 </ul>
 <p><em>In the future, we may need to add special instructions for invoking interface and virtual methods...</em></p>
 <p>Each time a method is invoked a new local frame and operand stack is created. The Algorand Virtual Machine uses local frames to pass parameters on method invocation. On method invocation, any parameters are passed in consecutive local variables stored in the method’s local frame starting from local variable 0. The invoker of a method writes the parameters in the local frame of the invoked method using <code>arg</code> instructions.</p>
@@ -73,13 +73,15 @@
 <p>A method invocation completes normally if that invocation does not cause an exception to be thrown, either directly from the AVM or as a result of executing an explicit throw statement. If the invocation of the current method completes normally, then a value may be returned to the invoking method. This occurs when the invoked method executes one of the return instructions, the choice of which must be appropriate for the type of the value being returned (if any). Execution then continues normally in the invoking method’s local frame with the returned value (if any) pushed onto the operand stack.</p>
 <p>A method invocation completes abruptly if an exceptions is thrown and is not caught by the current method. A method invocation that completes abruptly never returns a value to its invoker.</p>
 <p>When a method completes, whether normally or abruptly, the call stack is used to restore the state of the invoker, including its local frame and operand stack, with the <code>PC</code> register appropriately restored and incremented to skip past the method invocation instruction. If the invoker was another smart contract, i.e. the invocation was made by an <code>invoke_external</code> instruction, the current memory segment will be changed to the invoker’s segment.</p>
-<p>A thrown exception causes methods in the call stack to complete <strong>abruptly</strong> one by one, as long as the <code>PC</code> register is not pointing to a <code>catch</code> instruction. The <code>catch</code> instruction acts like a branch instruction that branches only if an exception is caught. <strong>When an external method invocation completes abruptly, before changing the current segment, all changes made to the heap area will be rolled back.</strong></p>
+<p>A thrown exception causes methods in the call stack to complete <strong>abruptly</strong> one by one, as long as the <code>PC</code> register is not pointing to a <code>catch</code> instruction. The <code>catch</code> instruction acts like a branch instruction that branches only if an exception is caught. <strong>When an external method invocation completes abruptly, before changing the current segment, all changes made to the heap area by that method call, including changes made to other segments, will be rolled back.</strong> So, when a method call completes abruptly, that method call essentially has no effect on the AVM state.</p>
 <p><em>By using the <code>athrow</code> instruction properly, a programmer can make any method act like an atomic operation.</em></p>
-<h4 id="authorizing-operations">Authorizing Operations</h4>
-<p>In blockchain applications, we usually need to authorize certain operations. For example, for sending an asset from a user to another user, first we need to make sure that the sender has authorized this operation. The Algorand virtual machine has no built in mechanism for authorizing operations, but it provides a rich set of cryptographic instructions for validating signatures and cryptographic entities. By using these instructions and passing signatures as parameters to methods a programmer can implement the required logic for authorizing any operation.</p>
+<h3 id="subsec:authorizing-operations">Authorizing Operations</h3>
+<p>In blockchain applications, we usually need to authorize certain operations. For example, for sending an asset from a user to another user, first we need to make sure that the sender has authorized this operation. The Algorand virtual machine has no built in mechanism for authorizing operations, but it provides a rich set of cryptographic instructions for validating signatures and cryptographic entities. By using these instructions and passing signatures as parameters to methods, a programmer can implement the required logic for authorizing any operation.</p>
 <p><em>The Algorand virtual machine has no instructions for issuing cryptographic signatures.</em></p>
-<p>In addition to signatures, a method can verify its invoker by using <code>get_parent</code> instruction. This instruction gets the <code>applicationID</code> of the smart contract that is one level deeper than the current smart contract in the call stack. In other words, it gives the smart contract that has invoked the current smart contract. (if any)</p>
-<h4 id="heap-allocation-instructions">Heap Allocation Instructions</h4>
+<p>In addition to signatures, a method can verify its invoker by using <code>get_parent</code> instruction. This instruction gets the <code>applicationID</code> of the smart contract that is one level deeper than the current smart contract in the call stack. In other words, it returns the <code>applicationID</code> of the smart contract that has invoked the current smart contract. (if any)</p>
+<h3 id="subsec:heap-allocation-instructions">Heap Allocation Instructions</h3>
+<p>...</p>
+<h2 id="sec:the-avm-standard-library">The AVM Standard Library</h2>
 <p>...</p>
 <h1 id="ch:implementation">Implementation</h1>
 <h2 id="sec:persistence">Persistence</h2>
@@ -87,24 +89,24 @@
 <ul>
 <li><p>The ZK-EDB contains a mapping from a set of keys to a set of values.</p></li>
 <li><p>Every state of the database has a commitment <span class="math inline">\(C\)</span>.</p></li>
-<li><p>The ZK-EDB has a method <span class="math inline">\((D, p) = get(x)\)</span>, where <span class="math inline">\(x\)</span> is a key and <span class="math inline">\(D\)</span> is the associated value with <span class="math inline">\(x\)</span> and <span class="math inline">\(p\)</span> is a proof.</p></li>
+<li><p>The ZK-EDB has a method <span class="math inline">\((D, p) = get(x)\)</span>, where <span class="math inline">\(x\)</span> is a key and <span class="math inline">\(D\)</span> is the associated data with <span class="math inline">\(x\)</span>, and <span class="math inline">\(p\)</span> is a proof.</p></li>
 <li><p>A user can use <span class="math inline">\(C\)</span> and <span class="math inline">\(p\)</span> to verify that <span class="math inline">\(D\)</span> is really associated with <span class="math inline">\(x\)</span>, and <span class="math inline">\(D\)</span> is not altered. Consequently, a user who can obtain <span class="math inline">\(C\)</span> from a trusted source does not need to trust the ZK-EDB.</p></li>
 <li><p>Having <span class="math inline">\(p\)</span> and <span class="math inline">\(C\)</span> a user can compute the commitment <span class="math inline">\(C&#39;\)</span> for the database in which <span class="math inline">\(D&#39;\)</span> is associated with <span class="math inline">\(x\)</span> instead of <span class="math inline">\(D\)</span>.</p></li>
 </ul>
 <p>We use a ZK-EDB for storing the AVM heap. We include the commitment of the current state of this DB in every block of the Algorand blockchain, so ZK-EDB servers need not be trusted servers.</p>
 <p>Every page of AVM heap will be stored with a key of the form: <code>applicationID|pageIndex</code> (the <code>|</code> operator concatenates two numbers). Nodes do not keep a full copy of the AVM heap and for validating block certificates or emulating the AVM ( i.e. validating transactions) they need to connect to a ZK-EDB and retrieve the required pages of AVM heap. For better performance, nodes keep a cache of heap pages to reduce the amount of ZK-EDB access.</p>
 <p>We also use a ZK-EDB for storing the code area of each segment, and we include the commitment of this DB in every block. Every code area will be divided into blocks and every block will be stored in the DB with <code>applicationID|blockID</code> as its key. Like heap pages, nodes keep a cache of code area blocks.</p>
-<p><em>Unlike heap pages, the AVM is not aware of different blocks of the code area.</em></p>
+<p><em>Unlike heap pages, the AVM is not aware of different blocks of code area.</em></p>
 <h2 id="sec:transactions">Transactions</h2>
 <p>Algorand has four types of transaction:</p>
 <ul>
 <li><p><code>avmCall</code> essentially is an <code>invoke_external</code> instruction that invokes a method from an AVM smart contract. Users interact with AVM smart contracts using these transactions. Transferring all assets, including ALGOs, is done by these transactions.</p></li>
-<li><p><code>installApp</code> installs an AVM smart contract and determines the update policy of the smart contract: if the contract is updatable or not, the accounts that can update or uninstall the contract, and so on.</p></li>
+<li><p><code>installApp</code> installs an AVM smart contract and determines the update policy of the smart contract: if the contract is updatable or not, which accounts can update or uninstall the contract, and so on.</p></li>
 <li><p><code>unInstallApp</code> removes an AVM smart contract.</p></li>
 <li><p><code>updateApp</code> updates an AVM smart contract.</p></li>
 </ul>
 <p>All types of Algorand transactions contain an <code>invoke_external</code> instruction which calls a special method from ALGO smart contract that transfers the proposed fee of the transaction in ALGOs from a sender account to the fee sink accounts.</p>
-<p>Every transaction is required to exactly specify what heap pages or code area blocks it will access. This enables validators to start retrieving the required memory blocks from available ZK-EDB servers as soon as they see a transaction, and they won’t need to wait for receiving the new proposed block. A transaction that tries to access a memory block that is not included in its access lists, will be rejected. Users could use smart contract oracles to predict the list of memory blocks their transactions need. See Section <a href="#sec:smart-contract-oracle" data-reference-type="ref" data-reference="sec:smart-contract-oracle">2.7</a> for more details.</p>
+<p>Every transaction is required to exactly specify what heap locations or code area addresses it will access. This enables validators to start retrieving the required memory blocks from available ZK-EDB servers as soon as they see a transaction, and they won’t need to wait for receiving the new proposed block. A transaction that tries to access a memory location that is not included in its access lists, will be rejected. Users could use smart contract oracles to predict the list of memory blocks their transactions need. See Section <a href="#sec:smart-contract-oracle" data-reference-type="ref" data-reference="sec:smart-contract-oracle">2.7</a> for more details.</p>
 <h2 id="sec:blockchain">Blockchain</h2>
 <p>Every block of the Algorand blockchain corresponds to a set of transactions. We store the commitment of this transaction set in every block, but we don’t keep the set itself. To be able to detect replay attacks, we require every signature that a user creates to have a nonce. This nonce consists of the issuance round of the signature and a sequence number: <code>(issuance, sequence)</code>. When a user creates more than one signature in a round, he must sequence his signatures starting from 0 (i.e. the sequence number restarts from 0 in every round). We define a maximum lifetime for signatures, so a signature is invalid if <code>currentRound - issuance &gt; maxLifeTime</code> or if a signature of the same user with a bigger or equal nonce is already used (i.e. is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.</p>
 <p>To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. When the difference between <code>issuance</code> component of this nonce and the current round becomes bigger than the maximum allowed lifetime of a signature, this information can be safely deleted. <strong>As a result, we will not have the problem of "un-removable empty accounts" like Ethereum.</strong></p>
@@ -146,8 +148,8 @@
 <p>Every <code>avmCall</code> transaction is required to provide the following information as an upper bound for the resources it needs:</p>
 <ul>
 <li><p>Execution cost</p></li>
-<li><p>A list of heap/code-area pages for reading</p></li>
-<li><p>A list of heap pages for writing</p></li>
+<li><p>A list of heap/code-area locations for reading</p></li>
+<li><p>A list of heap locations for writing</p></li>
 <li><p>A list of heap pages it will deallocate</p></li>
 <li><p>Number and size of heap pages it will allocate</p></li>
 </ul>
@@ -156,20 +158,20 @@
 <h3 id="subsec:zk-edb-servers">ZK-EDB Servers</h3>
 <p>The incentive mechanism for ZK-EDB servers should have the following properties:</p>
 <ul>
-<li><p>It incentivizes storing all memory blocks, whether a heap page or a code area block, and not only those that are used more frequently.</p></li>
-<li><p>It incentivizes the ZK-EDB servers to actively provide the required memory blocks for validators.</p></li>
+<li><p>It incentivizes storing all memory blocks, whether a heap page or a code area block, and not only those which are used more frequently.</p></li>
+<li><p>It incentivizes ZK-EDB servers to actively provide the required memory blocks for validators.</p></li>
 <li><p>Making more accounts will not provide any advantages for a ZK-EDB server.</p></li>
 </ul>
 <p>For our incentive mechanism, we require that every time a validator receives a memory block from a ZK-EDB, after validating the data, he give a receipt to the ZK-EDB. In this receipt the validator signs the following information:</p>
 <ul>
-<li><p><code>ownerAddr</code> the ALGO address of the ZK-EDB.</p></li>
-<li><p><code>receivedBlockID</code> the ID of the received memory block.</p></li>
-<li><p><code>round</code> the current round number.</p></li>
+<li><p><code>ownerAddr</code>: the ALGO address of the ZK-EDB.</p></li>
+<li><p><code>receivedBlockID</code>: the ID of the received memory block.</p></li>
+<li><p><code>round</code>: the current round number.</p></li>
 </ul>
 <p><em>In a round, an honest validator never gives a receipt for an identical memory block to two different ZK-EDBs.</em></p>
-<p>To incentivize ZK-EDB servers, every round a lottery will be held and a predefined amount of ALGOs from <code>dbFeeSink</code> account will be distributed between winners as a prize. This prize will be divided equally between all the <em>winning tickets</em> of the lottery.</p>
+<p>To incentivize ZK-EDB servers, a lottery will be held every round and a predefined amount of ALGOs from <code>dbFeeSink</code> account will be distributed between winners as a prize. This prize will be divided equally between all <em>winning tickets</em> of the lottery.</p>
 <p><em>One ZK-EDB server could own multiple winning tickets in a round.</em></p>
-<p>To run this lottery, In every round, based on the current block seed, a collection of <em>valid</em> receipts will be selected randomly as the <em>winning</em> receipts. A receipt is <em>valid</em> in the round <span class="math inline">\(r\)</span> if:</p>
+<p>To run this lottery, every round, based on the current block seed, a collection of <em>valid</em> receipts will be selected randomly as the <em>winning receipts</em> of the round. A receipt is <em>valid</em> in the round <span class="math inline">\(r\)</span> if:</p>
 <ul>
 <li><p>The signer was a validator in the round <span class="math inline">\(r - 1\)</span> and voted for the agreed-upon block.</p></li>
 <li><p>The data block in the receipt was needed for validating the <strong>previous</strong> block.</p></li>
@@ -177,8 +179,8 @@
 <li><p>The signer did not sign a receipt for the same data block for two different ZK-EDBs in the previous round.</p></li>
 </ul>
 <p>For selecting the winning receipts we could use a random generator:</p>
-<pre><code>        if random(seed|validatorPK|receivedBlockID) &lt; winProbability
-            the receipt issued by validatorPK for receivedBlockID is a winner</code></pre>
+<pre><code>IF random(seed|validatorPK|receivedBlockID) &lt; winProbability THEN
+    the receipt issued by validatorPK for receivedBlockID is a winner</code></pre>
 <ul>
 <li><p><code>random()</code> produces uniform random numbers between 0 and 1, using its input argument as a seed.</p></li>
 <li><p><code>validatorPK</code> is the public key of the signer of the receipt.</p></li>
@@ -192,21 +194,47 @@
 <p>A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge memory block combined with the ZK-EDB ALGO address: <code>hash(challenge.content|ownerAddr)</code></p>
 <p>The winning tickets of the lottery of the round <span class="math inline">\(r\)</span> need to be included in the block of the round <span class="math inline">\(r\)</span>, otherwise they will be considered expired. Validation and prize distribution for the winning tickets of the round <span class="math inline">\(r\)</span> will be done in the round <span class="math inline">\(r + 1\)</span>. This way, <strong>the content of the challenge memory block could be kept secret during the lottery round.</strong> Every winning ticket will get an equal share of the lottery prize.</p>
 <h3 id="subsec:memory-allocation-and-de-allocation">Memory Allocation and De-allocation</h3>
-<p>Every k round the protocol chooses a price per byte for the AVM memory. When a smart contract executes a heap allocation instruction, the protocol will automatically deduce the cost of the allocated memory from the ALGO address of the smart contract.</p>
-<p>To determine the price of AVM memory, Every k round, the protocol calculates <code>dbFee</code> and <code>memTraffic</code> values. <code>dbFee</code> is the aggregate amount of collected database fees and <code>memTraffic</code> is the total memory traffic of the system. For calculating the memory traffic of the system the protocol considers the total size of all memory pages that were accessed for either reading or writing during some time. These two values will be calculated for the last k rounds and the price per byte of the AVM memory will be a linear function of <code>dbFee/memTraffic</code></p>
-<p>When a smart contract executes a heap de-allocation instruction, the protocol will refund the cost of de-allocated memory to the smart contract. Here, the current price of AVM memory does not matter and the protocol calculates the refunded amount based on the average price the smart had paid for that allocated memory. This will prevent smart contracts from profit taking by trading memory with the protocol.</p>
+<p>Every <span class="math inline">\(k\)</span> round the protocol chooses a price per byte for AVM memory. When a smart contract executes a heap allocation instruction, the protocol will automatically deduce the cost of the allocated memory from the ALGO address of the smart contract.</p>
+<p>To determine the price of AVM memory, Every <span class="math inline">\(k\)</span> round, the protocol calculates <code>dbFee</code> and <code>memTraffic</code> values. <code>dbFee</code> is the aggregate amount of collected database fees, and <code>memTraffic</code> is the total memory traffic of the system. For calculating the memory traffic of the system the protocol considers the total size of all the memory pages that were accessed for either reading or writing during a time period. These two values will be calculated for the last <span class="math inline">\(k\)</span> rounds and the price per byte of AVM memory will be a linear function of <code>dbFee/memTraffic</code></p>
+<p>When a smart contract executes a heap de-allocation instruction, the protocol will refund the cost of de-allocated memory to the smart contract. Here, the current price of AVM memory does not matter and the protocol calculates the refunded amount based on the average price the smart contract had paid for that allocated memory. This will prevent smart contracts from profit taking by trading memory with the protocol.</p>
 <h2 id="sec:concurrency">Concurrency</h2>
+<h3 id="subsec:memory-dependency-graph">Memory Dependency Graph</h3>
 <p>Every block of the Algorand blockchain contains a list of transactions. This list is an ordered list and the effect of its contained transactions must be applied to the AVM state sequentially as they appear in the ordered list. The ordering of transactions in a block is solely chosen by the block proposer.</p>
 <p><em>Users should not have any assumption about the ordering of transactions in a block.</em></p>
 <p>The fact that block transactions constitute a sequential list, does not mean they can not be validated concurrently. Many transactions are actually independent and the order of their execution does not matter. These transactions can be safely validated in parallel by validators.</p>
-<p>A transaction can change the AVM state by modifying either the code area or the AVM heap. In Algorand, all transactions declare the list of memory blocks they want to read or write. This will enable us to determine the independent sets of transactions which can be validated in parallel. To do so, we define the <em>memory dependency graph</em> as follows:</p>
+<p>A transaction can change the AVM state by modifying either the code area or the AVM heap. In Algorand, all transactions declare the list of memory locations they want to read or write. This will enable us to determine the independent sets of transactions which can be validated in parallel. To do so, we define the <em>memory dependency graph</em> as follows:</p>
 <ul>
 <li><p><span class="math inline">\(G\)</span> is an undirected graph.</p></li>
 <li><p>Every vertex in <span class="math inline">\(G\)</span> corresponds to a transaction.</p></li>
-<li><p>Vertices <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span> are adjacent in <span class="math inline">\(G\)</span> if and only if <span class="math inline">\(u\)</span> has a memory block <span class="math inline">\(B\)</span> in its writing list and <span class="math inline">\(v\)</span> has <span class="math inline">\(B\)</span> in either its writing list or reading list.</p></li>
+<li><p>Vertices <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span> are adjacent in <span class="math inline">\(G\)</span> if and only if <span class="math inline">\(u\)</span> has a memory location <span class="math inline">\(L\)</span> in its writing list and <span class="math inline">\(v\)</span> has <span class="math inline">\(L\)</span> in either its writing list or reading list.</p></li>
 </ul>
 <p>If we consider a proper vertex coloring of <span class="math inline">\(G\)</span>, every color class will give us an independent set of transactions which can be validated concurrently. To achieve the highest parallelization, we need to color <span class="math inline">\(G\)</span> with minimum number of colors. Thus, the <em>chromatic number</em> of the memory dependency graph shows how good a transaction set could be run concurrently.</p>
 <p>Graph coloring is computationally NP-hard. However, in our use case we don’t need to necessarily find an optimal solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is the one who is responsible for solving the graph coloring problem and a proposed block must determine the independent sets of transactions which can be run in parallel safely. Since with better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good graph coloring.</p>
+<h3 id="subsec:concurrent-counters">Concurrent Counters</h3>
+<p>We know that in Algorand every transaction needs to transfer its proposed fee to the <code>feeSink</code> account first. This will essentially make every transaction a reader and a writer of the balance record of the <code>feeSink</code> account. As a result, all transactions will be dependant and parallelism will be completely impossible. Actually, any account that is highly active, for example the account of an exchange or a payment processor, can become a concurrency bottleneck in our system which makes many transactions dependant.</p>
+<p>This problem can be easily solved by using a concurrent counter (CC) for storing the balance of these kind of accounts. A concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a single counter. The value of the concurrent current is equal to the sum of the sub counters and it can be incremented or decremented by incrementing/decrementing any of the sub counters. This way a concurrent counter trades concurrency with memory usage.</p>
+<p>A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter becomes negative, follows:</p>
+<pre><code>INCREMENT(CC, value, seed)
+    i = seed MOD CC.size
+    ATOMIC_INCREMENT(CC.cell[i], value)
+
+DECREMENT(CC, value, seed, attempt)
+    IF attempt = CC.size THEN
+        restore CC by adding back the subtracted value to CC
+        RETURN ERROR
+    i = seed MOD CC.size
+    i = (i + attempt) MOD CC.size
+    IF CC.cell[i] &gt;= value THEN
+        ATOMIC_DECREMENT(CC.cell[i], value)
+    ELSE
+        ATOMIC_SET(CC.cell[i], 0)
+        DECREMENT(CC, value - CC.cell[i], seed, attempt + 1)</code></pre>
+<p>Concurrent counter data structure is a part of the AVM standard library, and any smart contract can use this data structure for storing the balance of highly active accounts.</p>
+<h3 id="subsec:memory-chunks">Memory Chunks</h3>
+<p>In order to further increase the concurrency level of Algorand, we can divide the AVM memory into <em>chunks</em>. Each memory chunk can be persisted using a different ZK-EDB, hence having a different commitment. Then, the consensus on new values of different commitments can be done by different voting committees.</p>
+<p>Any transaction needs to be validated only by voting committee of the memory chunk that it modifies. So, if we choose chunks in a way that most transactions only modify memory locations of one chunk, the transactions of a block can be divided between voting committees and be validated in parallel.</p>
+<p><em>If a transaction modifies multiple chunks it will be validated by voting committees of all chunks it modifies.</em></p>
+<p>Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure that having multiple voting committees will not change the security properties of our agreement protocol.</p>
 <h2 id="sec:consensus">Consensus</h2>
 <h3 id="subsec:estimating-a-user&#39;s-stake">Estimating A User’s Stake</h3>
 <p>In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount of stake the user has in the system. Conventionally in these systems, for estimating a user’s stake, we use the amount of native system tokens the user is holding. Unfortunately, one problem with this approach is that a strong attacker may be able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this stake to attack the system.</p>
@@ -245,6 +273,6 @@
 <p>Hence, if we want to increase the total stake of the system from <span class="math inline">\(\gamma \sum_{u}B_u\)</span> to <span class="math inline">\(\lambda \sum_{u}B_u\)</span>, we can obtain <span class="math inline">\(m\)</span> from the following formula, assuming <span class="math inline">\(\alpha\)</span> is small enough:</p>
 <p><span class="math display">\[m = \frac{1}{\alpha} \ln \left(\frac{1 - \gamma}{1 - \lambda}\right)\]</span></p>
 <h2 id="sec:smart-contract-oracle">Smart Contract Oracle</h2>
-<p>A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM execution without accessing a ZK-EDB. Smart contract oracles can be used for reporting useful information about <code>avmCall</code> transactions such as accessed AVM heap pages or code area blocks, exact amount of execution cost, and soon.</p>
+<p>A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM execution without accessing a ZK-EDB. Smart contract oracles can be used for reporting useful information about <code>avmCall</code> transactions such as accessed AVM heap or code area locations, exact amount of execution cost, and so on.</p>
 </body>
 </html>

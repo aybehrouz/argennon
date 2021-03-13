@@ -36,7 +36,7 @@ memory locations outside its current working segment can not be accessed. The on
 current working segment are `invoke_external`, `athrow` and return instructions.
 
 Every smart contract has its own memory segment. Hence, there is no way for a smart contract to access another smart
-contract’s memory. Interaction between smart contracts is done using `invoke_external` instruction, and A smart contract
+contract’s memory. Interaction between smart contracts is done using `invoke_external` instruction, and a smart contract
 can invoke methods of another smart contract by this instruction.
 
 A memory segment consists of five data areas:
@@ -72,7 +72,7 @@ of a method can be either `public` or `private`. The AVM has no instructions for
 #### Local Frame
 
 A local frame is used to store methods parameters and local variables. A new frame is created each time a method is
-invoked. A frame is destroyed when its method invocation completes, whether the completion is normal or abrupt.
+invoked, and it is destroyed when its method invocation completes, whether the completion is normal or abrupt.
 
 #### Operand Stack
 
@@ -82,10 +82,10 @@ operand stack is destroyed when its owner method completes, whether that complet
 
 #### Heap
 
-The heap of a segment is a persistent memory area which is divided into pages. Each page can be referenced by an index
-that starts from 0. Memory locations inside every page have a separate address space that starts from 0. In other words,
-the address of every memory location inside a heap is a pair of indices: `(pageIndex, offset) `. Pages of a heap do not
-need to be equally sized.
+The heap of a segment is a persistent memory area which is divided into pages. Memory locations inside every page have a
+separate address space that starts from 0, and each page can be referenced by an index that starts from 0. In other
+words, the address of every memory location inside a heap is a pair of indices: `(pageIndex, offset)`. Different pages
+of a heap do not need to be equally sized.
 
 *The reason behind this paged design is that the heap is usually persisted using a block device. A heap with a paged
 structure could expose the underlying block based nature of the persistence layer to the application layer. In this way,
@@ -108,7 +108,7 @@ The Algorand Virtual Machine has three types of method invocation:
     to the segment of the invoked smart contract.
 
 -   `invoke_native` invokes a method that is not hosted by the Algorand virtual machine. By this instruction, high
-    performance native methods of a hosting machine could become available to AVM smart contracts.
+    performance native methods of the hosting machine could become available to AVM smart contracts.
 
 *In the future, we may need to add special instructions for invoking interface and virtual methods...*
 
@@ -143,25 +143,31 @@ the method invocation instruction. If the invoker was another smart contract, i.
 A thrown exception causes methods in the call stack to complete **abruptly** one by one, as long as the `PC` register is
 not pointing to a `catch` instruction. The `catch` instruction acts like a branch instruction that branches only if an
 exception is caught. **When an external method invocation completes abruptly, before changing the current segment, all
-changes made to the heap area will be rolled back.**
+changes made to the heap area by that method call, including changes made to other segments, will be rolled back.** So,
+when a method call completes abruptly, that method call essentially has no effect on the AVM state.
 
 *By using the `athrow` instruction properly, a programmer can make any method act like an atomic operation.*
 
-#### Authorizing Operations
+### Authorizing Operations
 
 In blockchain applications, we usually need to authorize certain operations. For example, for sending an asset from a
 user to another user, first we need to make sure that the sender has authorized this operation. The Algorand virtual
 machine has no built in mechanism for authorizing operations, but it provides a rich set of cryptographic instructions
 for validating signatures and cryptographic entities. By using these instructions and passing signatures as parameters
-to methods a programmer can implement the required logic for authorizing any operation.
+to methods, a programmer can implement the required logic for authorizing any operation.
 
 *The Algorand virtual machine has no instructions for issuing cryptographic signatures.*
 
 In addition to signatures, a method can verify its invoker by using `get_parent` instruction. This instruction gets the
 `applicationID` of the smart contract that is one level deeper than the current smart contract in the call stack. In
-other words, it gives the smart contract that has invoked the current smart contract. (if any)
+other words, it returns the `applicationID` of the smart contract that has invoked the current smart contract. (if any)
 
-#### Heap Allocation Instructions
+### Heap Allocation Instructions
+
+...
+
+The AVM Standard Library
+------------------------
 
 ...
 
@@ -178,7 +184,7 @@ elementary database (ZK-EDB) with the following properties:
 
 -   Every state of the database has a commitment *C*.
 
--   The ZK-EDB has a method (*D*, *p*) = *get*(*x*), where *x* is a key and *D* is the associated value with *x* and
+-   The ZK-EDB has a method (*D*, *p*) = *get*(*x*), where *x* is a key and *D* is the associated data with *x*, and
     *p* is a proof.
 
 -   A user can use *C* and *p* to verify that *D* is really associated with *x*, and *D* is not altered. Consequently, a
@@ -199,7 +205,7 @@ We also use a ZK-EDB for storing the code area of each segment, and we include t
 Every code area will be divided into blocks and every block will be stored in the DB with `applicationID|blockID` as its
 key. Like heap pages, nodes keep a cache of code area blocks.
 
-*Unlike heap pages, the AVM is not aware of different blocks of the code area.*
+*Unlike heap pages, the AVM is not aware of different blocks of code area.*
 
 Transactions
 ------------
@@ -211,7 +217,7 @@ Algorand has four types of transaction:
     these transactions.
 
 -   `installApp` installs an AVM smart contract and determines the update policy of the smart contract: if the contract
-    is updatable or not, the accounts that can update or uninstall the contract, and so on.
+    is updatable or not, which accounts can update or uninstall the contract, and so on.
 
 -   `unInstallApp` removes an AVM smart contract.
 
@@ -220,10 +226,10 @@ Algorand has four types of transaction:
 All types of Algorand transactions contain an `invoke_external` instruction which calls a special method from ALGO smart
 contract that transfers the proposed fee of the transaction in ALGOs from a sender account to the fee sink accounts.
 
-Every transaction is required to exactly specify what heap pages or code area blocks it will access. This enables
+Every transaction is required to exactly specify what heap locations or code area addresses it will access. This enables
 validators to start retrieving the required memory blocks from available ZK-EDB servers as soon as they see a
 transaction, and they won’t need to wait for receiving the new proposed block. A transaction that tries to access a
-memory block that is not included in its access lists, will be rejected. Users could use smart contract oracles to
+memory location that is not included in its access lists, will be rejected. Users could use smart contract oracles to
 predict the list of memory blocks their transactions need. See
 Section <a href="#sec:smart-contract-oracle" data-reference-type="ref" data-reference="sec:smart-contract-oracle">2.7</a>
 for more details.
@@ -329,9 +335,9 @@ needs:
 
 -   Execution cost
 
--   A list of heap/code-area pages for reading
+-   A list of heap/code-area locations for reading
 
--   A list of heap pages for writing
+-   A list of heap locations for writing
 
 -   A list of heap pages it will deallocate
 
@@ -348,32 +354,32 @@ final emulation.*
 
 The incentive mechanism for ZK-EDB servers should have the following properties:
 
--   It incentivizes storing all memory blocks, whether a heap page or a code area block, and not only those that are
+-   It incentivizes storing all memory blocks, whether a heap page or a code area block, and not only those which are
     used more frequently.
 
--   It incentivizes the ZK-EDB servers to actively provide the required memory blocks for validators.
+-   It incentivizes ZK-EDB servers to actively provide the required memory blocks for validators.
 
 -   Making more accounts will not provide any advantages for a ZK-EDB server.
 
 For our incentive mechanism, we require that every time a validator receives a memory block from a ZK-EDB, after
 validating the data, he give a receipt to the ZK-EDB. In this receipt the validator signs the following information:
 
--   `ownerAddr` the ALGO address of the ZK-EDB.
+-   `ownerAddr`: the ALGO address of the ZK-EDB.
 
--   `receivedBlockID` the ID of the received memory block.
+-   `receivedBlockID`: the ID of the received memory block.
 
--   `round` the current round number.
+-   `round`: the current round number.
 
 *In a round, an honest validator never gives a receipt for an identical memory block to two different ZK-EDBs.*
 
-To incentivize ZK-EDB servers, every round a lottery will be held and a predefined amount of ALGOs from `dbFeeSink`
-account will be distributed between winners as a prize. This prize will be divided equally between all the *winning
-tickets* of the lottery.
+To incentivize ZK-EDB servers, a lottery will be held every round and a predefined amount of ALGOs from `dbFeeSink`
+account will be distributed between winners as a prize. This prize will be divided equally between all *winning tickets*
+of the lottery.
 
 *One ZK-EDB server could own multiple winning tickets in a round.*
 
-To run this lottery, In every round, based on the current block seed, a collection of *valid* receipts will be selected
-randomly as the *winning* receipts. A receipt is *valid* in the round *r* if:
+To run this lottery, every round, based on the current block seed, a collection of *valid* receipts will be selected
+randomly as the *winning receipts* of the round. A receipt is *valid* in the round *r* if:
 
 -   The signer was a validator in the round *r* − 1 and voted for the agreed-upon block.
 
@@ -385,8 +391,8 @@ randomly as the *winning* receipts. A receipt is *valid* in the round *r* if:
 
 For selecting the winning receipts we could use a random generator:
 
-            if random(seed|validatorPK|receivedBlockID) < winProbability
-                the receipt issued by validatorPK for receivedBlockID is a winner
+    IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
+        the receipt issued by validatorPK for receivedBlockID is a winner
 
 -   `random()` produces uniform random numbers between 0 and 1, using its input argument as a seed.
 
@@ -418,23 +424,25 @@ round.** Every winning ticket will get an equal share of the lottery prize.
 
 ### Memory Allocation and De-allocation
 
-Every k round the protocol chooses a price per byte for the AVM memory. When a smart contract executes a heap allocation
+Every *k* round the protocol chooses a price per byte for AVM memory. When a smart contract executes a heap allocation
 instruction, the protocol will automatically deduce the cost of the allocated memory from the ALGO address of the smart
 contract.
 
-To determine the price of AVM memory, Every k round, the protocol calculates `dbFee` and `memTraffic` values. `dbFee` is
-the aggregate amount of collected database fees and `memTraffic` is the total memory traffic of the system. For
-calculating the memory traffic of the system the protocol considers the total size of all memory pages that were
-accessed for either reading or writing during some time. These two values will be calculated for the last k rounds and
-the price per byte of the AVM memory will be a linear function of `dbFee/memTraffic`
+To determine the price of AVM memory, Every *k* round, the protocol calculates `dbFee` and `memTraffic` values. `dbFee`
+is the aggregate amount of collected database fees, and `memTraffic` is the total memory traffic of the system. For
+calculating the memory traffic of the system the protocol considers the total size of all the memory pages that were
+accessed for either reading or writing during a time period. These two values will be calculated for the last *k* rounds
+and the price per byte of AVM memory will be a linear function of `dbFee/memTraffic`
 
 When a smart contract executes a heap de-allocation instruction, the protocol will refund the cost of de-allocated
 memory to the smart contract. Here, the current price of AVM memory does not matter and the protocol calculates the
-refunded amount based on the average price the smart had paid for that allocated memory. This will prevent smart
-contracts from profit taking by trading memory with the protocol.
+refunded amount based on the average price the smart contract had paid for that allocated memory. This will prevent
+smart contracts from profit taking by trading memory with the protocol.
 
 Concurrency
 -----------
+
+### Memory Dependency Graph
 
 Every block of the Algorand blockchain contains a list of transactions. This list is an ordered list and the effect of
 its contained transactions must be applied to the AVM state sequentially as they appear in the ordered list. The
@@ -447,15 +455,15 @@ Many transactions are actually independent and the order of their execution does
 safely validated in parallel by validators.
 
 A transaction can change the AVM state by modifying either the code area or the AVM heap. In Algorand, all transactions
-declare the list of memory blocks they want to read or write. This will enable us to determine the independent sets of
-transactions which can be validated in parallel. To do so, we define the *memory dependency graph* as follows:
+declare the list of memory locations they want to read or write. This will enable us to determine the independent sets
+of transactions which can be validated in parallel. To do so, we define the *memory dependency graph* as follows:
 
 -   *G* is an undirected graph.
 
 -   Every vertex in *G* corresponds to a transaction.
 
--   Vertices *u* and *v* are adjacent in *G* if and only if *u* has a memory block *B* in its writing list and *v* has
-    *B* in either its writing list or reading list.
+-   Vertices *u* and *v* are adjacent in *G* if and only if *u* has a memory location *L* in its writing list and *v*
+    has *L* in either its writing list or reading list.
 
 If we consider a proper vertex coloring of *G*, every color class will give us an independent set of transactions which
 can be validated concurrently. To achieve the highest parallelization, we need to color *G* with minimum number of
@@ -467,6 +475,57 @@ solution. An approximate greedy algorithm will perform well enough in most circu
 who is responsible for solving the graph coloring problem and a proposed block must determine the independent sets of
 transactions which can be run in parallel safely. Since with better parallelization a block can contain more
 transactions, a proposer is incentivized enough to find a good graph coloring.
+
+### Concurrent Counters
+
+We know that in Algorand every transaction needs to transfer its proposed fee to the `feeSink` account first. This will
+essentially make every transaction a reader and a writer of the balance record of the `feeSink` account. As a result,
+all transactions will be dependant and parallelism will be completely impossible. Actually, any account that is highly
+active, for example the account of an exchange or a payment processor, can become a concurrency bottleneck in our system
+which makes many transactions dependant.
+
+This problem can be easily solved by using a concurrent counter (CC) for storing the balance of these kind of accounts.
+A concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a
+single counter. The value of the concurrent current is equal to the sum of the sub counters and it can be incremented or
+decremented by incrementing/decrementing any of the sub counters. This way a concurrent counter trades concurrency with
+memory usage.
+
+A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter becomes
+negative, follows:
+
+    INCREMENT(CC, value, seed)
+        i = seed MOD CC.size
+        ATOMIC_INCREMENT(CC.cell[i], value)
+
+    DECREMENT(CC, value, seed, attempt)
+        IF attempt = CC.size THEN
+            restore CC by adding back the subtracted value to CC
+            RETURN ERROR
+        i = seed MOD CC.size
+        i = (i + attempt) MOD CC.size
+        IF CC.cell[i] >= value THEN
+            ATOMIC_DECREMENT(CC.cell[i], value)
+        ELSE
+            ATOMIC_SET(CC.cell[i], 0)
+            DECREMENT(CC, value - CC.cell[i], seed, attempt + 1)
+
+Concurrent counter data structure is a part of the AVM standard library, and any smart contract can use this data
+structure for storing the balance of highly active accounts.
+
+### Memory Chunks
+
+In order to further increase the concurrency level of Algorand, we can divide the AVM memory into *chunks*. Each memory
+chunk can be persisted using a different ZK-EDB, hence having a different commitment. Then, the consensus on new values
+of different commitments can be done by different voting committees.
+
+Any transaction needs to be validated only by voting committee of the memory chunk that it modifies. So, if we choose
+chunks in a way that most transactions only modify memory locations of one chunk, the transactions of a block can be
+divided between voting committees and be validated in parallel.
+
+*If a transaction modifies multiple chunks it will be validated by voting committees of all chunks it modifies.*
+
+Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure that
+having multiple voting committees will not change the security properties of our agreement protocol.
 
 Consensus
 ---------
@@ -573,4 +632,4 @@ Smart Contract Oracle
 
 A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM execution
 without accessing a ZK-EDB. Smart contract oracles can be used for reporting useful information about `avmCall`
-transactions such as accessed AVM heap pages or code area blocks, exact amount of execution cost, and soon.
+transactions such as accessed AVM heap or code area locations, exact amount of execution cost, and so on.
