@@ -4,20 +4,20 @@ Specification
 Introduction
 ------------
 
-The Algorand Virtual Machine (AVM) is an abstract computing machine for executing Algorand’s smart contracts. It is
+The Argennon Virtual Machine (AVM) is an abstract computing machine for executing Argennon’s smart contracts. It is
 designed in a way that it could be efficiently implemented in either hardware or software.
 
-The Structure of the Algorand Virtual Machine
+The Structure of the Argennon Virtual Machine
 ---------------------------------------------
 
 ...
 
 ### Data Types
 
-The Algorand Virtual Machine expects that all type checking is done prior to run time, typically by a compiler, and does
-not have to be done by the Algorand Virtual Machine itself.
+The Argennon Virtual Machine expects that all type checking is done prior to run time, typically by a compiler, and does
+not have to be done by the Argennon Virtual Machine itself.
 
-The instruction set of the Algorand Virtual Machine distinguishes its operand types using instructions intended to
+The instruction set of the Argennon Virtual Machine distinguishes its operand types using instructions intended to
 operate on values of specific types. For instance, `iadd` assumes that its operands are two 64-bit integers.
 
 ### The `PC` Register
@@ -30,7 +30,7 @@ A call stack contains the information that is needed for restoring the state of 
 
 ### Memory Unit
 
-The Algorand Virtual Machine has a byte addressable memory which is divided into separate segments. Every segment
+The Argennon Virtual Machine has a byte addressable memory which is divided into separate segments. Every segment
 belongs to a smart contract that has a unique `applicationID`. The AVM always has a single working memory segment and
 memory locations outside its current working segment can not be accessed. The only instructions which can change the
 current working segment are `invoke_external`, `athrow` and return instructions.
@@ -94,25 +94,25 @@ the compiler or the programmer could better optimize the code for the persistenc
 Instruction Set Summary
 -----------------------
 
-An Algorand Virtual Machine instruction consists of a **one-byte** opcode specifying the operation to be performed,
+An Argennon Virtual Machine instruction consists of a **one-byte** opcode specifying the operation to be performed,
 followed by zero or more operands supplying arguments or data that are used by the operation. **The number and size of
 the operands are determined solely by the opcode.**
 
 ### Method Invocation
 
-The Algorand Virtual Machine has three types of method invocation:
+The Argennon Virtual Machine has three types of method invocation:
 
 -   `invoke_internal` invokes a method from the current running smart contract.
 
 -   `invoke_external` invokes a `public` method from another smart contract. It will change the current memory segment
     to the segment of the invoked smart contract.
 
--   `invoke_native` invokes a method that is not hosted by the Algorand virtual machine. By this instruction, high
+-   `invoke_native` invokes a method that is not hosted by the Argennon virtual machine. By this instruction, high
     performance native methods of the hosting machine could become available to AVM smart contracts.
 
 *In the future, we may need to add special instructions for invoking interface and virtual methods...*
 
-Each time a method is invoked a new local frame and operand stack is created. The Algorand Virtual Machine uses local
+Each time a method is invoked a new local frame and operand stack is created. The Argennon Virtual Machine uses local
 frames to pass parameters on method invocation. On method invocation, any parameters are passed in consecutive local
 variables stored in the method’s local frame starting from local variable 0. The invoker of a method writes the
 parameters in the local frame of the invoked method using `arg` instructions.
@@ -120,7 +120,7 @@ parameters in the local frame of the invoked method using `arg` instructions.
 #### Exceptions
 
 An exception is thrown programmatically using the `athrow` instruction. Exceptions can also be thrown by various
-Algorand Virtual Machine instructions if they detect an abnormal condition. Some exceptions are not catchable and will
+Argennon Virtual Machine instructions if they detect an abnormal condition. Some exceptions are not catchable and will
 always abort the execution of the smart contract.
 
 #### Method Invocation Completion
@@ -151,12 +151,12 @@ when a method call completes abruptly, that method call essentially has no effec
 ### Authorizing Operations
 
 In blockchain applications, we usually need to authorize certain operations. For example, for sending an asset from a
-user to another user, first we need to make sure that the sender has authorized this operation. The Algorand virtual
+user to another user, first we need to make sure that the sender has authorized this operation. The Argennon virtual
 machine has no built in mechanism for authorizing operations, but it provides a rich set of cryptographic instructions
 for validating signatures and cryptographic entities. By using these instructions and passing signatures as parameters
 to methods, a programmer can implement the required logic for authorizing any operation.
 
-*The Algorand virtual machine has no instructions for issuing cryptographic signatures.*
+*The Argennon virtual machine has no instructions for issuing cryptographic signatures.*
 
 In addition to signatures, a method can verify its invoker by using `get_parent` instruction. This instruction gets the
 `applicationID` of the smart contract that is one level deeper than the current smart contract in the call stack. In
@@ -194,7 +194,7 @@ elementary database (ZK-EDB) with the following properties:
     instead of *D*.
 
 We use a ZK-EDB for storing the AVM heap. We include the commitment of the current state of this DB in every block of
-the Algorand blockchain, so ZK-EDB servers need not be trusted servers.
+the Argennon blockchain, so ZK-EDB servers need not be trusted servers.
 
 Every page of AVM heap will be stored with a key of the form: `applicationID|pageIndex` (the `|` operator concatenates
 two numbers). Nodes do not keep a full copy of the AVM heap and for validating block certificates or emulating the AVM (
@@ -210,10 +210,10 @@ key. Like heap pages, nodes keep a cache of code area blocks.
 Transactions
 ------------
 
-Algorand has four types of transaction:
+Argennon has four types of transaction:
 
 -   `avmCall` essentially is an `invoke_external` instruction that invokes a method from an AVM smart contract. Users
-    interact with AVM smart contracts using these transactions. Transferring all assets, including ALGOs, is done by
+    interact with AVM smart contracts using these transactions. Transferring all assets, including ARGs, is done by
     these transactions.
 
 -   `installApp` installs an AVM smart contract and determines the update policy of the smart contract: if the contract
@@ -223,8 +223,8 @@ Algorand has four types of transaction:
 
 -   `updateApp` updates an AVM smart contract.
 
-All types of Algorand transactions contain an `invoke_external` instruction which calls a special method from ALGO smart
-contract that transfers the proposed fee of the transaction in ALGOs from a sender account to the fee sink accounts.
+All types of Argennon transactions contain an `invoke_external` instruction which calls a special method from ARG smart
+contract that transfers the proposed fee of the transaction in ARGs from a sender account to the fee sink accounts.
 
 Every transaction is required to exactly specify what heap locations or code area addresses it will access. This enables
 validators to start retrieving the required memory blocks from available ZK-EDB servers as soon as they see a
@@ -237,7 +237,7 @@ for more details.
 Blockchain
 ----------
 
-Every block of the Algorand blockchain corresponds to a set of transactions. We store the commitment of this transaction
+Every block of the Argennon blockchain corresponds to a set of transactions. We store the commitment of this transaction
 set in every block, but we don’t keep the set itself. To be able to detect replay attacks, we require every signature
 that a user creates to have a nonce. This nonce consists of the issuance round of the signature and a sequence number:
 `(issuance, sequence)`. When a user creates more than one signature in a round, he must sequence his signatures starting
@@ -252,8 +252,8 @@ difference between `issuance` component of this nonce and the current round beco
 lifetime of a signature, this information can be safely deleted. **As a result, we will not have the problem of
 "un-removable empty accounts" like Ethereum.**
 
-The only information that Algorand nodes are required to store is **the most recent block** of the Algorand blockchain.
-Every block of the Algorand blockchain contains the following information:
+The only information that Argennon nodes are required to store is **the most recent block** of the Argennon blockchain.
+Every block of the Argennon blockchain contains the following information:
 
 <table>
 <thead>
@@ -281,11 +281,11 @@ Every block of the Algorand blockchain contains the following information:
 </table>
 
 For confirming a new block, nodes that are not validators only need to verify the block certificate. For verifying a
-block certificate, a node needs to know the ALGO balances of validators, but it doesn’t need to emulate the AVM
+block certificate, a node needs to know the ARG balances of validators, but it doesn’t need to emulate the AVM
 execution.
 
 On the other hand, nodes that are chosen to be validators, for validating a new block, need to emulate the execution of
-the Algorand virtual machine. To do so, first they retrieve all heap pages and code area blocks they need from available
+the Argennon virtual machine. To do so, first they retrieve all heap pages and code area blocks they need from available
 ZK-EDBs. Then, they emulate the execution of AVM instructions and validate all the transactions included in the new
 block. This will modify some pages of the AVM memory, so they update the ZK-EDB commitments based on the modified pages
 and verify the commitments included in the new block. Validators also calculate and verify the commitment to the new
@@ -299,9 +299,9 @@ Incentive mechanism
 
 ### Transaction Fee
 
-Every transaction in the Algorand blockchain starts with an `invoke_external` instruction which calls a special method
-from ALGO smart contract. This method will transfer the proposed fee of the transaction in ALGOs from a sender account
-to the fee sink accounts. Algorand has two fee sink accounts: `execFeeSink` collects execution fees and `dbFeeSink`
+Every transaction in the Argennon blockchain starts with an `invoke_external` instruction which calls a special method
+from ARG smart contract. This method will transfer the proposed fee of the transaction in ARGs from a sender account to
+the fee sink accounts. Argennon has two fee sink accounts: `execFeeSink` collects execution fees and `dbFeeSink`
 collects fees for ZK-EDBs. The Protocol decides how to distribute the transaction fee between these two fee sink
 accounts.
 
@@ -364,7 +364,7 @@ The incentive mechanism for ZK-EDB servers should have the following properties:
 For our incentive mechanism, we require that every time a validator receives a memory block from a ZK-EDB, after
 validating the data, he give a receipt to the ZK-EDB. In this receipt the validator signs the following information:
 
--   `ownerAddr`: the ALGO address of the ZK-EDB.
+-   `ownerAddr`: the ARG address of the ZK-EDB.
 
 -   `receivedBlockID`: the ID of the received memory block.
 
@@ -372,7 +372,7 @@ validating the data, he give a receipt to the ZK-EDB. In this receipt the valida
 
 *In a round, an honest validator never gives a receipt for an identical memory block to two different ZK-EDBs.*
 
-To incentivize ZK-EDB servers, a lottery will be held every round and a predefined amount of ALGOs from `dbFeeSink`
+To incentivize ZK-EDB servers, a lottery will be held every round and a predefined amount of ARGs from `dbFeeSink`
 account will be distributed between winners as a prize. This prize will be divided equally between all *winning tickets*
 of the lottery.
 
@@ -415,7 +415,7 @@ challenge requires the content of the memory block which was selected as the rou
 ZK-EDBs to store all memory blocks.
 
 A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge memory
-block combined with the ZK-EDB ALGO address: `hash(challenge.content|ownerAddr)`
+block combined with the ZK-EDB ARG address: `hash(challenge.content|ownerAddr)`
 
 The winning tickets of the lottery of the round *r* need to be included in the block of the round *r*, otherwise they
 will be considered expired. Validation and prize distribution for the winning tickets of the round *r* will be done in
@@ -425,7 +425,7 @@ round.** Every winning ticket will get an equal share of the lottery prize.
 ### Memory Allocation and De-allocation
 
 Every *k* round the protocol chooses a price per byte for AVM memory. When a smart contract executes a heap allocation
-instruction, the protocol will automatically deduce the cost of the allocated memory from the ALGO address of the smart
+instruction, the protocol will automatically deduce the cost of the allocated memory from the ARG address of the smart
 contract.
 
 To determine the price of AVM memory, Every *k* round, the protocol calculates `dbFee` and `memTraffic` values. `dbFee`
@@ -444,7 +444,7 @@ Concurrency
 
 ### Memory Dependency Graph
 
-Every block of the Algorand blockchain contains a list of transactions. This list is an ordered list and the effect of
+Every block of the Argennon blockchain contains a list of transactions. This list is an ordered list and the effect of
 its contained transactions must be applied to the AVM state sequentially as they appear in the ordered list. The
 ordering of transactions in a block is solely chosen by the block proposer.
 
@@ -454,7 +454,7 @@ The fact that block transactions constitute a sequential list, does not mean the
 Many transactions are actually independent and the order of their execution does not matter. These transactions can be
 safely validated in parallel by validators.
 
-A transaction can change the AVM state by modifying either the code area or the AVM heap. In Algorand, all transactions
+A transaction can change the AVM state by modifying either the code area or the AVM heap. In Argennon, all transactions
 declare the list of memory locations they want to read or write. This will enable us to determine the independent sets
 of transactions which can be validated in parallel. To do so, we define the *memory dependency graph* as follows:
 
@@ -478,16 +478,16 @@ transactions, a proposer is incentivized enough to find a good graph coloring.
 
 ### Concurrent Counters
 
-We know that in Algorand every transaction needs to transfer its proposed fee to the `feeSink` account first. This will
-essentially make every transaction a reader and a writer of the balance record of the `feeSink` account. As a result,
-all transactions will be dependant and parallelism will be completely impossible. Actually, any account that is highly
-active, for example the account of an exchange or a payment processor, can become a concurrency bottleneck in our system
-which makes many transactions dependant.
+We know that in Argennon every transaction needs to transfer its proposed fee to the `feeSink` account first. This
+essentially makes every transaction a reader and a writer of the memory location which stores the balance record of the
+`feeSink` account. As a result, all transactions in Argennon will be dependant and parallelism will be completely
+impossible. Actually, any account that is highly active, for example the account of an exchange or a payment processor,
+could become a concurrency bottleneck, making all transactions that interact with them dependant.
 
 This problem can be easily solved by using a concurrent counter (CC) for storing the balance of these kind of accounts.
 A concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a
-single counter. The value of the concurrent current is equal to the sum of the sub counters and it can be incremented or
-decremented by incrementing/decrementing any of the sub counters. This way a concurrent counter trades concurrency with
+single counter. The value of the concurrent counter is equal to the sum of its sub counters and it can be incremented or
+decremented by incrementing/decrementing any of the sub counters. This way, a concurrent counter trades concurrency with
 memory usage.
 
 A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter becomes
@@ -506,15 +506,20 @@ negative, follows:
         IF CC.cell[i] >= value THEN
             ATOMIC_DECREMENT(CC.cell[i], value)
         ELSE
+            remaining = value - CC.cell[i]
             ATOMIC_SET(CC.cell[i], 0)
-            DECREMENT(CC, value - CC.cell[i], seed, attempt + 1)
+            DECREMENT(CC, remaining, seed, attempt + 1)
+
+It should be noted that in a blockchain application we don’t have concurrent threads and therefore we don’t need atomic
+functions. For usage in a smart contract, the atomic functions of this pseudocode can be implemented like normal
+functions.
 
 Concurrent counter data structure is a part of the AVM standard library, and any smart contract can use this data
 structure for storing the balance of highly active accounts.
 
 ### Memory Chunks
 
-In order to further increase the concurrency level of Algorand, we can divide the AVM memory into *chunks*. Each memory
+In order to further increase the concurrency level of Argennon, we can divide the AVM memory into *chunks*. Each memory
 chunk can be persisted using a different ZK-EDB, hence having a different commitment. Then, the consensus on new values
 of different commitments can be done by different voting committees.
 
@@ -522,7 +527,7 @@ Any transaction needs to be validated only by voting committee of the memory chu
 chunks in a way that most transactions only modify memory locations of one chunk, the transactions of a block can be
 divided between voting committees and be validated in parallel.
 
-*If a transaction modifies multiple chunks it will be validated by voting committees of all chunks it modifies.*
+*If a transaction modifies multiple chunks it must be validated by the voting committees of all chunks it modifies.*
 
 Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure that
 having multiple voting committees will not change the security properties of our agreement protocol.
@@ -538,8 +543,8 @@ native system tokens the user is holding. Unfortunately, one problem with this a
 able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
 stake to attack the system.
 
-To mitigate this problem, for calculating a user’s stake at the time step *t*, instead of using the raw ALGO balance, we
-use the minimum of a *trust value* the system has calculated for the user and the user’s ALGO balance:
+To mitigate this problem, for calculating a user’s stake at the time step *t*, instead of using the raw ARG balance, we
+use the minimum of a *trust value* the system has calculated for the user and the user’s ARG balance:
 
 *S*<sub>*u*, *t*</sub> = min (*B*<sub>*u*, *t*</sub>, *Trust*<sub>*u*, *t*</sub>)
 
@@ -547,16 +552,16 @@ Where:
 
 -   *S*<sub>*u*, *t*</sub> is the stake of the user *u* at the time step *t*.
 
--   *B*<sub>*u*, *t*</sub> is the ALGO balance of the user *u* at the time step *t*.
+-   *B*<sub>*u*, *t*</sub> is the ARG balance of the user *u* at the time step *t*.
 
 -   *Trust*<sub>*u*, *t*</sub> is an estimated trust value for the user *u* at the time step *t*.
 
 The agreement protocol, at the time step *t*, will use ∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> to determine the required
 number of votes for the confirmation of a block, and we let *Trust*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t*</sub>,
-where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ALGO balance of the user *u* at the time step *t*.
+where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ARG balance of the user *u* at the time step *t*.
 
-In our system a user who held ALGOs and participated in the consensus for a long time is more trusted than a user with a
-higher balance whose balance has increased recently. An attacker who has obtained a large amount of ALGOs, also needs to
+In our system a user who held ARGs and participated in the consensus for a long time is more trusted than a user with a
+higher balance whose balance has increased recently. An attacker who has obtained a large amount of ARGs, also needs to
 hold them for a long period of time before being able to attack the system.
 
 For calculating the exponential moving average of a user’s balance at the time step *t*, we can use the following
@@ -617,7 +622,7 @@ Therefore, we have:
 ∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> = (1 − *α*)∑<sub>*u*</sub>*S*<sub>*u*, *t* − 1</sub> + *α*∑<sub>*u*</sub>*B*<sub>*u*</sub>
 
 This equation shows that when the balance of users is not changing over time the total stake of the system is the
-exponential average of the total ALGOs of the system. Consequently, when we shift the time for *m* steps, we can
+exponential average of the total ARGs of the system. Consequently, when we shift the time for *m* steps, we can
 calculate the new total stake of the system from the following equation:
 
 ∑<sub>*u*</sub>*S*<sub>*u*, *t* + *m*</sub> = (1 − *α*)<sup>*m*</sup>∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> + \[1 − (1 − *α*)<sup>*m*</sup>\]∑<sub>*u*</sub>*B*<sub>*u*</sub>
