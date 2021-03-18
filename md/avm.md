@@ -240,7 +240,7 @@ set in every block, but we don’t keep the set itself. To be able to detect rep
 that a user creates to have a nonce. This nonce consists of the issuance round of the signature and a sequence number:
 `(issuance, sequence)`. When a user creates more than one signature in a round, he must sequence his signatures starting
 from 0 (i.e. the sequence number restarts from 0 in every round). We define a maximum lifetime for signatures, so a
-signature is invalid if `currentRound - issuance > maxLifeTime` or if a signature of the same user with a bigger or
+signature is invalid if `currentRound - issuance > maxLifeTime` or if a signature of the same user with a bigger or
 equal nonce is already used (i.e. is recorded in the blockchain). A nonce is bigger than another nonce if it has an
 older issuance. If two nonces have an equal issuance, the nonce with the bigger sequence number will be considered
 bigger.
@@ -300,7 +300,7 @@ Incentive mechanism
 Every transaction in the Argennon blockchain starts with an `invoke_external` instruction which calls a special method
 from ARG smart contract. This method will transfer the proposed fee of the transaction in ARGs from a sender account to
 the fee sink accounts. Argennon has two fee sink accounts: `execFeeSink` collects execution fees and `dbFeeSink`
-collects fees for ZK-EDBs. The Protocol decides how to distribute the transaction fee between these two fee sink
+collects fees for ZK-EDB servers. The Protocol decides how to distribute the transaction fee between these two fee sink
 accounts.
 
 When a block is added to the blockchain, the proposer of that block will receive a share of the block fees.
@@ -461,29 +461,29 @@ as follows:
 -   Every vertex in *G*<sub>*d*</sub> corresponds to a transaction and vice versa.
 
 -   Vertices *u* and *v* are adjacent in *G*<sub>*d*</sub> if and only if *u* has a memory location *L* in its writing
-    list and *v* has *L* in either its writing list or reading list.
+    list and *v* has *L* in either its writing list or its reading list.
 
 If we consider a proper vertex coloring of *G*<sub>*d*</sub>, every color class will give us an independent set of
 transactions which can be executed concurrently. To achieve the highest parallelization, we need to color
-*G*<sub>*d*</sub> with minimum number of colors. The *chromatic number* of the memory dependency graph thus shows how
+*G*<sub>*d*</sub> with minimum number of colors. Thus, the *chromatic number* of the memory dependency graph shows how
 good a transaction set could be run concurrently.
 
 Graph coloring is computationally NP-hard. However, in our use case we don’t need to necessarily find an optimal
 solution. An approximate greedy algorithm will perform well enough in most circumstances.
 
-After constructing the memory dependency graph of a transaction set, we can use it to construct the *execution DAG* of
-transactions. The execution DAG of a transaction set *T* is a directed acyclic graph *G*<sub>*e*</sub> which has the
-*execution invariance* property:
+After constructing the memory dependency graph, we can use it to construct the *execution DAG* of transactions. The
+execution DAG of transaction set *T* is a directed acyclic graph
+*G*<sub>*e*</sub> = (*V*<sub>*e*</sub>, *E*<sub>*e*</sub>) which has the *execution invariance* property:
 
--   Every vertex in *G*<sub>*e*</sub> corresponds to a transaction in *T* and vice versa.
+-   Every vertex in *V*<sub>*e*</sub> corresponds to a transaction in *T* and vice versa.
 
--   Applying the transactions of *T* in any order that *respects* *G*<sub>*e*</sub> will result in the same AVM state.
+-   Executing the transactions of *T* in any order that *respects* *G*<sub>*e*</sub> will result in the same AVM state.
 
-    -   An ordering of transactions of *T* respects *G*<sub>*e*</sub> if for every directed edge (*u*, *v*) in
-        *G*<sub>*e*</sub> the transaction *u* comes before the transaction *v* in the ordering.
+    -   An ordering of transactions of *T* respects *G*<sub>*e*</sub> if for every directed edge
+        (*u*, *v*) ∈ *E*<sub>*e*</sub> the transaction *u* comes before the transaction *v* in the ordering.
 
 Having the execution DAG of a set of transactions, using Algorithm , we can apply the transaction set to the AVM state
-concurrently, using multiple processor, while we can make sure that the resulted AVM state will always be the same no
+concurrently, using multiple processor, while we can be sure that the resulted AVM state will always be the same no
 matter how many processor we have used.
 
 <img src="../img/Alg1s.png" alt="image" style="width:17cm" />
@@ -498,10 +498,10 @@ that it results in the minimum overall execution time.
 
 <img src="../img/Alg2s.png" alt="image" style="width:17cm" />
 
-The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block which will
-determine the ordering of block transactions and help validators to validate transactions in parallel. Since with better
-parallelization a block can contain more transactions, a proposer is incentivized enough to find a good execution DAG
-for transactions.
+The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block. This execution
+DAG will determine the ordering of block transactions and help validators to validate transactions in parallel. Since
+with better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good
+execution DAG for transactions.
 
 ### Concurrent Counters
 
@@ -509,16 +509,15 @@ We know that in Argennon every transaction needs to transfer its proposed fee to
 essentially makes every transaction a reader and a writer of the memory locations which store the balance record of the
 `feeSink` accounts. As a result, all transactions in Argennon will be dependant and parallelism will be completely
 impossible. Actually, any account that is highly active, for example the account of an exchange or a payment processor,
-could become a concurrency bottleneck of the system, making all transactions which interact with them dependant.
+could become a concurrency bottleneck in our system which makes all transactions interacting with them dependant.
 
-This problem can be easily solved by using a concurrent counter (CC) for storing the balance of this type of accounts. A
-concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a
+This problem can be easily solved by using a concurrent counter for storing the balance record of this type of accounts.
+A concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a
 single counter. The value of the concurrent counter is equal to the sum of its sub counters and it can be incremented or
 decremented by incrementing/decrementing any of the sub counters. This way, a concurrent counter trades concurrency with
 memory usage.
 
-A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter becomes
-negative, follows:
+Algorithm  implements a concurrent counter which returns an error when the value of the counter becomes negative.
 
 <img src="../img/Alg3s.png" alt="image" style="width:17cm" />
 
@@ -527,23 +526,23 @@ functions. For usage in a smart contract, the atomic functions of this pseudocod
 functions.
 
 Concurrent counter data structure is a part of the AVM standard library, and any smart contract can use this data
-structure for storing the balance of highly active accounts.
+structure for storing the balance record of highly active accounts.
 
 ### Memory Chunks
 
 In order to further increase the concurrency level of Argennon, we can divide the AVM memory into *chunks*. Each memory
 chunk can be persisted using a different ZK-EDB, hence having its own commitment. Then, the consensus on new values of
-the commitment of any chunk can be achieved by different voting committees.
+the commitment of any chunk can be achieved by a different voting committee.
 
 If a transaction does not modify a memory chunk and in the transaction ordering of the block it comes after any
 transaction which modifies that chunk, then the execution of that transaction is not needed for calculating the new
-commitment of the chunk. Consequently, the voting committee of the memory chunk can safely ignore such a transaction.
+commitment of the chunk. Consequently, the voting committee of that memory chunk can safely ignore such a transaction.
 The execution DAG of transactions can be used for finding and pruning these transactions as we see in Algorithm .
 
 <img src="../img/Alg4s.png" alt="image" style="width:17cm" />
 
-If we choose chunks in a way that most transactions only modify memory locations of one chunk, likely the transactions
-of a block are divided between voting committees and are validated in parallel.
+If we choose chunks in a way that most transactions only modify memory locations of one chunk, likely many transactions
+of a block only need to be validated by one voting committee and can be validated in parallel by different committees.
 
 Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure that
 having multiple voting committees will not change the security properties of the Argennon agreement protocol.
@@ -561,29 +560,29 @@ native system tokens the user is holding. Unfortunately, one problem with this a
 able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
 stake to attack the system.
 
-To mitigate this problem, for calculating a user’s stake at the time step *t*, instead of using the raw ARG balance, we
-use the minimum of a *trust value* the system has calculated for the user and the user’s ARG balance:
+To mitigate this problem, for calculating a user’s stake at time step *t*, instead of using the raw ARG balance, we use
+the minimum of a *trust value* the system has calculated for the user and the user’s ARG balance:
 
 *S*<sub>*u*, *t*</sub> = min (*B*<sub>*u*, *t*</sub>, *Trust*<sub>*u*, *t*</sub>)
 
 Where:
 
--   *S*<sub>*u*, *t*</sub> is the stake of the user *u* at the time step *t*.
+-   *S*<sub>*u*, *t*</sub> is the stake of user *u* at time step *t*.
 
--   *B*<sub>*u*, *t*</sub> is the ARG balance of the user *u* at the time step *t*.
+-   *B*<sub>*u*, *t*</sub> is the ARG balance of user *u* at time step *t*.
 
--   *Trust*<sub>*u*, *t*</sub> is an estimated trust value for the user *u* at the time step *t*.
+-   *Trust*<sub>*u*, *t*</sub> is an estimated trust value for user *u* at time step *t*.
 
-The agreement protocol, at the time step *t*, will use ∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> to determine the required
+The agreement protocol, at time step *t*, will use ∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> to determine the required
 number of votes for the confirmation of a block, and we let *Trust*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t*</sub>,
-where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ARG balance of the user *u* at the time step *t*.
+where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ARG balance of user *u* at time step *t*.
 
 In our system a user who held ARGs and participated in the consensus for a long time is more trusted than a user with a
 higher balance whose balance has increased recently. An attacker who has obtained a large amount of ARGs, also needs to
 hold them for a long period of time before being able to attack the system.
 
-For calculating the exponential moving average of a user’s balance at the time step *t*, we can use the following
-recursive formula:
+For calculating the exponential moving average of a user’s balance at time step *t*, we can use the following recursive
+formula:
 
 *M*<sub>*u*, *t*</sub> = (1 − *α*)*M*<sub>*u*, *t* − 1</sub> + *αB*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t* − 1</sub> + *α*(*B*<sub>*u*, *t*</sub> − *M*<sub>*u*, *t* − 1</sub>)
 

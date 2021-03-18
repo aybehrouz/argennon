@@ -2,12 +2,12 @@
 %! Date = 2/28/21
 
 % Preamble
-\documentclass[11pt, A4]{report}
+\documentclass[a4paper]{report}
 
 % Packages
 %\usepackage{amsmath}
+%\usepackage[a4paper]{geometry}
 \usepackage{graphicx}
-\graphicspath{ {../img/} }
 \usepackage{hyperref}
 \usepackage{amsfonts}
 \usepackage[ruled,boxed]{algorithm2e}
@@ -28,6 +28,7 @@
 % Document
 \begin{document}
     \maketitle
+    \tableofcontents
 
 
     \chapter{Specification}\label{ch:specification}
@@ -274,8 +275,8 @@
     every signature that a user creates to have a nonce. This nonce consists of the issuance round of the signature
     and a sequence number: \texttt{(issuance,\ sequence)}. When a user creates more than one signature in a round, he
     must sequence his signatures starting from 0 (i.e.~the sequence number restarts from 0 in every round). We define
-    a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound - issuance \textgreater{}\
-        maxLifeTime} or if a signature of the same user with a bigger or equal nonce is already used
+    a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound - issuance > maxLifeTime} or
+    if a signature of the same user with a bigger or equal nonce is already used
     (i.e.~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
     nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
 
@@ -323,7 +324,7 @@
     Every transaction in the Argennon blockchain starts with an \texttt{invoke\_external} instruction which calls a
     special method from ARG smart contract. This method will transfer the proposed fee of the transaction in ARGs
     from a sender account to the fee sink accounts. Argennon has two fee sink accounts: \texttt{execFeeSink} collects
-    execution fees and \texttt{dbFeeSink} collects fees for ZK-EDBs. The Protocol decides how to distribute the
+    execution fees and \texttt{dbFeeSink} collects fees for ZK-EDB servers. The Protocol decides how to distribute the
     transaction fee between these two fee sink accounts.
 
     When a block is added to the blockchain, the proposer of that block will receive a share of the block fees.
@@ -477,40 +478,40 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
         \item \(G_d\) is an undirected graph.
         \item Every vertex in \(G_d\) corresponds to a transaction and vice versa.
         \item Vertices \(u\) and \(v\) are adjacent in \(G_d\) if and only if \(u\) has a memory location \(L\) in its
-        writing list and \(v\) has \(L\) in either its writing list or reading list.
+        writing list and \(v\) has \(L\) in either its writing list or its reading list.
     \end{itemize}
 
     If we consider a proper vertex coloring of \(G_d\), every color class will give us an independent set of
     transactions which can be executed concurrently. To achieve the highest parallelization, we need to color \(G_d\)
-    with minimum number of colors. The \emph{chromatic number} of the memory dependency graph thus shows how good a
+    with minimum number of colors. Thus, the \emph{chromatic number} of the memory dependency graph shows how good a
     transaction set could be run concurrently.
 
     Graph coloring is computationally NP-hard. However, in our use case we don't need to necessarily find an optimal
     solution. An approximate greedy algorithm will perform well enough in most circumstances.
 
-    After constructing the memory dependency graph of a transaction set, we can use it to construct the
-    \emph{execution DAG} of transactions. The execution DAG of a transaction set \(T\) is a directed acyclic
-    graph \(G_e\) which has the \emph{execution invariance} property:
+    After constructing the memory dependency graph, we can use it to construct the
+    \emph{execution DAG} of transactions. The execution DAG of transaction set \(T\) is a directed acyclic
+    graph \(G_e = (V_e,E_e)\) which has the \emph{execution invariance} property:
     \begin{itemize}
-        \item Every vertex in \(G_e\) corresponds to a transaction in \(T\) and vice versa.
-        \item Applying the transactions of \(T\) in any order that \emph{respects} \(G_e\) will result in
+        \item Every vertex in \(V_e\) corresponds to a transaction in \(T\) and vice versa.
+        \item Executing the transactions of \(T\) in any order that \emph{respects} \(G_e\) will result in
         the same AVM state.
         \begin{itemize}
-            \item An ordering of transactions of \(T\) respects \(G_e\) if for every directed edge \((u,v)\) in \(G_e\)
+            \item An ordering of transactions of \(T\) respects \(G_e\) if for every directed edge \((u,v) \in E_e\)
             the transaction \(u\) comes before the transaction \(v\) in the ordering.
         \end{itemize}
     \end{itemize}
 
     Having the execution DAG of a set of transactions, using Algorithm~\ref{alg:exec_dag}, we can apply the transaction
-    set to the AVM state concurrently, using multiple processor, while we can make sure that the resulted AVM state will
+    set to the AVM state concurrently, using multiple processor, while we can be sure that the resulted AVM state will
     always be the same no matter how many processor we have used.
 
-    %\includegraphics[width=17cm]{../img/Alg1s.png}
+    %##\includegraphics[width=17cm]{../img/Alg1s.png}
     \begin{algorithm}
         \DontPrintSemicolon
         \SetKwData{Ready}{$R_e$}\SetKwData{V}{$v_f$}\SetKwData{Graph}{$G_e$}\SetKwData{Vertices}{$V$}\SetKwData
         {Txns}{$T$}
-        \KwData{The execution dag $\Graph = (\Vertices,E)$ of a transaction set \Txns}
+        \KwData{The execution dag $\Graph = (\Vertices,E)$ of transaction set \Txns}
         \KwResult{The state of the AVM after applying \Txns with any ordering respecting \Graph}
         \BlankLine
         \Ready $\gets$ the set of all vertices of \Vertices with in degree 0\;
@@ -544,12 +545,12 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     can be shown that by providing a minimal graph coloring to Algorithm~\ref{alg:gen_dag} as input, the resulted
     DAG will be optimal, in the sense that it results in the minimum overall execution time.
 
-    %\includegraphics[width=17cm]{../img/Alg2s.png}
+    %##\includegraphics[width=17cm]{../img/Alg2s.png}
     \begin{algorithm}
         \DontPrintSemicolon
         \SetKwData{Txns}{$T$}\SetKwData{Gd}{$G_d=(V_d,E_d)$}
         \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
-        \Input{The memory dependency graph \Gd of a transaction set \Txns\\A proper coloring of $G_d$}
+        \Input{The memory dependency graph \Gd of transaction set \Txns\\A proper coloring of $G_d$}
         \Output{An execution dag $G_e=(V_e,E_e)$ for the transaction set \Txns}
         \BlankLine
         $V_e \gets V_d$\;
@@ -567,10 +568,10 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
         \caption{Constructing an execution DAG}\label{alg:gen_dag}
     \end{algorithm}
 
-    The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block which will
-    determine the ordering of block transactions and help validators to validate transactions in parallel. Since with
-    better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good
-    execution DAG for transactions.
+    The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block. This
+    execution DAG will determine the ordering of block transactions and help validators to validate transactions in
+    parallel. Since with better parallelization a block can contain more transactions, a proposer is incentivized enough
+    to find a good execution DAG for transactions.
 
     \subsection{Concurrent Counters}\label{subsec:concurrent-counters}
 
@@ -578,19 +579,19 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     first. This essentially makes every transaction a reader and a writer of the memory locations which store the
     balance record of the \texttt{feeSink} accounts. As a result, all transactions in Argennon will be dependant and
     parallelism will be completely impossible. Actually, any account that is highly active, for example the account
-    of an exchange or a payment processor, could become a concurrency bottleneck of the system, making all transactions
-    which interact with them dependant.
+    of an exchange or a payment processor, could become a concurrency bottleneck in our system which makes all
+    transactions interacting with them dependant.
 
-    This problem can be easily solved by using a concurrent counter (CC) for storing the balance of this type of
+    This problem can be easily solved by using a concurrent counter for storing the balance record of this type of
     accounts. A concurrent counter is a data structure which improves concurrency by using multiple memory locations for
     storing a single counter. The value of the concurrent counter is equal to the sum of its sub counters and it can
     be incremented or decremented by incrementing/decrementing any of the sub counters. This way, a concurrent
     counter trades concurrency with memory usage.
 
-    A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter
-    becomes negative, follows:
+    Algorithm~\ref{alg:CC} implements a concurrent counter which returns an error when the value of the counter
+    becomes negative.
 
-    %\includegraphics[width=17cm]{../img/Alg3s.png}
+    %##\includegraphics[width=17cm]{../img/Alg3s.png}
     \begin{algorithm}
         \DontPrintSemicolon
         \SetKwData{CC}{Counter}
@@ -601,7 +602,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
         \Fn{\Inc{\CC, value, seed}}
         {
             $i \gets seed \bmod \CC.size$\;
-           \AtomInc{$\CC.cell[i]$, value}\;
+            \AtomInc{$\CC.cell[i]$, value}\;
         }
         \BlankLine
         \Fn{\Dec{\CC, value, seed, attempt}}
@@ -630,28 +631,28 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     normal functions.
 
     Concurrent counter data structure is a part of the AVM standard library, and any smart contract can use this data
-    structure for storing the balance of highly active accounts.
+    structure for storing the balance record of highly active accounts.
 
     \subsection{Memory Chunks}\label{subsec:memory-chunks}
 
     In order to further increase the concurrency level of Argennon, we can divide the AVM memory into \emph{chunks}.
     Each memory chunk can be persisted using a different ZK-EDB, hence having its own commitment. Then, the
-    consensus on new values of the commitment of any chunk can be achieved by different voting committees.
+    consensus on new values of the commitment of any chunk can be achieved by a different voting committee.
 
     If a transaction does not modify a memory chunk and in the transaction ordering of the block it comes after
     any transaction which modifies that chunk, then the execution of that transaction is not needed for calculating
-    the new commitment of the chunk. Consequently, the voting committee of the memory chunk can safely ignore such a
+    the new commitment of the chunk. Consequently, the voting committee of that memory chunk can safely ignore such a
     transaction. The execution DAG of transactions can be used for finding and pruning these transactions as
     we see in Algorithm~\ref{alg:prune_dag}.
 
-    %\includegraphics[width=17cm]{../img/Alg4s.png}
+    %##\includegraphics[width=17cm]{../img/Alg4s.png}
     \begin{algorithm}
         \DontPrintSemicolon
         \SetKwData{V}{$v_0$}\SetKwData{Graph}{$G_e$}\SetKwData{Chunk}{$C_k$}\SetKwData{Txns}{$T$}
         \SetKwFunction{RPrune}{RecursivePrune}
         \SetKwProg{Fn}{Function}{}{}
         \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
-        \Input{An execution dag and a memory chunk \Chunk}
+        \Input{An execution dag \Graph and a memory chunk \Chunk}
         \Output{The pruned execution dag based on \Chunk}
         \BlankLine
         \For{each vertex \V with out degree $0$}
@@ -664,20 +665,22 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
             \If{$Adj[\V] = \varnothing$ {\bf and} \V does not modify \Chunk}
             {
                 remove \V from \Graph\;
-                \For{each $u$ such that $\V \in Adj[u]$}
+                \For{each $u$ such that edge $(u,\V)$ was in \Graph}
                 {
                     \RPrune{u}\;
                 }
             }
         }
-        \caption{Pruning the execution DAG}\label{alg:prune_dag}
+        \caption{Pruning an execution DAG}\label{alg:prune_dag}
     \end{algorithm}
 
     If we choose chunks in a way that most transactions only modify memory locations of one chunk,
-    likely the transactions of a block are divided between voting committees and are validated in parallel.
+    likely many transactions of a block only need to be validated by one voting committee and can be validated in
+    parallel by different committees.
 
     Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure
     that having multiple voting committees will not change the security properties of the Argennon agreement protocol.
+
 
     \section{Consensus}\label{sec:consensus}
 
@@ -691,7 +694,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     strong attacker may be able to obtain a considerable amount of system tokens, for example by borrowing from a
     DEFI application, and use this stake to attack the system.
 
-    To mitigate this problem, for calculating a user's stake at the time step \(t\), instead of using the raw ARG
+    To mitigate this problem, for calculating a user's stake at time step \(t\), instead of using the raw ARG
     balance, we use the minimum of a \emph{trust value} the system has calculated for the user and the user's
     ARG balance:
     \[
@@ -699,20 +702,20 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     \]
     Where:
     \begin{itemize}
-        \item \(S_{u,t}\) is the stake of the user \(u\) at the time step \(t\).
-        \item \(B_{u,t}\) is the ARG balance of the user \(u\) at the time step \(t\).
-        \item \(Trust_{u,t}\) is an estimated trust value for the user \(u\) at the time step \(t\).
+        \item \(S_{u,t}\) is the stake of user \(u\) at time step \(t\).
+        \item \(B_{u,t}\) is the ARG balance of user \(u\) at time step \(t\).
+        \item \(Trust_{u,t}\) is an estimated trust value for user \(u\) at time step \(t\).
     \end{itemize}
 
-    The agreement protocol, at the time step \(t\), will use \(\sum_{u}S_{u,t}\) to determine the required
+    The agreement protocol, at time step \(t\), will use \(\sum_{u}S_{u,t}\) to determine the required
     number of votes for the confirmation of a block, and we let \(Trust_{u,t} = M_{u,t}\), where \(M_{u,t}\) is the
-    exponential moving average of the ARG balance of the user \(u\) at the time step \(t\).
+    exponential moving average of the ARG balance of user \(u\) at time step \(t\).
 
     In our system a user who held ARGs and participated in the consensus for a long time is more trusted
     than a user with a higher balance whose balance has increased recently. An attacker who has obtained a large
     amount of ARGs, also needs to hold them for a long period of time before being able to attack the system.
 
-    For calculating the exponential moving average of a user's balance at the time step \(t\), we can use the following
+    For calculating the exponential moving average of a user's balance at time step \(t\), we can use the following
     recursive formula:
     \[
         M_{u,t} = (1 - \alpha) M_{u,t-1} + \alpha B_{u,t} = M_{u,t-1} + \alpha (B_{u,t} - M_{u,t-1})

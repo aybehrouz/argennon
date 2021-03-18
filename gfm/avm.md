@@ -231,7 +231,7 @@ set in every block, but we don’t keep the set itself. To be able to detect rep
 that a user creates to have a nonce. This nonce consists of the issuance round of the signature and a sequence number:
 `(issuance, sequence)`. When a user creates more than one signature in a round, he must sequence his signatures starting
 from 0 (i.e. the sequence number restarts from 0 in every round). We define a maximum lifetime for signatures, so a
-signature is invalid if `currentRound - issuance > maxLifeTime` or if a signature of the same user with a bigger or
+signature is invalid if `currentRound - issuance > maxLifeTime` or if a signature of the same user with a bigger or
 equal nonce is already used (i.e. is recorded in the blockchain). A nonce is bigger than another nonce if it has an
 older issuance. If two nonces have an equal issuance, the nonce with the bigger sequence number will be considered
 bigger.
@@ -273,7 +273,7 @@ will update their database by emulating the AVM execution.*
 Every transaction in the Argennon blockchain starts with an `invoke_external` instruction which calls a special method
 from ARG smart contract. This method will transfer the proposed fee of the transaction in ARGs from a sender account to
 the fee sink accounts. Argennon has two fee sink accounts: `execFeeSink` collects execution fees and `dbFeeSink`
-collects fees for ZK-EDBs. The Protocol decides how to distribute the transaction fee between these two fee sink
+collects fees for ZK-EDB servers. The Protocol decides how to distribute the transaction fee between these two fee sink
 accounts.
 
 When a block is added to the blockchain, the proposer of that block will receive a share of the block fees.
@@ -432,29 +432,29 @@ of transactions which can be executed in parallel. To do so, we define the *memo
   - Every vertex in ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_d) corresponds to a transaction and vice versa.
 
   - Vertices ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;v) are adjacent in ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_d) if and only if ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) has a memory location ![equation](https://latex.codecogs.com/gif.latex?\inline&space;L) in its writing
-    list and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;v) has ![equation](https://latex.codecogs.com/gif.latex?\inline&space;L) in either its writing list or reading list.
+    list and ![equation](https://latex.codecogs.com/gif.latex?\inline&space;v) has ![equation](https://latex.codecogs.com/gif.latex?\inline&space;L) in either its writing list or its reading list.
 
 If we consider a proper vertex coloring of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_d), every color class will give us an independent set of transactions
 which can be executed concurrently. To achieve the highest parallelization, we need to color ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_d) with minimum number
-of colors. The *chromatic number* of the memory dependency graph thus shows how good a transaction set could be run
+of colors. Thus, the *chromatic number* of the memory dependency graph shows how good a transaction set could be run
 concurrently.
 
 Graph coloring is computationally NP-hard. However, in our use case we don’t need to necessarily find an optimal
 solution. An approximate greedy algorithm will perform well enough in most circumstances.
 
-After constructing the memory dependency graph of a transaction set, we can use it to construct the *execution DAG* of
-transactions. The execution DAG of a transaction set ![equation](https://latex.codecogs.com/gif.latex?\inline&space;T) is a directed acyclic graph ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_e) which has the *execution
+After constructing the memory dependency graph, we can use it to construct the *execution DAG* of transactions. The
+execution DAG of transaction set ![equation](https://latex.codecogs.com/gif.latex?\inline&space;T) is a directed acyclic graph ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_e&space;=&space;(V_e,E_e)) which has the *execution
 invariance* property:
 
-  - Every vertex in ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_e) corresponds to a transaction in ![equation](https://latex.codecogs.com/gif.latex?\inline&space;T) and vice versa.
+  - Every vertex in ![equation](https://latex.codecogs.com/gif.latex?\inline&space;V_e) corresponds to a transaction in ![equation](https://latex.codecogs.com/gif.latex?\inline&space;T) and vice versa.
 
-  - Applying the transactions of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;T) in any order that *respects* ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_e) will result in the same AVM state.
+  - Executing the transactions of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;T) in any order that *respects* ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_e) will result in the same AVM state.
     
-      - An ordering of transactions of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;T) respects ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_e) if for every directed edge ![equation](https://latex.codecogs.com/gif.latex?\inline&space;(u,v)) in ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_e) the
+      - An ordering of transactions of ![equation](https://latex.codecogs.com/gif.latex?\inline&space;T) respects ![equation](https://latex.codecogs.com/gif.latex?\inline&space;G_e) if for every directed edge ![equation](https://latex.codecogs.com/gif.latex?\inline&space;(u,v)&space;\in&space;E_e) the
         transaction ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) comes before the transaction ![equation](https://latex.codecogs.com/gif.latex?\inline&space;v) in the ordering.
 
 Having the execution DAG of a set of transactions, using Algorithm , we can apply the transaction set to the AVM state
-concurrently, using multiple processor, while we can make sure that the resulted AVM state will always be the same no
+concurrently, using multiple processor, while we can be sure that the resulted AVM state will always be the same no
 matter how many processor we have used.
 
 ![image](../img/Alg1s.png)
@@ -469,10 +469,10 @@ that it results in the minimum overall execution time.
 
 ![image](../img/Alg2s.png)
 
-The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block which will
-determine the ordering of block transactions and help validators to validate transactions in parallel. Since with better
-parallelization a block can contain more transactions, a proposer is incentivized enough to find a good execution DAG
-for transactions.
+The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block. This execution
+DAG will determine the ordering of block transactions and help validators to validate transactions in parallel. Since
+with better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good
+execution DAG for transactions.
 
 ### Concurrent Counters
 
@@ -480,16 +480,15 @@ We know that in Argennon every transaction needs to transfer its proposed fee to
 essentially makes every transaction a reader and a writer of the memory locations which store the balance record of the
 `feeSink` accounts. As a result, all transactions in Argennon will be dependant and parallelism will be completely
 impossible. Actually, any account that is highly active, for example the account of an exchange or a payment processor,
-could become a concurrency bottleneck of the system, making all transactions which interact with them dependant.
+could become a concurrency bottleneck in our system which makes all transactions interacting with them dependant.
 
-This problem can be easily solved by using a concurrent counter (CC) for storing the balance of this type of accounts. A
-concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a
+This problem can be easily solved by using a concurrent counter for storing the balance record of this type of accounts.
+A concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a
 single counter. The value of the concurrent counter is equal to the sum of its sub counters and it can be incremented or
 decremented by incrementing/decrementing any of the sub counters. This way, a concurrent counter trades concurrency with
 memory usage.
 
-A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter becomes
-negative, follows:
+Algorithm  implements a concurrent counter which returns an error when the value of the counter becomes negative.
 
 ![image](../img/Alg3s.png)
 
@@ -498,23 +497,23 @@ functions. For usage in a smart contract, the atomic functions of this pseudocod
 functions.
 
 Concurrent counter data structure is a part of the AVM standard library, and any smart contract can use this data
-structure for storing the balance of highly active accounts.
+structure for storing the balance record of highly active accounts.
 
 ### Memory Chunks
 
 In order to further increase the concurrency level of Argennon, we can divide the AVM memory into *chunks*. Each memory
 chunk can be persisted using a different ZK-EDB, hence having its own commitment. Then, the consensus on new values of
-the commitment of any chunk can be achieved by different voting committees.
+the commitment of any chunk can be achieved by a different voting committee.
 
 If a transaction does not modify a memory chunk and in the transaction ordering of the block it comes after any
 transaction which modifies that chunk, then the execution of that transaction is not needed for calculating the new
-commitment of the chunk. Consequently, the voting committee of the memory chunk can safely ignore such a transaction.
+commitment of the chunk. Consequently, the voting committee of that memory chunk can safely ignore such a transaction.
 The execution DAG of transactions can be used for finding and pruning these transactions as we see in Algorithm .
 
 ![image](../img/Alg4s.png)
 
-If we choose chunks in a way that most transactions only modify memory locations of one chunk, likely the transactions
-of a block are divided between voting committees and are validated in parallel.
+If we choose chunks in a way that most transactions only modify memory locations of one chunk, likely many transactions
+of a block only need to be validated by one voting committee and can be validated in parallel by different committees.
 
 Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure that
 having multiple voting committees will not change the security properties of the Argennon agreement protocol.
@@ -531,8 +530,8 @@ native system tokens the user is holding. Unfortunately, one problem with this a
 able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
 stake to attack the system.
 
-To mitigate this problem, for calculating a user’s stake at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), instead of using the raw ARG balance,
-we use the minimum of a *trust value* the system has calculated for the user and the user’s ARG balance:
+To mitigate this problem, for calculating a user’s stake at time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), instead of using the raw ARG balance, we
+use the minimum of a *trust value* the system has calculated for the user and the user’s ARG balance:
 
 
 
@@ -542,21 +541,21 @@ we use the minimum of a *trust value* the system has calculated for the user and
 
 Where:
 
-  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;S_{u,t}) is the stake of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;S_{u,t}) is the stake of user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
-  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;B_{u,t}) is the ARG balance of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;B_{u,t}) is the ARG balance of user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
-  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{u,t}) is an estimated trust value for the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+  - ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{u,t}) is an estimated trust value for user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
-The agreement protocol, at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), will use ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\sum_{u}S_{u,t}) to determine the required number of votes
-for the confirmation of a block, and we let ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{u,t}&space;=&space;M_{u,t}), where ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}) is the exponential moving
-average of the ARG balance of the user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
+The agreement protocol, at time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), will use ![equation](https://latex.codecogs.com/gif.latex?\inline&space;\sum_{u}S_{u,t}) to determine the required number of votes for
+the confirmation of a block, and we let ![equation](https://latex.codecogs.com/gif.latex?\inline&space;Trust_{u,t}&space;=&space;M_{u,t}), where ![equation](https://latex.codecogs.com/gif.latex?\inline&space;M_{u,t}) is the exponential moving average
+of the ARG balance of user ![equation](https://latex.codecogs.com/gif.latex?\inline&space;u) at time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t).
 
 In our system a user who held ARGs and participated in the consensus for a long time is more trusted than a user with a
 higher balance whose balance has increased recently. An attacker who has obtained a large amount of ARGs, also needs to
 hold them for a long period of time before being able to attack the system.
 
-For calculating the exponential moving average of a user’s balance at the time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), we can use the following
+For calculating the exponential moving average of a user’s balance at time step ![equation](https://latex.codecogs.com/gif.latex?\inline&space;t), we can use the following
 recursive formula:
 
 
