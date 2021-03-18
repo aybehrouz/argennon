@@ -230,9 +230,7 @@ Every transaction is required to exactly specify what heap locations or code are
 validators to start retrieving the required memory blocks from available ZK-EDB servers as soon as they see a
 transaction, and they won’t need to wait for receiving the new proposed block. A transaction that tries to access a
 memory location that is not included in its access lists, will be rejected. Users could use smart contract oracles to
-predict the list of memory blocks their transactions need. See
-Section <a href="#sec:smart-contract-oracle" data-reference-type="ref" data-reference="sec:smart-contract-oracle">2.7</a>
-for more details.
+predict the list of memory blocks their transactions need. See Section  for more details.
 
 Blockchain
 ----------
@@ -445,47 +443,76 @@ Concurrency
 ### Memory Dependency Graph
 
 Every block of the Argennon blockchain contains a list of transactions. This list is an ordered list and the effect of
-its contained transactions must be applied to the AVM state sequentially as they appear in the ordered list. The
-ordering of transactions in a block is solely chosen by the block proposer.
+its contained transactions must be applied to the AVM state sequentially as they appear in the ordered list. This
+ordering is solely chosen by the block proposer, and users should not have any assumption about the ordering of
+transactions in a block.
 
-*Users should not have any assumption about the ordering of transactions in a block.*
-
-The fact that block transactions constitute a sequential list, does not mean they can not be validated concurrently.
-Many transactions are actually independent and the order of their execution does not matter. These transactions can be
-safely validated in parallel by validators.
+The fact that block transactions constitute a sequential list, does not mean they can not be executed and applied to the
+AVM state concurrently. Many transactions are actually independent and the order of their execution does not matter.
+These transactions can be safely validated in parallel by validators.
 
 A transaction can change the AVM state by modifying either the code area or the AVM heap. In Argennon, all transactions
 declare the list of memory locations they want to read or write. This will enable us to determine the independent sets
-of transactions which can be validated in parallel. To do so, we define the *memory dependency graph* as follows:
+of transactions which can be executed in parallel. To do so, we define the *memory dependency graph* *G*<sub>*d*</sub>
+as follows:
 
--   *G* is an undirected graph.
+-   *G*<sub>*d*</sub> is an undirected graph.
 
--   Every vertex in *G* corresponds to a transaction.
+-   Every vertex in *G*<sub>*d*</sub> corresponds to a transaction and vice versa.
 
--   Vertices *u* and *v* are adjacent in *G* if and only if *u* has a memory location *L* in its writing list and *v*
-    has *L* in either its writing list or reading list.
+-   Vertices *u* and *v* are adjacent in *G*<sub>*d*</sub> if and only if *u* has a memory location *L* in its writing
+    list and *v* has *L* in either its writing list or reading list.
 
-If we consider a proper vertex coloring of *G*, every color class will give us an independent set of transactions which
-can be validated concurrently. To achieve the highest parallelization, we need to color *G* with minimum number of
-colors. Thus, the *chromatic number* of the memory dependency graph shows how good a transaction set could be run
-concurrently.
+If we consider a proper vertex coloring of *G*<sub>*d*</sub>, every color class will give us an independent set of
+transactions which can be executed concurrently. To achieve the highest parallelization, we need to color
+*G*<sub>*d*</sub> with minimum number of colors. The *chromatic number* of the memory dependency graph thus shows how
+good a transaction set could be run concurrently.
 
 Graph coloring is computationally NP-hard. However, in our use case we don’t need to necessarily find an optimal
-solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is the one
-who is responsible for solving the graph coloring problem and a proposed block must determine the independent sets of
-transactions which can be run in parallel safely. Since with better parallelization a block can contain more
-transactions, a proposer is incentivized enough to find a good graph coloring.
+solution. An approximate greedy algorithm will perform well enough in most circumstances.
+
+After constructing the memory dependency graph of a transaction set, we can use it to construct the *execution DAG* of
+transactions. The execution DAG of a transaction set *T* is a directed acyclic graph *G*<sub>*e*</sub> which has the
+*execution invariance* property:
+
+-   Every vertex in *G*<sub>*e*</sub> corresponds to a transaction in *T* and vice versa.
+
+-   Applying the transactions of *T* in any order that *respects* *G*<sub>*e*</sub> will result in the same AVM state.
+
+    -   An ordering of transactions of *T* respects *G*<sub>*e*</sub> if for every directed edge (*u*, *v*) in
+        *G*<sub>*e*</sub> the transaction *u* comes before the transaction *v* in the ordering.
+
+Having the execution DAG of a set of transactions, using Algorithm , we can apply the transaction set to the AVM state
+concurrently, using multiple processor, while we can make sure that the resulted AVM state will always be the same no
+matter how many processor we have used.
+
+<img src="../img/Alg1.png" alt="image" style="width:17cm" />
+
+By replacing every undirected edge of a memory dependency graph with a directed edge in such a way that the resulted
+graph has no cycles, we will obtain a valid execution DAG. Thus, from a memory dependency graph different execution DAGs
+can be constructed with different levels of parallelization ability.
+
+If we assume that we have unlimited number of processors and all transactions take equal time for executing, it can be
+shown that by providing a minimal graph coloring to Algorithm  as input, the resulted DAG will be optimal, in the sense
+that it results in the minimum overall execution time.
+
+<img src="../img/Alg2.png" alt="image" style="width:17cm" />
+
+The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block which will
+determine the ordering of block transactions and help validators to validate transactions in parallel. Since with better
+parallelization a block can contain more transactions, a proposer is incentivized enough to find a good execution DAG
+for transactions.
 
 ### Concurrent Counters
 
-We know that in Argennon every transaction needs to transfer its proposed fee to the `feeSink` account first. This
-essentially makes every transaction a reader and a writer of the memory location which stores the balance record of the
-`feeSink` account. As a result, all transactions in Argennon will be dependant and parallelism will be completely
+We know that in Argennon every transaction needs to transfer its proposed fee to the `feeSink` accounts first. This
+essentially makes every transaction a reader and a writer of the memory locations which store the balance record of the
+`feeSink` accounts. As a result, all transactions in Argennon will be dependant and parallelism will be completely
 impossible. Actually, any account that is highly active, for example the account of an exchange or a payment processor,
-could become a concurrency bottleneck, making all transactions that interact with them dependant.
+could become a concurrency bottleneck of the system, making all transactions which interact with them dependant.
 
-This problem can be easily solved by using a concurrent counter (CC) for storing the balance of these kind of accounts.
-A concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a
+This problem can be easily solved by using a concurrent counter (CC) for storing the balance of this type of accounts. A
+concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a
 single counter. The value of the concurrent counter is equal to the sum of its sub counters and it can be incremented or
 decremented by incrementing/decrementing any of the sub counters. This way, a concurrent counter trades concurrency with
 memory usage.
@@ -493,22 +520,7 @@ memory usage.
 A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter becomes
 negative, follows:
 
-    INCREMENT(CC, value, seed)
-        i = seed MOD CC.size
-        ATOMIC_INCREMENT(CC.cell[i], value)
-
-    DECREMENT(CC, value, seed, attempt)
-        IF attempt = CC.size THEN
-            restore CC by adding back the subtracted value to CC
-            RETURN ERROR
-        i = seed MOD CC.size
-        i = (i + attempt) MOD CC.size
-        IF CC.cell[i] >= value THEN
-            ATOMIC_DECREMENT(CC.cell[i], value)
-        ELSE
-            remaining = value - CC.cell[i]
-            ATOMIC_SET(CC.cell[i], 0)
-            DECREMENT(CC, remaining, seed, attempt + 1)
+<img src="../img/Alg3.png" alt="image" style="width:17cm" />
 
 It should be noted that in a blockchain application we don’t have concurrent threads and therefore we don’t need atomic
 functions. For usage in a smart contract, the atomic functions of this pseudocode can be implemented like normal
@@ -520,20 +532,26 @@ structure for storing the balance of highly active accounts.
 ### Memory Chunks
 
 In order to further increase the concurrency level of Argennon, we can divide the AVM memory into *chunks*. Each memory
-chunk can be persisted using a different ZK-EDB, hence having a different commitment. Then, the consensus on new values
-of different commitments can be done by different voting committees.
+chunk can be persisted using a different ZK-EDB, hence having its own commitment. Then, the consensus on new values of
+the commitment of any chunk can be achieved by different voting committees.
 
-Any transaction needs to be validated only by voting committee of the memory chunk that it modifies. So, if we choose
-chunks in a way that most transactions only modify memory locations of one chunk, the transactions of a block can be
-divided between voting committees and be validated in parallel.
+If a transaction does not modify a memory chunk and in the transaction ordering of the block it comes after any
+transaction which modifies that chunk, then the execution of that transaction is not needed for calculating the new
+commitment of the chunk. Consequently, the voting committee of the memory chunk can safely ignore such a transaction.
+The execution DAG of transactions can be used for finding and pruning these transactions as we see in Algorithm .
 
-*If a transaction modifies multiple chunks it must be validated by the voting committees of all chunks it modifies.*
+<img src="../img/Alg4.png" alt="image" style="width:17cm" />
+
+If we choose chunks in a way that most transactions only modify memory locations of one chunk, likely the transactions
+of a block are divided between voting committees and are validated in parallel.
 
 Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure that
-having multiple voting committees will not change the security properties of our agreement protocol.
+having multiple voting committees will not change the security properties of the Argennon agreement protocol.
 
 Consensus
 ---------
+
+The consensus protocol of Argennon is similar to Algorand with a few minor improvements.
 
 ### Estimating A User’s Stake
 

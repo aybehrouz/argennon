@@ -6,8 +6,18 @@
 
 % Packages
 %\usepackage{amsmath}
-
+\usepackage{graphicx}
+\graphicspath{ {../img/} }
 \usepackage{hyperref}
+\usepackage{amsfonts}
+\usepackage[ruled,boxed]{algorithm2e}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{amssymb}
+\lstset{
+%  basicstyle=\ttfamily,
+    mathescape
+}
 %\binoppenalty=99999
 %\relpenalty=99999
 
@@ -451,47 +461,128 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
 
     Every block of the Argennon blockchain contains a list of transactions. This list is an ordered list and the
     effect of its contained transactions must be applied to the AVM state sequentially as they appear in the ordered
-    list. The ordering of transactions in a block is solely chosen by the block proposer.
+    list. This ordering is solely chosen by the block proposer, and users should not have any assumption about
+    the ordering of transactions in a block.
 
-    \emph{Users should not have any assumption about the ordering of transactions in a block.}
-
-    The fact that block transactions constitute a sequential list, does not mean they can not be validated
-    concurrently. Many transactions are actually independent and the order of their execution does not matter. These
-    transactions can be safely validated in parallel by validators.
+    The fact that block transactions constitute a sequential list, does not mean they can not be executed and applied
+    to the AVM state concurrently. Many transactions are actually independent and the order of their execution does not
+    matter. These transactions can be safely validated in parallel by validators.
 
     A transaction can change the AVM state by modifying either the code area or the AVM heap. In Argennon, all
     transactions declare the list of memory locations they want to read or write. This will enable us to determine the
-    independent sets of transactions which can be validated in parallel. To do so, we define the \emph{memory dependency
-    graph} as follows:
+    independent sets of transactions which can be executed in parallel. To do so, we define the \emph{memory dependency
+    graph} \(G_d\) as follows:
 
     \begin{itemize}
-        \item \(G\) is an undirected graph.
-        \item Every vertex in \(G\) corresponds to a transaction.
-        \item Vertices \(u\) and \(v\) are adjacent in \(G\) if and only if \(u\) has a memory location \(L\) in its
+        \item \(G_d\) is an undirected graph.
+        \item Every vertex in \(G_d\) corresponds to a transaction and vice versa.
+        \item Vertices \(u\) and \(v\) are adjacent in \(G_d\) if and only if \(u\) has a memory location \(L\) in its
         writing list and \(v\) has \(L\) in either its writing list or reading list.
     \end{itemize}
 
-    If we consider a proper vertex coloring of \(G\), every color class will give us an independent set of
-    transactions which can be validated concurrently. To achieve the highest parallelization, we need to color \(G\)
-    with minimum number of colors. Thus, the \emph{chromatic number} of the memory dependency graph shows how good a
+    If we consider a proper vertex coloring of \(G_d\), every color class will give us an independent set of
+    transactions which can be executed concurrently. To achieve the highest parallelization, we need to color \(G_d\)
+    with minimum number of colors. The \emph{chromatic number} of the memory dependency graph thus shows how good a
     transaction set could be run concurrently.
 
     Graph coloring is computationally NP-hard. However, in our use case we don't need to necessarily find an optimal
-    solution. An approximate greedy algorithm will perform well enough in most circumstances. The block proposer is the
-    one who is responsible for solving the graph coloring problem and a proposed block must determine the independent
-    sets of transactions which can be run in parallel safely. Since with better parallelization a block can contain more
-    transactions, a proposer is incentivized enough to find a good graph coloring.
+    solution. An approximate greedy algorithm will perform well enough in most circumstances.
 
-    \subsection{Concurrent Counters}\label{subsec:concurrent-counters}
+    After constructing the memory dependency graph of a transaction set, we can use it to construct the
+    \emph{execution DAG} of transactions. The execution DAG of a transaction set \(T\) is a directed acyclic
+    graph \(G_e\) which has the \emph{execution invariance} property:
+    \begin{itemize}
+        \item Every vertex in \(G_e\) corresponds to a transaction in \(T\) and vice versa.
+        \item Applying the transactions of \(T\) in any order that \emph{respects} \(G_e\) will result in
+        the same AVM state.
+        \begin{itemize}
+            \item An ordering of transactions of \(T\) respects \(G_e\) if for every directed edge \((u,v)\) in \(G_e\)
+            the transaction \(u\) comes before the transaction \(v\) in the ordering.
+        \end{itemize}
+    \end{itemize}
 
-    We know that in Argennon every transaction needs to transfer its proposed fee to the \texttt{feeSink} account
-    first. This essentially makes every transaction a reader and a writer of the memory location which stores the
-    balance record of the \texttt{feeSink} account. As a result, all transactions in Argennon will be dependant and
+    Having the execution DAG of a set of transactions, using Algorithm~\ref{alg:exec_dag}, we can apply the transaction
+    set to the AVM state concurrently, using multiple processor, while we can make sure that the resulted AVM state will
+    always be the same no matter how many processor we have used.
+
+    %\includegraphics[width=17cm]{../img/Alg1.png}
+    \begin{algorithm}
+        \DontPrintSemicolon
+        \SetKwData{Ready}{$R_e$}\SetKwData{V}{$v_f$}\SetKwData{Graph}{$G_e$}\SetKwData{Vertices}{$V$}\SetKwData
+        {Txns}{$T$}
+        \KwData{The execution dag $\Graph = (\Vertices,E)$ of a transaction set \Txns}
+        \KwResult{The state of the AVM after applying \Txns with any ordering respecting \Graph}
+        \BlankLine
+        \Ready $\gets$ the set of all vertices of \Vertices with in degree 0\;
+        \While{$\Vertices \neq \varnothing$}
+        {
+            wait until a new free processor is available\;
+            \If{the execution of a transaction was finished}
+            {
+                remove the vertex of the finished transaction \V from \Graph\;
+                \For{each vertex $u \in Adj[\V]$}
+                {
+                    \If{$u$ has zero in degree}
+                    {
+                        $\Ready \gets \Ready \cup u$\;
+                    }
+                }
+            }
+            \If{$\Ready \neq \varnothing$}
+            {
+                remove a vertex from \Ready and assign it to a processor\;
+            }
+        }
+        \caption{executing DAG transactions}\label{alg:exec_dag}
+    \end{algorithm}
+
+    By replacing every undirected edge of a memory dependency graph with a directed edge in such a way that the
+    resulted graph has no cycles, we will obtain a valid execution DAG. Thus, from a memory dependency graph different
+    execution DAGs can be constructed with different levels of parallelization ability.
+
+    If we assume that we have unlimited number of processors and all transactions take equal time for executing, it
+    can be shown that by providing a minimal graph coloring to Algorithm~\ref{alg:gen_dag} as input, the resulted
+    DAG will be optimal, in the sense that it results in the minimum overall execution time.
+
+    %\includegraphics[width=17cm]{../img/Alg2.png}
+    \begin{algorithm}
+        \DontPrintSemicolon
+        \SetKwData{Txns}{$T$}\SetKwData{Gd}{$G_d=(V_d,E_d)$}
+        \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+        \Input{The memory dependency graph \Gd of a transaction set \Txns\\A proper coloring of $G_d$}
+        \Output{An execution dag $G_e=(V_e,E_e)$ for the transaction set \Txns}
+        \BlankLine
+        $V_e \gets V_d$\;
+        $E_e \gets \varnothing$\;
+        define a total order on colors of $G_d$\;
+        \For{each edge $\{u,v\} \in E_d$}
+        {
+            \eIf{$color[u] < color[v]$}
+            {
+                $E_e \gets E_e \cup (u,v)$\;
+            }{
+                $E_e \gets E_e \cup (v,u)$\;
+            }
+        }
+        \caption{Constructing an execution DAG}\label{alg:gen_dag}
+    \end{algorithm}
+
+    The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block which will
+    determine the ordering of block transactions and help validators to validate transactions in parallel. Since with
+    better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good
+    execution DAG for transactions.
+
+
+ \subsection{Concurrent Counters}\label{subsec:concurrent-counters}
+
+    We know that in Argennon every transaction needs to transfer its proposed fee to the \texttt{feeSink} accounts
+    first. This essentially makes every transaction a reader and a writer of the memory locations which store the
+    balance record of the \texttt{feeSink} accounts. As a result, all transactions in Argennon will be dependant and
     parallelism will be completely impossible. Actually, any account that is highly active, for example the account
-    of an exchange or a payment processor, could become a concurrency bottleneck, making all transactions that interact
-    with them dependant.
+    of an exchange or a payment processor, could become a concurrency bottleneck of the system, making all transactions
+    which interact with them dependant.
 
-    This problem can be easily solved by using a concurrent counter (CC) for storing the balance of these kind of
+    This problem can be easily solved by using a concurrent counter (CC) for storing the balance of this type of
     accounts. A concurrent counter is a data structure which improves concurrency by using multiple memory locations for
     storing a single counter. The value of the concurrent counter is equal to the sum of its sub counters and it can
     be incremented or decremented by incrementing/decrementing any of the sub counters. This way, a concurrent
@@ -500,26 +591,40 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter
     becomes negative, follows:
 
-    \begin{samepage}
-        \begin{verbatim}
-INCREMENT(CC, value, seed)
-    i = seed MOD CC.size
-    ATOMIC_INCREMENT(CC.cell[i], value)
-
-DECREMENT(CC, value, seed, attempt)
-    IF attempt = CC.size THEN
-        restore CC by adding back the subtracted value to CC
-        RETURN ERROR
-    i = seed MOD CC.size
-    i = (i + attempt) MOD CC.size
-    IF CC.cell[i] >= value THEN
-        ATOMIC_DECREMENT(CC.cell[i], value)
-    ELSE
-        remaining = value - CC.cell[i]
-        ATOMIC_SET(CC.cell[i], 0)
-        DECREMENT(CC, remaining, seed, attempt + 1)
-        \end{verbatim}
-    \end{samepage}
+    %\includegraphics[width=17cm]{../img/Alg3.png}
+    \begin{algorithm}
+        \DontPrintSemicolon
+        \SetKwData{CC}{Counter}
+        \SetKwFunction{Inc}{Increment}\SetKwFunction{Dec}{Decrement}\SetKwFunction{AtomInc}{AtomicIncrement}
+        \SetKwFunction{AtomDec}{AtomicDecrement}\SetKwFunction{AtomSet}{AtomicSet}
+        \SetKwProg{Fn}{Function}{}{}
+        \BlankLine
+        \Fn{\Inc{\CC, value, seed}}
+        {
+            $i \gets seed \bmod \CC.size$\;
+           \AtomInc{$\CC.cell[i]$, value}\;
+        }
+        \BlankLine
+        \Fn{\Dec{\CC, value, seed, attempt}}
+        {
+            \If {attempt = \CC.size}
+            {
+                restore \CC by adding back the subtracted value\;
+                \KwRet{Error}\;
+            }
+            $i \gets seed \bmod \CC.size$\;
+            $i \gets (i + attempt) \bmod \CC.size$\;
+            \eIf {$\CC.cell[i] \geq value$}
+            {
+                \AtomDec{$\CC.cell[i]$, value}\;
+            }{
+                $r \gets value - \CC.cell[i]$\;
+                \AtomSet{$\CC.cell[i]$, $0$}\;
+                \Dec{\CC, r, seed, $attempt + 1$}\;
+            }
+        }
+        \caption{Concurrent counter}\label{alg:CC}
+    \end{algorithm}
 
     It should be noted that in a blockchain application we don't have concurrent threads and therefore we don't need
     atomic functions. For usage in a smart contract, the atomic functions of this pseudocode can be implemented like
@@ -531,21 +636,53 @@ DECREMENT(CC, value, seed, attempt)
     \subsection{Memory Chunks}\label{subsec:memory-chunks}
 
     In order to further increase the concurrency level of Argennon, we can divide the AVM memory into \emph{chunks}.
-    Each memory chunk can be persisted using a different ZK-EDB, hence having a different commitment. Then, the
-    consensus on new values of different commitments can be done by different voting committees.
+    Each memory chunk can be persisted using a different ZK-EDB, hence having its own commitment. Then, the
+    consensus on new values of the commitment of any chunk can be achieved by different voting committees.
 
-    Any transaction needs to be validated only by voting committee of the memory chunk that it modifies. So, if we
-    choose chunks in a way that most transactions only modify memory locations of one chunk, the transactions of a
-    block can be divided between voting committees and be validated in parallel.
+    If a transaction does not modify a memory chunk and in the transaction ordering of the block it comes after
+    any transaction which modifies that chunk, then the execution of that transaction is not needed for calculating
+    the new commitment of the chunk. Consequently, the voting committee of the memory chunk can safely ignore such a
+    transaction. The execution DAG of transactions can be used for finding and pruning these transactions as
+    we see in Algorithm~\ref{alg:prune_dag}.
 
-    \emph{If a transaction modifies multiple chunks it must be validated by the voting committees of all chunks it
-    modifies.}
+    %\includegraphics[width=17cm]{../img/Alg4.png}
+    \begin{algorithm}
+        \DontPrintSemicolon
+        \SetKwData{V}{$v_0$}\SetKwData{Graph}{$G_e$}\SetKwData{Chunk}{$C_k$}\SetKwData{Txns}{$T$}
+        \SetKwFunction{RPrune}{RecursivePrune}
+        \SetKwProg{Fn}{Function}{}{}
+        \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+        \Input{An execution dag and a memory chunk \Chunk}
+        \Output{The pruned execution dag based on \Chunk}
+        \BlankLine
+        \For{each vertex \V with out degree $0$}
+        {
+            \RPrune{\V}\;
+        }
+        \BlankLine
+        \Fn{\RPrune{\V}}
+        {
+            \If{$Adj[\V] = \varnothing$ {\bf and} \V does not modify \Chunk}
+            {
+                remove \V from \Graph\;
+                \For{each $u$ such that $\V \in Adj[u]$}
+                {
+                    \RPrune{u}\;
+                }
+            }
+        }
+        \caption{Pruning the execution DAG}\label{alg:prune_dag}
+    \end{algorithm}
+
+    If we choose chunks in a way that most transactions only modify memory locations of one chunk,
+    likely the transactions of a block are divided between voting committees and are validated in parallel.
 
     Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure
-    that having multiple voting committees will not change the security properties of our agreement protocol.
-
+    that having multiple voting committees will not change the security properties of the Argennon agreement protocol.
 
     \section{Consensus}\label{sec:consensus}
+
+    The consensus protocol of Argennon is similar to Algorand with a few minor improvements.
 
     \subsection{Estimating A User's Stake}\label{subsec:estimating-a-user's-stake}
 
@@ -654,3 +791,5 @@ DECREMENT(CC, value, seed, attempt)
     and so on.
 
 \end{document}
+
+

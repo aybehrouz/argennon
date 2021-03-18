@@ -21,7 +21,8 @@ html: ${HTML_FILES}
 
 ${TEX_DIR}%.tmp: ${TEX_DIR}%.tex
 	cp $< $@
-	sed -i 's/\\\[/\n\\\[/; s/\\\]/\\\]\n/;' $@
+	sed -i 's/\\\[/\n\\\[/; s/\\\]/\\\]\n/; s/\\end{algorithm}/@\n/; s/%\\/\n\\/' $@
+	sed -i -z 's/\\begin{algorithm}[^@]*@//g; s/\\ref{[^}]*}//g' $@
 
 ${HTML_DIR}%.html: ${TEX_DIR}%.tmp
 	mkdir -p ${HTML_DIR}
