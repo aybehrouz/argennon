@@ -218,22 +218,22 @@
 </ul></li>
 </ul>
 <p>Having the execution DAG of a set of transactions, using Algorithm , we can apply the transaction set to the AVM state concurrently, using multiple processor, while we can make sure that the resulted AVM state will always be the same no matter how many processor we have used.</p>
-<p><img src="../img/Alg1.png" alt="image" style="width:17cm" /></p>
+<p><img src="../img/Alg1s.png" alt="image" style="width:17cm" /></p>
 <p>By replacing every undirected edge of a memory dependency graph with a directed edge in such a way that the resulted graph has no cycles, we will obtain a valid execution DAG. Thus, from a memory dependency graph different execution DAGs can be constructed with different levels of parallelization ability.</p>
 <p>If we assume that we have unlimited number of processors and all transactions take equal time for executing, it can be shown that by providing a minimal graph coloring to Algorithm  as input, the resulted DAG will be optimal, in the sense that it results in the minimum overall execution time.</p>
-<p><img src="../img/Alg2.png" alt="image" style="width:17cm" /></p>
+<p><img src="../img/Alg2s.png" alt="image" style="width:17cm" /></p>
 <p>The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block which will determine the ordering of block transactions and help validators to validate transactions in parallel. Since with better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good execution DAG for transactions.</p>
 <h3 id="subsec:concurrent-counters">Concurrent Counters</h3>
 <p>We know that in Argennon every transaction needs to transfer its proposed fee to the <code>feeSink</code> accounts first. This essentially makes every transaction a reader and a writer of the memory locations which store the balance record of the <code>feeSink</code> accounts. As a result, all transactions in Argennon will be dependant and parallelism will be completely impossible. Actually, any account that is highly active, for example the account of an exchange or a payment processor, could become a concurrency bottleneck of the system, making all transactions which interact with them dependant.</p>
 <p>This problem can be easily solved by using a concurrent counter (CC) for storing the balance of this type of accounts. A concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a single counter. The value of the concurrent counter is equal to the sum of its sub counters and it can be incremented or decremented by incrementing/decrementing any of the sub counters. This way, a concurrent counter trades concurrency with memory usage.</p>
 <p>A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter becomes negative, follows:</p>
-<p><img src="../img/Alg3.png" alt="image" style="width:17cm" /></p>
+<p><img src="../img/Alg3s.png" alt="image" style="width:17cm" /></p>
 <p>It should be noted that in a blockchain application we don’t have concurrent threads and therefore we don’t need atomic functions. For usage in a smart contract, the atomic functions of this pseudocode can be implemented like normal functions.</p>
 <p>Concurrent counter data structure is a part of the AVM standard library, and any smart contract can use this data structure for storing the balance of highly active accounts.</p>
 <h3 id="subsec:memory-chunks">Memory Chunks</h3>
 <p>In order to further increase the concurrency level of Argennon, we can divide the AVM memory into <em>chunks</em>. Each memory chunk can be persisted using a different ZK-EDB, hence having its own commitment. Then, the consensus on new values of the commitment of any chunk can be achieved by different voting committees.</p>
 <p>If a transaction does not modify a memory chunk and in the transaction ordering of the block it comes after any transaction which modifies that chunk, then the execution of that transaction is not needed for calculating the new commitment of the chunk. Consequently, the voting committee of the memory chunk can safely ignore such a transaction. The execution DAG of transactions can be used for finding and pruning these transactions as we see in Algorithm .</p>
-<p><img src="../img/Alg4.png" alt="image" style="width:17cm" /></p>
+<p><img src="../img/Alg4s.png" alt="image" style="width:17cm" /></p>
 <p>If we choose chunks in a way that most transactions only modify memory locations of one chunk, likely the transactions of a block are divided between voting committees and are validated in parallel.</p>
 <p>Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure that having multiple voting committees will not change the security properties of the Argennon agreement protocol.</p>
 <h2 id="sec:consensus">Consensus</h2>

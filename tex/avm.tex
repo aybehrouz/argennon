@@ -505,7 +505,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     set to the AVM state concurrently, using multiple processor, while we can make sure that the resulted AVM state will
     always be the same no matter how many processor we have used.
 
-    %\includegraphics[width=17cm]{../img/Alg1.png}
+    %\includegraphics[width=17cm]{../img/Alg1s.png}
     \begin{algorithm}
         \DontPrintSemicolon
         \SetKwData{Ready}{$R_e$}\SetKwData{V}{$v_f$}\SetKwData{Graph}{$G_e$}\SetKwData{Vertices}{$V$}\SetKwData
@@ -544,7 +544,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     can be shown that by providing a minimal graph coloring to Algorithm~\ref{alg:gen_dag} as input, the resulted
     DAG will be optimal, in the sense that it results in the minimum overall execution time.
 
-    %\includegraphics[width=17cm]{../img/Alg2.png}
+    %\includegraphics[width=17cm]{../img/Alg2s.png}
     \begin{algorithm}
         \DontPrintSemicolon
         \SetKwData{Txns}{$T$}\SetKwData{Gd}{$G_d=(V_d,E_d)$}
@@ -572,8 +572,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good
     execution DAG for transactions.
 
-
- \subsection{Concurrent Counters}\label{subsec:concurrent-counters}
+    \subsection{Concurrent Counters}\label{subsec:concurrent-counters}
 
     We know that in Argennon every transaction needs to transfer its proposed fee to the \texttt{feeSink} accounts
     first. This essentially makes every transaction a reader and a writer of the memory locations which store the
@@ -591,7 +590,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter
     becomes negative, follows:
 
-    %\includegraphics[width=17cm]{../img/Alg3.png}
+    %\includegraphics[width=17cm]{../img/Alg3s.png}
     \begin{algorithm}
         \DontPrintSemicolon
         \SetKwData{CC}{Counter}
@@ -645,7 +644,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     transaction. The execution DAG of transactions can be used for finding and pruning these transactions as
     we see in Algorithm~\ref{alg:prune_dag}.
 
-    %\includegraphics[width=17cm]{../img/Alg4.png}
+    %\includegraphics[width=17cm]{../img/Alg4s.png}
     \begin{algorithm}
         \DontPrintSemicolon
         \SetKwData{V}{$v_0$}\SetKwData{Graph}{$G_e$}\SetKwData{Chunk}{$C_k$}\SetKwData{Txns}{$T$}

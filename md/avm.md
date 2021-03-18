@@ -486,7 +486,7 @@ Having the execution DAG of a set of transactions, using Algorithm , we can app
 concurrently, using multiple processor, while we can make sure that the resulted AVM state will always be the same no
 matter how many processor we have used.
 
-<img src="../img/Alg1.png" alt="image" style="width:17cm" />
+<img src="../img/Alg1s.png" alt="image" style="width:17cm" />
 
 By replacing every undirected edge of a memory dependency graph with a directed edge in such a way that the resulted
 graph has no cycles, we will obtain a valid execution DAG. Thus, from a memory dependency graph different execution DAGs
@@ -496,7 +496,7 @@ If we assume that we have unlimited number of processors and all transactions ta
 shown that by providing a minimal graph coloring to Algorithm  as input, the resulted DAG will be optimal, in the sense
 that it results in the minimum overall execution time.
 
-<img src="../img/Alg2.png" alt="image" style="width:17cm" />
+<img src="../img/Alg2s.png" alt="image" style="width:17cm" />
 
 The block proposer is responsible for proposing an efficient execution DAG alongside his proposed block which will
 determine the ordering of block transactions and help validators to validate transactions in parallel. Since with better
@@ -520,7 +520,7 @@ memory usage.
 A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter becomes
 negative, follows:
 
-<img src="../img/Alg3.png" alt="image" style="width:17cm" />
+<img src="../img/Alg3s.png" alt="image" style="width:17cm" />
 
 It should be noted that in a blockchain application we don’t have concurrent threads and therefore we don’t need atomic
 functions. For usage in a smart contract, the atomic functions of this pseudocode can be implemented like normal
@@ -540,7 +540,7 @@ transaction which modifies that chunk, then the execution of that transaction is
 commitment of the chunk. Consequently, the voting committee of the memory chunk can safely ignore such a transaction.
 The execution DAG of transactions can be used for finding and pruning these transactions as we see in Algorithm .
 
-<img src="../img/Alg4.png" alt="image" style="width:17cm" />
+<img src="../img/Alg4s.png" alt="image" style="width:17cm" />
 
 If we choose chunks in a way that most transactions only modify memory locations of one chunk, likely the transactions
 of a block are divided between voting committees and are validated in parallel.

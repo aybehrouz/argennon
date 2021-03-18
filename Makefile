@@ -32,7 +32,6 @@ ${MD_DIR}%.md: ${TEX_DIR}%.tmp
 	mkdir -p ${MD_DIR}
 	${PANDOC} -t markdown_strict $< -o $@
 	sed -i '/[^ ]\*\*[^ ]/s/\*\*//g' $@
-	cp $@ proposal.md
 
 #${GFM_DIR}%.md: ${TEX_DIR}%.tmp
 #	mkdir -p ${GFM_DIR}
