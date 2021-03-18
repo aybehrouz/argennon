@@ -511,13 +511,13 @@ essentially makes every transaction a reader and a writer of the memory location
 impossible. Actually, any account that is highly active, for example the account of an exchange or a payment processor,
 could become a concurrency bottleneck of the system, making all transactions which interact with them dependant.
 
-This problem can be easily solved by using a concurrent counter (CC) for storing the balance of this type of accounts. A
+This problem can be easily solved by using a concurrent counter for storing the balance of this type of accounts. A
 concurrent counter is a data structure which improves concurrency by using multiple memory locations for storing a
 single counter. The value of the concurrent counter is equal to the sum of its sub counters and it can be incremented or
 decremented by incrementing/decrementing any of the sub counters. This way, a concurrent counter trades concurrency with
 memory usage.
 
-A pseudocode for implementing a concurrent counter (CC) which returns an error when the value of the counter becomes
+A pseudocode for implementing a concurrent counter which returns an error when the value of the counter becomes
 negative, follows:
 
 <img src="../img/Alg3s.png" alt="image" style="width:17cm" />
