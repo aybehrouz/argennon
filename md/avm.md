@@ -348,7 +348,7 @@ fee of that transaction.
 *A transaction always pays all of its proposed fee, no matter how much of its predefined resources were not used in the
 final emulation.*
 
-### ZK-EDB Servers
+### Incentives for ZK-EDB Servers
 
 The incentive mechanism for ZK-EDB servers should have the following properties:
 
@@ -420,7 +420,7 @@ will be considered expired. Validation and prize distribution for the winning ti
 the round *r* + 1. This way, **the content of the challenge memory block could be kept secret during the lottery
 round.** Every winning ticket will get an equal share of the lottery prize.
 
-### Memory Allocation and De-allocation
+### Memory Allocation and De-allocation Fee
 
 Every *k* round the protocol chooses a price per byte for AVM memory. When a smart contract executes a heap allocation
 instruction, the protocol will automatically deduce the cost of the allocated memory from the ARG address of the smart
@@ -444,7 +444,7 @@ Concurrency
 
 Every block of the Argennon blockchain contains a list of transactions. This list is an ordered list and the effect of
 its contained transactions must be applied to the AVM state sequentially as they appear in the ordered list. This
-ordering is solely chosen by the block proposer, and users should not have any assumption about the ordering of
+ordering is solely chosen by the block proposer, and users should not have any assumptions about the ordering of
 transactions in a block.
 
 The fact that block transactions constitute a sequential list, does not mean they can not be executed and applied to the
@@ -502,6 +502,15 @@ The block proposer is responsible for proposing an efficient execution DAG along
 DAG will determine the ordering of block transactions and help validators to validate transactions in parallel. Since
 with better parallelization a block can contain more transactions, a proposer is incentivized enough to find a good
 execution DAG for transactions.
+
+### Memory Spooling
+
+When two transactions are dependant and they are connected with an edge (*u*, *v*) in the execution DAG, the transaction
+*u* needs to be run before the transaction *v*. However, if *v* does not read any memory locations that *u* modifies, we
+can run *u* and *v* in parallel. We just need to make sure *u* does not see any changes *v* is making in AVM memory.
+This can be done by appropriate versioning of the memory locations which is shared between *u* and *v*. We call this
+method *memory spooling*. After enabling memory spooling between two transactions the edge connecting them can be safely
+removed from the execution DAG.
 
 ### Concurrent Counters
 

@@ -14,6 +14,7 @@
 \usepackage{algpseudocode}
 \usepackage{listings}
 \usepackage{amssymb}
+\usepackage{cleveref}
 \lstset{
 %  basicstyle=\ttfamily,
     mathescape
@@ -370,7 +371,7 @@
     \emph{A transaction always pays all of its proposed fee, no matter how much of its predefined resources were not
     used in the final emulation.}
 
-    \subsection{ZK-EDB Servers}\label{subsec:zk-edb-servers}
+    \subsection{Incentives for ZK-EDB Servers}\label{subsec:zk-edb-servers}
 
     The incentive mechanism for ZK-EDB servers should have the following properties:
 
@@ -437,7 +438,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     \(r\) will be done in the round \(r + 1\). This way, \textbf{the content of the challenge memory block could be
     kept secret during the lottery round.} Every winning ticket will get an equal share of the lottery prize.
 
-    \subsection{Memory Allocation and De-allocation}\label{subsec:memory-allocation-and-de-allocation}
+    \subsection{Memory Allocation and De-allocation Fee}\label{subsec:memory-allocation-and-de-allocation}
 
     Every \(k\) round the protocol chooses a price per byte for AVM memory. When a smart contract executes a heap
     allocation instruction, the protocol will automatically deduce the cost of the allocated memory from the ARG
@@ -462,7 +463,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
 
     Every block of the Argennon blockchain contains a list of transactions. This list is an ordered list and the
     effect of its contained transactions must be applied to the AVM state sequentially as they appear in the ordered
-    list. This ordering is solely chosen by the block proposer, and users should not have any assumption about
+    list. This ordering is solely chosen by the block proposer, and users should not have any assumptions about
     the ordering of transactions in a block.
 
     The fact that block transactions constitute a sequential list, does not mean they can not be executed and applied
@@ -573,6 +574,16 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     parallel. Since with better parallelization a block can contain more transactions, a proposer is incentivized enough
     to find a good execution DAG for transactions.
 
+    \subsection{Memory Spooling}\label{subsec:spooling}
+
+    When two transactions are dependant and they are connected with an edge \((u,v)\) in the execution DAG,
+    the transaction \(u\) needs to be run before the transaction \(v\). However, if \(v\) does not read any
+    memory locations that \(u\) modifies, we can run \(u\) and \(v\) in parallel. We just need to make sure
+    \(u\) does not see any changes \(v\) is making in AVM memory. This can be done by appropriate versioning
+    of the memory locations which is shared between \(u\) and \(v\). We call this method \emph{memory spooling}.
+    After enabling memory spooling between two transactions the edge connecting them can be safely removed from the
+    execution DAG\@.
+
     \subsection{Concurrent Counters}\label{subsec:concurrent-counters}
 
     We know that in Argennon every transaction needs to transfer its proposed fee to the \texttt{feeSink} accounts
@@ -596,8 +607,20 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
         \DontPrintSemicolon
         \SetKwData{CC}{Counter}
         \SetKwFunction{Inc}{Increment}\SetKwFunction{Dec}{Decrement}\SetKwFunction{AtomInc}{AtomicIncrement}
-        \SetKwFunction{AtomDec}{AtomicDecrement}\SetKwFunction{AtomSet}{AtomicSet}
+        \SetKwFunction{AtomDec}{AtomicDecrement}\SetKwFunction{AtomSet}{AtomicSet}\SetKwFunction{Get}{GetValue}
+        \SetKwFunction{Acquire}{Lock.Acquire}\SetKwFunction{Release}{Lock.Release}
         \SetKwProg{Fn}{Function}{}{}
+        \Fn{\Get{\CC}}
+        {
+            $s \gets 0$\;
+            \Acquire{}\;
+            \For{$i \gets 0$ \KwTo $\CC.size - 1$}
+            {
+                $s \gets s + \CC.cell[i]$\;
+            }
+            \Release{}\;
+            \KwRet{s}\;
+        }
         \BlankLine
         \Fn{\Inc{\CC, value, seed}}
         {
