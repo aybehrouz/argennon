@@ -14,13 +14,19 @@
 \usepackage{algpseudocode}
 \usepackage{listings}
 \usepackage{amssymb}
-\usepackage{cleveref}
+\usepackage{tcolorbox}
 \lstset{
 %  basicstyle=\ttfamily,
     mathescape
 }
 %\binoppenalty=99999
 %\relpenalty=99999
+\newcommand{\note}[1] {
+    \begin{tcolorbox}[colframe=white,colback=white]
+        \emph{#1}
+        %\emph{#1}\medskip
+    \end{tcolorbox}
+}
 
 \title{The Argennon Virtual Machine}
 \author{aybehrouz}
@@ -97,7 +103,7 @@
     type of a method can be either \texttt{public} or \texttt{private}. The AVM has no instructions for modifying the
     constant area.
 
-    \emph{Only public methods can be invoked by \texttt{invoke\_external} instruction.}
+    \note{Only public methods can be invoked by \texttt{invoke\_external} instruction.}
 
     \subsubsection{Local Frame}
 
@@ -117,7 +123,7 @@
     other words, the address of every memory location inside a heap is a pair of indices: \texttt{(pageIndex, offset)}.
     Different pages of a heap do not need to be equally sized.
 
-    \emph{The reason behind this paged design is that the heap is usually persisted using a block device. A heap with
+    \note{The reason behind this paged design is that the heap is usually persisted using a block device. A heap with
     a paged structure could expose the underlying block based nature of the persistence layer to the application
     layer. In this way, the compiler or the programmer could better optimize the code for the persistence layer.}
 
@@ -140,7 +146,7 @@
         contracts.
     \end{itemize}
 
-    \emph{In the future, we may need to add special instructions for invoking interface and virtual methods...}
+    \note{In the future, we may need to add special instructions for invoking interface and virtual methods...}
 
     Each time a method is invoked a new local frame and operand stack is created. The Argennon Virtual Machine uses
     local frames to pass parameters on method invocation. On method invocation, any parameters are passed in
@@ -178,7 +184,7 @@
     call, including changes made to other segments, will be rolled back.} So, when a method call completes abruptly,
     that method call essentially has no effect on the AVM state.
 
-    \emph{By using the \texttt{athrow} instruction properly, a programmer can make any method act like an atomic
+    \note{By using the \texttt{athrow} instruction properly, a programmer can make any method act like an atomic
     operation.}
 
     \subsection{Authorizing Operations}\label{subsec:authorizing-operations}
@@ -190,7 +196,7 @@
     passing signatures as parameters to methods, a programmer can implement the required logic for authorizing any
     operation.
 
-    \emph{The Argennon virtual machine has no instructions for issuing cryptographic signatures.}
+    \note{The Argennon virtual machine has no instructions for issuing cryptographic signatures.}
 
     In addition to signatures, a method can verify its invoker by using \texttt{get\_parent} instruction. This
     instruction gets the \texttt{applicationID} of the smart contract that is one level deeper than the current
@@ -239,7 +245,7 @@
     block. Every code area will be divided into blocks and every block will be stored in the DB with
     \texttt{applicationID|blockID} as its key. Like heap pages, nodes keep a cache of code area blocks.
 
-    \emph{Unlike heap pages, the AVM is not aware of different blocks of code area.}
+    \note{Unlike heap pages, the AVM is not aware of different blocks of code area.}
 
 
     \section{Transactions}\label{sec:transactions}
@@ -314,7 +320,7 @@
     commitments based on the modified pages and verify the commitments included in the new block. Validators also
     calculate and verify the commitment to the new block's transaction set.
 
-    \emph{Validators do not need to write the modified pages back to ZK-EDB servers. ZK-EDBs will receive the new
+    \note{Validators do not need to write the modified pages back to ZK-EDB servers. ZK-EDBs will receive the new
     block, and they will update their database by emulating the AVM execution.}
 
 
@@ -368,7 +374,7 @@
     location that is not included in its reading list, it will be considered failed and the network can receive the
     proposed fee of that transaction.
 
-    \emph{A transaction always pays all of its proposed fee, no matter how much of its predefined resources were not
+    \note{A transaction always pays all of its proposed fee, no matter how much of its predefined resources were not
     used in the final emulation.}
 
     \subsection{Incentives for ZK-EDB Servers}\label{subsec:zk-edb-servers}
@@ -391,16 +397,16 @@
         \item \texttt{round}: the current round number.
     \end{itemize}
 
-    \emph{In a round, an honest validator never gives a receipt for an identical memory block to two different ZK-EDBs.}
+    \note{In a round, an honest validator never gives a receipt for an identical memory block to two different ZK-EDBs.}
 
     To incentivize ZK-EDB servers, a lottery will be held every round and a predefined amount of ARGs from
     \texttt{dbFeeSink} account will be distributed between winners as a prize. This prize will be divided equally
     between all \emph{winning tickets} of the lottery.
 
-    \emph{One ZK-EDB server could own multiple winning tickets in a round.}
+    \note{One ZK-EDB server could own multiple winning tickets in a round.}
 
     To run this lottery, every round, based on the current block seed, a collection of \emph{valid} receipts will be
-    selected randomly as the \emph{winning receipts} of the round. A receipt is \emph{valid} in the round \(r\) if:
+    selected randomly as the \emph{winning receipts} of the round. A receipt is \emph{valid} in round \(r\) if:
 
     \begin{itemize}
         \item The signer was a validator in the round \(r - 1\) and voted for the agreed-upon block.
@@ -422,7 +428,7 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
         \item \texttt{|} is a concatenation operator.
     \end{itemize}
 
-    \emph{The winners of the lottery were validators one round before the lottery round.}
+    \note{The winners of the lottery were validators one round before the lottery round.}
 
     Also, based on the current block seed, a random memory block, whether a heap page or a code area block, is
     selected as the challenge of the round. A ZK-EDB that owns a winning receipt needs to broadcast a \emph{winning
@@ -433,8 +439,8 @@ IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
     A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge
     memory block combined with the ZK-EDB ARG address: \texttt{hash(challenge.content|ownerAddr)}
 
-    The winning tickets of the lottery of the round \(r\) need to be included in the block of the round \(r\),
-    otherwise they will be considered expired. Validation and prize distribution for the winning tickets of the round
+    The winning tickets of the lottery of round \(r\) need to be included in the block of the round \(r\),
+    otherwise they will be considered expired. Validation and prize distribution for the winning tickets of round
     \(r\) will be done in the round \(r + 1\). This way, \textbf{the content of the challenge memory block could be
     kept secret during the lottery round.} Every winning ticket will get an equal share of the lottery prize.
 

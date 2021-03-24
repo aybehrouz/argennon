@@ -377,7 +377,7 @@ of the lottery.
 *One ZK-EDB server could own multiple winning tickets in a round.*
 
 To run this lottery, every round, based on the current block seed, a collection of *valid* receipts will be selected
-randomly as the *winning receipts* of the round. A receipt is *valid* in the round *r* if:
+randomly as the *winning receipts* of the round. A receipt is *valid* in round *r* if:
 
 -   The signer was a validator in the round *r* − 1 and voted for the agreed-upon block.
 
@@ -415,10 +415,10 @@ ZK-EDBs to store all memory blocks.
 A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge memory
 block combined with the ZK-EDB ARG address: `hash(challenge.content|ownerAddr)`
 
-The winning tickets of the lottery of the round *r* need to be included in the block of the round *r*, otherwise they
-will be considered expired. Validation and prize distribution for the winning tickets of the round *r* will be done in
-the round *r* + 1. This way, **the content of the challenge memory block could be kept secret during the lottery
-round.** Every winning ticket will get an equal share of the lottery prize.
+The winning tickets of the lottery of round *r* need to be included in the block of the round *r*, otherwise they will
+be considered expired. Validation and prize distribution for the winning tickets of round *r* will be done in the round
+*r* + 1. This way, **the content of the challenge memory block could be kept secret during the lottery round.** Every
+winning ticket will get an equal share of the lottery prize.
 
 ### Memory Allocation and De-allocation Fee
 
