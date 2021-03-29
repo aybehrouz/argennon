@@ -1,8 +1,8 @@
 ### Goals:
 
 - The runtime environment for smart contracts should be free from any type of storage-memory impedance mismatch
-  problem. A programmer will be able to write his smart contracts without the need to think about the permanent
-  storage structure. He can easily assume his application will reside in the mein memory forever and he doesn't need
+  problem. A programmer will be able to write his smart contract without the need to think about the structure of
+  permanent storage. He can simply assume his application will reside in main memory forever and he doesn't need
   storage.
 
 - Smart contracts should be able to store considerable amount of data securely on blockchain. We achieve this by
