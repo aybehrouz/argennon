@@ -289,8 +289,110 @@ block. This will modify some pages of the AVM memory, so they update the ZK-EDB 
 and verify the commitments included in the new block. Validators also calculate and verify the commitment to the new
 block’s transaction set.
 
-*Validators do not need to write the modified pages back to ZK-EDB servers. ZK-EDBs will receive the new block, and they
-will update their database by emulating the AVM execution.*
+*Validators do not need to write the modified pages back to ZK-EDB servers. ZK-EDB servers will receive the new block,
+and they will update their database by emulating the AVM execution.*
+
+Consensus
+---------
+
+*It will be a randomized proof of stake which is under development....*
+
+### Estimating A User’s Stake
+
+In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount of
+stake the user has in the system. Conventionally in these systems, for estimating a user’s stake, we use the amount of
+native system tokens the user is holding. Unfortunately, one problem with this approach is that a strong attacker may be
+able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
+stake to attack the system.
+
+To mitigate this problem, for calculating a user’s stake at time step *t*, instead of using the raw ARG balance, we use
+the minimum of a *trust value* the system has calculated for the user and the user’s ARG balance:
+
+*S*<sub>*u*, *t*</sub> = min (*B*<sub>*u*, *t*</sub>, *Trust*<sub>*u*, *t*</sub>)
+
+Where:
+
+-   *S*<sub>*u*, *t*</sub> is the stake of user *u* at time step *t*.
+
+-   *B*<sub>*u*, *t*</sub> is the ARG balance of user *u* at time step *t*.
+
+-   *Trust*<sub>*u*, *t*</sub> is an estimated trust value for user *u* at time step *t*.
+
+The agreement protocol, at time step *t*, will use ∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> to determine the required
+number of votes for the confirmation of a block, and we let *Trust*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t*</sub>,
+where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ARG balance of user *u* at time step *t*.
+
+In our system a user who held ARGs and participated in the consensus for a long time is more trusted than a user with a
+higher balance whose balance has increased recently. An attacker who has obtained a large amount of ARGs, also needs to
+hold them for a long period of time before being able to attack the system.
+
+For calculating the exponential moving average of a user’s balance at time step *t*, we can use the following recursive
+formula:
+
+*M*<sub>*u*, *t*</sub> = (1 − *α*)*M*<sub>*u*, *t* − 1</sub> + *αB*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t* − 1</sub> + *α*(*B*<sub>*u*, *t*</sub> − *M*<sub>*u*, *t* − 1</sub>)
+
+Where the coefficient *α* is a constant smoothing factor between 0 and 1 which represents the degree of weighting
+decrease, A higher *α* discounts older observations faster.
+
+Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
+*M*<sub>*u*, *t*</sub>: (In the following equations the *u* subscript is dropped for simplicity)
+
+*M*<sub>*t*</sub> = (1 − *α*)<sup>*t* − *k*</sup>*M*<sub>*k*</sub> + \[1 − (1 − *α*)<sup>*t* − *k*</sup>\]*B*
+
+Where:
+
+*B* = *B*<sub>*k* + 1</sub> = *B*<sub>*k* + 2</sub> = … = *B*<sub>*t*</sub>
+
+We know that when |*nx*| ≪ 1 we can use the binomial approximation (1 + *x*)<sup>*n*</sup> ≈ 1 + *nx*. So, we can
+further simplify this formula:
+
+*M*<sub>*t*</sub> = *M*<sub>*k*</sub> + (*t* − *k*)*α*(*B* − *M*<sub>*k*</sub>)
+
+For choosing the value of *α* we can consider the number of time steps that the trust value of a user needs for reaching
+a specified fraction of his account balance. We know that for large *n* and |*x*| &lt; 1 we have
+(1 + *x*)<sup>*n*</sup> ≈ *e*<sup>*nx*</sup>, so by letting *M*<sub>*u*, *k*</sub> = 0 and *n* = *t* − *k* we can
+write:
+
+$$\\alpha =- \\frac{\\ln\\left(1 - \\frac{M\_{n+k}}{B}\\right)}{n}$$
+
+The value of *α* for a desired configuration can be calculated by this equation. For instance, we could calculate the
+*α* for a relatively good configuration in which *M*<sub>*n* + *k*</sub> = 0.8*B* and *n* equals to the number of time
+steps of 10 years.
+
+In our system a newly created account will not have voting power for some time, no matter how high its balance is. While
+this is a desirable property, in case a large proportion of total system tokens are transferred to newly created
+accounts, it can result in too much voting power for older accounts. This may decrease the degree of decentralization in
+our system.
+
+However, this situation is easily detectable by comparing the total stake of the system with the total balance of users.
+If after confirming a block the total stake of the system goes too low and we have:
+
+∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> &lt; *γ*∑<sub>*u*</sub>*B*<sub>*u*, *t*</sub>
+
+The protocol will perform a *time shift* in the system: the time step of the system will be incremented for *m* steps
+while no blocks will be confirmed. This will increase the value of *M*<sub>*u*, *t*</sub> for new accounts with a
+non-zero balance, giving them more influence in the agreement protocol.
+
+For calculating the value of *m* which determines the amount of time shift in the system, we should note that when
+*B*<sub>*u*, *t*</sub> = *B*<sub>*u*, *t* − 1</sub> = *B*<sub>*u*</sub>, we can derive a simple recursive rule for the
+stake of a user:
+
+*S*<sub>*u*, *t*</sub> = (1 − *α*)*S*<sub>*u*, *t* − 1</sub> + *αB*<sub>*u*</sub>
+
+Therefore, we have:
+
+∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> = (1 − *α*)∑<sub>*u*</sub>*S*<sub>*u*, *t* − 1</sub> + *α*∑<sub>*u*</sub>*B*<sub>*u*</sub>
+
+This equation shows that when the balance of users is not changing over time the total stake of the system is the
+exponential average of the total ARGs of the system. Consequently, when we shift the time for *m* steps, we can
+calculate the new total stake of the system from the following equation:
+
+∑<sub>*u*</sub>*S*<sub>*u*, *t* + *m*</sub> = (1 − *α*)<sup>*m*</sup>∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> + \[1 − (1 − *α*)<sup>*m*</sup>\]∑<sub>*u*</sub>*B*<sub>*u*</sub>
+
+Hence, if we want to increase the total stake of the system from *γ*∑<sub>*u*</sub>*B*<sub>*u*</sub> to
+*λ*∑<sub>*u*</sub>*B*<sub>*u*</sub>, we can obtain *m* from the following formula, assuming *α* is small enough:
+
+$$m = \\frac{1}{\\alpha} \\ln \\left(\\frac{1 - \\gamma}{1 - \\lambda}\\right)$$
 
 Incentive mechanism
 -------------------
@@ -555,108 +657,6 @@ of a block only need to be validated by one voting committee and can be validate
 
 Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure that
 having multiple voting committees will not change the security properties of the Argennon agreement protocol.
-
-Consensus
----------
-
-The consensus protocol of Argennon is similar to Algorand with a few minor improvements.
-
-### Estimating A User’s Stake
-
-In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount of
-stake the user has in the system. Conventionally in these systems, for estimating a user’s stake, we use the amount of
-native system tokens the user is holding. Unfortunately, one problem with this approach is that a strong attacker may be
-able to obtain a considerable amount of system tokens, for example by borrowing from a DEFI application, and use this
-stake to attack the system.
-
-To mitigate this problem, for calculating a user’s stake at time step *t*, instead of using the raw ARG balance, we use
-the minimum of a *trust value* the system has calculated for the user and the user’s ARG balance:
-
-*S*<sub>*u*, *t*</sub> = min (*B*<sub>*u*, *t*</sub>, *Trust*<sub>*u*, *t*</sub>)
-
-Where:
-
--   *S*<sub>*u*, *t*</sub> is the stake of user *u* at time step *t*.
-
--   *B*<sub>*u*, *t*</sub> is the ARG balance of user *u* at time step *t*.
-
--   *Trust*<sub>*u*, *t*</sub> is an estimated trust value for user *u* at time step *t*.
-
-The agreement protocol, at time step *t*, will use ∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> to determine the required
-number of votes for the confirmation of a block, and we let *Trust*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t*</sub>,
-where *M*<sub>*u*, *t*</sub> is the exponential moving average of the ARG balance of user *u* at time step *t*.
-
-In our system a user who held ARGs and participated in the consensus for a long time is more trusted than a user with a
-higher balance whose balance has increased recently. An attacker who has obtained a large amount of ARGs, also needs to
-hold them for a long period of time before being able to attack the system.
-
-For calculating the exponential moving average of a user’s balance at time step *t*, we can use the following recursive
-formula:
-
-*M*<sub>*u*, *t*</sub> = (1 − *α*)*M*<sub>*u*, *t* − 1</sub> + *αB*<sub>*u*, *t*</sub> = *M*<sub>*u*, *t* − 1</sub> + *α*(*B*<sub>*u*, *t*</sub> − *M*<sub>*u*, *t* − 1</sub>)
-
-Where the coefficient *α* is a constant smoothing factor between 0 and 1 which represents the degree of weighting
-decrease, A higher *α* discounts older observations faster.
-
-Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
-*M*<sub>*u*, *t*</sub>: (In the following equations the *u* subscript is dropped for simplicity)
-
-*M*<sub>*t*</sub> = (1 − *α*)<sup>*t* − *k*</sup>*M*<sub>*k*</sub> + \[1 − (1 − *α*)<sup>*t* − *k*</sup>\]*B*
-
-Where:
-
-*B* = *B*<sub>*k* + 1</sub> = *B*<sub>*k* + 2</sub> = … = *B*<sub>*t*</sub>
-
-We know that when |*nx*| ≪ 1 we can use the binomial approximation (1 + *x*)<sup>*n*</sup> ≈ 1 + *nx*. So, we can
-further simplify this formula:
-
-*M*<sub>*t*</sub> = *M*<sub>*k*</sub> + (*t* − *k*)*α*(*B* − *M*<sub>*k*</sub>)
-
-For choosing the value of *α* we can consider the number of time steps that the trust value of a user needs for reaching
-a specified fraction of his account balance. We know that for large *n* and |*x*| &lt; 1 we have
-(1 + *x*)<sup>*n*</sup> ≈ *e*<sup>*nx*</sup>, so by letting *M*<sub>*u*, *k*</sub> = 0 and *n* = *t* − *k* we can
-write:
-
-$$\\alpha =- \\frac{\\ln\\left(1 - \\frac{M\_{n+k}}{B}\\right)}{n}$$
-
-The value of *α* for a desired configuration can be calculated by this equation. For instance, we could calculate the
-*α* for a relatively good configuration in which *M*<sub>*n* + *k*</sub> = 0.8*B* and *n* equals to the number of time
-steps of 10 years.
-
-In our system a newly created account will not have voting power for some time, no matter how high its balance is. While
-this is a desirable property, in case a large proportion of total system tokens are transferred to newly created
-accounts, it can result in too much voting power for older accounts. This may decrease the degree of decentralization in
-our system.
-
-However, this situation is easily detectable by comparing the total stake of the system with the total balance of users.
-If after confirming a block the total stake of the system goes too low and we have:
-
-∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> &lt; *γ*∑<sub>*u*</sub>*B*<sub>*u*, *t*</sub>
-
-The protocol will perform a *time shift* in the system: the time step of the system will be incremented for *m* steps
-while no blocks will be confirmed. This will increase the value of *M*<sub>*u*, *t*</sub> for new accounts with a
-non-zero balance, giving them more influence in the agreement protocol.
-
-For calculating the value of *m* which determines the amount of time shift in the system, we should note that when
-*B*<sub>*u*, *t*</sub> = *B*<sub>*u*, *t* − 1</sub> = *B*<sub>*u*</sub>, we can derive a simple recursive rule for the
-stake of a user:
-
-*S*<sub>*u*, *t*</sub> = (1 − *α*)*S*<sub>*u*, *t* − 1</sub> + *αB*<sub>*u*</sub>
-
-Therefore, we have:
-
-∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> = (1 − *α*)∑<sub>*u*</sub>*S*<sub>*u*, *t* − 1</sub> + *α*∑<sub>*u*</sub>*B*<sub>*u*</sub>
-
-This equation shows that when the balance of users is not changing over time the total stake of the system is the
-exponential average of the total ARGs of the system. Consequently, when we shift the time for *m* steps, we can
-calculate the new total stake of the system from the following equation:
-
-∑<sub>*u*</sub>*S*<sub>*u*, *t* + *m*</sub> = (1 − *α*)<sup>*m*</sup>∑<sub>*u*</sub>*S*<sub>*u*, *t*</sub> + \[1 − (1 − *α*)<sup>*m*</sup>\]∑<sub>*u*</sub>*B*<sub>*u*</sub>
-
-Hence, if we want to increase the total stake of the system from *γ*∑<sub>*u*</sub>*B*<sub>*u*</sub> to
-*λ*∑<sub>*u*</sub>*B*<sub>*u*</sub>, we can obtain *m* from the following formula, assuming *α* is small enough:
-
-$$m = \\frac{1}{\\alpha} \\ln \\left(\\frac{1 - \\gamma}{1 - \\lambda}\\right)$$
 
 Smart Contract Oracle
 ---------------------
