@@ -4,10 +4,10 @@
 
 % Preamble
 \documentclass[11pt, a4paper]{report}
+\usepackage[a4paper]{geometry}
 
 % Packages
 %\usepackage{amsmath}
-%\usepackage[a4paper]{geometry}
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{amsfonts}
@@ -16,8 +16,17 @@
 \usepackage{listings}
 \usepackage{amssymb}
 \usepackage{tcolorbox}
+\usepackage{amsmath}
+
+
 \lstset{
-%  basicstyle=\ttfamily,
+    language=Java,
+    morekeywords={contract, initialize, constructor, external, virtual, map, account, signature, overrides, is, string},
+    basicstyle=\small\sffamily,
+    columns=fullflexible,
+%   keywordstyle=\bfseries,
+    breaklines=true,
+    showstringspaces=false,
     mathescape
 }
 %\binoppenalty=99999
@@ -45,45 +54,103 @@
     \section{Introduction}\label{sec:introduction}
 
     The Argennon Virtual Machine (AVM) is an abstract computing machine for executing Argennon's smart contracts. The
-    Argennon Virtual Machine knows nothing of the Argennon blockchain, only of cleanup sessions and
-    execution sessions.
+    Argennon Virtual Machine knows nothing of the Argennon blockchain, only of Argennon's identifier tries and
+    the concept of execution sessions.
 
     Execution sessions are separate sessions of executing smart contact's code by the Argennon Virtual Machine.
-    These sessions usually are correspondent to the concept of a transaction in a blockchain. (See
-    Section~\ref{subsec:execution-sessions})
-
-    A cleanup session is the time slot in which the Argennon Virtual Machine performs cleanup and re-optimization of
-    its internal data structures in a "Stop the World" manner. Cleanup sessions usually are done as the final phase of
-    the block confirmation process in a blockchain. (See Section ...)
-
+    These sessions are usually correspondent to the concept of a transaction in a blockchain. (See
+    Section~\ref{sec:execution-sessions})
 
     \section{Data Types}\label{sec:data-types}
 
     The Argennon Virtual Machine expects that all type checking is done prior to run time, typically by a compiler,
     and does not have to be done by the Argennon Virtual Machine itself.
 
-    The Argennon Virtual Machine operates on two kinds of types: primitive types and reference types. There are,
+    The Argennon Virtual Machine operates on two kinds of types: primitive types and identifier types. There are,
     correspondingly, two kinds of values that can be stored in memory locations, passed as arguments, returned by
-    methods, and operated upon: primitive values and reference values.
+    methods, and operated upon: primitive values and identifier values.
 
-    Values of primitive or reference types need not be tagged or otherwise be inspectable to determine their types
+    Values of primitive or identifier types need not be tagged or otherwise be inspectable to determine their types
     at run time, or to be distinguished from values of other types. Instead, the instruction set of the Argennon
     Virtual Machine distinguishes its operand types using instructions intended to operate on values of specific
-    types. For instance, \texttt{iadd64} assumes that its operands are two 64-bit signed integers or \texttt{rstore}
-    assumes that its operand is a reference type.
+    types. For instance, \texttt{iadd64} assumes that its operands are two 64-bit signed integers or \texttt{delete}
+    assumes that its operand is an identifier type.
 
-    A reference value may be the special \texttt{null} reference, a reference to no location, which will be denoted here
-    by \texttt{null}. The default value of a reference type is \texttt{null}.
+    An identifier value in the Argennon Virtual Machine is a variable length array of bytes. Some instructions
+    that work with identifiers are able to determine the length of their identifier operands, while some
+    other instructions, for performance reasons, require the length to be specified.
 
     The Argennon virtual machine does not have a fixed word size. Any instruction of the Argennon Virtual Machine has
     its specific word size, and the addressable memory areas are byte addressable.
 
 
+    \section{Identifiers}\label{sec:identifiers}
+
+    In the Argennon Virtual Machine four distinct identifier values exist: \texttt{applicationID}, \texttt{accountID},
+    \texttt{methodID} and \texttt{chunkID}.
+
+    All these identifiers are \emph{prefix codes}, and hence can be represented by
+    \emph{prefix trees} \footnote{Also knows as tries.}. The AVM has three primitive prefix trees:
+    \emph{applications, accounts} and \emph{local}. Any identifier in Argennon is a
+    prefix code built by using one or more of these prefix trees:
+    \begin{itemize}
+        \item \texttt{applicationID} is a prefix code built by \emph{applications} prefix tree.
+        \item \texttt{accountID} is a prefix code built by \emph{accounts} prefix tree.
+        \item \texttt{methodID} is a composite prefix code built by concatenating an \texttt{applicationID} to
+        a prefix code made by \emph{local} prefix tree.(\texttt{|} is the concatenating operator.)
+
+        \texttt{methodID = (applicationID|<local prefix code>)}
+        \item \texttt{chunkID} is a composite prefix code built by concatenating an \texttt{applicationID} to
+        an \texttt{accountID} to a prefix code made by \emph{local} prefix tree
+
+        \texttt{chunkID = (applicationID|accountID|<local prefix code>)}
+    \end{itemize}
+
+    All Argennon prefix trees have an equal branching factor \(\beta\). Therefore, we can represent an Argennon
+    prefix tree as a sequence of fractional numbers in base \(\beta\):
+    \[
+        <A^{(1)},A^{(2)},A^{(3)},\dots>
+    \]
+    Where \(A^{(i)}=(0.a_{1}a_{2}\dots a_{i})_\beta\), and we have \(A^{(i)}<A^{(i+1)}\). A typical choice for \(\beta\)
+    could be \(2^8\).
+
+    One important property of prefix identifiers is that while they have variable and unlimited length, they are
+    uniquely extractable from any data. Assume that we have a string of digits which are in base $\beta$, we
+    know that $k$ first digits belong to an Argennon's identifier, but we don't know the value of $k$.
+    Algorithm~\ref{alg:prefix_id} can extract the prefixed identifier uniquely. We can apply this algorithm
+    multiple times to a sequence to extract a composite identifier, for example \texttt{chunkID}, from a sequence.
+
+    %##\includegraphics[width=17cm]{../img/Alg1s.png}
+    \begin{algorithm}
+        \DontPrintSemicolon
+        \SetKwData{Ready}{$R_e$}\SetKwData{V}{$v_f$}\SetKwData{Graph}{$G_e$}\SetKwData{Vertices}{$V$}\SetKwData
+        {Txns}{$T$}
+        \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+        \Input{A sequence of $n$ digits in base $\beta$: $d_{1}d_{2}\dots d_{n}$ \newline
+            A prefix tree: $<A^{(1)},A^{(2)},A^{(3)},\dots>$}
+        \Output{Valid identifier prefix of the sequence.}
+        \BlankLine
+        \For{$i = 1$ \KwTo $n$}
+        {
+            \If{$(0.d_{1}d_{2}\dots d_{i})_\beta < A^{(i)}$}
+            {
+                \KwRet{$d_{1}d_{2}\dots d_{i}$}\;
+            }
+        }
+        \KwRet{NIL}\;
+        \caption{Finding a prefixed identifier}\label{alg:prefix_id}
+    \end{algorithm}
+
+    In Argennon the shorter prefix codes are assigned to more active accounts and smart contracts which tend to own more
+    data objects in the system. The prefix trees are designed by analyzing empirical data to make sure the number
+    of leaves in each level is chosen appropriately.
+
+
     \section{Arithmetics}\label{sec:arithmetics}
 
-    All arithmetic operations in the Argennon Virtual machine are safe and there are strict overflow checks and
-    blah blah blah
-
+    The Argennon Virtual Machine supports signed integer and signed floating point operations. The Argennon Virtual
+    Machine does not support any type of unsigned arithmetics. All arithmetic operations in the Argennon Virtual Machine
+    are checked and any type of overflow or underflow will cause a catchable exception to be thrown.
 
     \section{Architecture}\label{sec:arch}
 
@@ -141,7 +208,7 @@ CallInfo {
         \item Heap
     \end{itemize}
     All data areas except operand stack, have their own address space. Operand stack is a
-    last-in-first-out (LIFO) stack and is not addressable. Every AVM memory access instruction operates on its specific
+    last-in-first-out (LIFO) stack and is not addressable. Every AVM instruction operates on its specific
     data areas.
 
     \subsubsection{Method Area}
@@ -158,8 +225,8 @@ CallInfo {
 
     Every smart contract has a single constant area which is stored in the AVM code area as a special type of
     non-executable method. The constant area of a smart contract contains several kinds of constants, ranging from user
-    defined constants to method address tables. A method address table stores the list of method identifiers of a smart
-    contract and their access type. The access type of a method can be either \texttt{external} or \texttt{internal}.
+    defined constants to method address tables. A method address table stores the list of methods of a smart
+    contract and their access type. The access type of method can be either \texttt{external} or \texttt{internal}.
     Only external methods can be invoked by \texttt{invoke\_external} instruction.
 
     \note{Instructions that modify the constant area can only be run in privileged mode.}
@@ -187,8 +254,9 @@ CallInfo {
 
     A smart contract can read any chunk stored in the heap by having its \texttt{chunkID}. However, it can only modify
     those chunks that was created by itself. In other words, every memory chunk in the AVM heap has an owner. Only
-    the owner can modify a chunk while any one can read that chunk. In addition, for modifying a chunk the \texttt{canModify}
-    flag of the current method's \texttt{callInfo} struct must be true.
+    the owner can modify a chunk while anyone can read that chunk. In addition, for modifying a chunk the \texttt{canModify}
+    flag of the current method's \texttt{callInfo} struct must be true. The owner of a chunk can be easily determined
+    by the \texttt{applicationID} part of the chunk identifier.
 
     \note{The reason behind this type of access control design is the fact that smart contract code is usually
     immutable. That means if a smart contract does not implement a getter mechanism for some parts of its internal
@@ -205,7 +273,7 @@ CallInfo {
         \item \texttt{Restore()} pops the snapshot stored on the top of the snapshot stack and restores it. The
         current state of the heap will be lost.
         \item \texttt{Discard()} pops the snapshot stored on the top of the snapshot stack and discards it. The current
-        state of the heap will be preserved.
+        state of the heap will not change.
     \end{itemize}
 
     \note{These functions are internal functions of the AVM. They are not instructions, and can not be called by smart
@@ -221,30 +289,32 @@ CallInfo {
 
     The Argennon Virtual Machine has four types of method invocation instruction:
     \begin{itemize}
-        \item \texttt{invoke\_internal} invokes a method without changing the context of method execution. In other
+        \item \texttt{invoke\_internal}: invokes a method without changing the context of method execution. In other
         words, \texttt{applicationID} and \texttt{canModify} fields of the invoked method in the
         call stack will be the same as the invoker.
         A smart contract can invoke any method by \texttt{invoke\_internal} instruction, even if that method is an
         internal method of another smart contract. Since the invoked method will always be executed in the context of
         the invoking smart contract, a smart contract will not be able to modify another smart contract state by
-        this instruction. This instruction facilitates the usage of libraries and code reuse.
-        \item \texttt{invoke\_external} invokes a method and changes the context of method execution to another
+        this instruction. This instruction facilitates code reuse and the usage of libraries.
+        \item \texttt{invoke\_external}: invokes a method and changes the context of method execution to another
         smart contract. Only external methods of another smart contract can be called by this instruction. For changing
         the context of method execution this instruction sets the \texttt{applicationID} field of the invoked method
         to the \texttt{applicationID} of the called smart contract. Then it searches the call stack and if
-        the \texttt{applicationID} of the called smart contract is found in the call stack it sets \texttt{canModify}
-        to \texttt{false}, otherwise \texttt{canModify} is set to \texttt{true}. As a result, if the
-        called smart contract is already called, the invoked method will not be able to modify the heap area.
-        \item \texttt{invoke\_native} invokes a method that is not hosted by the Argennon Virtual Machine. By this
+        the \texttt{applicationID} of the called smart contract is found in the current call stack it sets
+        \texttt{canModify} to \texttt{false}, otherwise \texttt{canModify} is set to \texttt{true}.
+        As a result, if the called smart contract is already called, the invoked method will not be
+        able to modify the heap area.
+        \item \texttt{invoke\_native}: invokes a method that is not hosted by the Argennon Virtual Machine. By this
         instruction, high performance native methods of the hosting machine could become available to AVM smart
         contracts. This instruction will not modify the AVM state.
-        \item \texttt{spawn} spawns a new method invocation. Spawning a method invocation is the invocation of a method
-        with changing the context of method execution and creating a new call stack. The created call stack is added at
-        the end of the call stack queue and the \texttt{canModify} field of the \texttt{CallInfo} struct will always
+        \item \texttt{spawn}: spawns a new method invocation. Spawning a method invocation is the invocation of a method
+        with changing the context of method execution and creating a new call stack. Only external methods can
+        be spawned. The created call stack is added at the end of the call stack queue and
+        the \texttt{canModify} field of the pushed \texttt{CallInfo} struct will always
         be set to \texttt{true}. This instruction does not modify the \texttt{pc} register and the execution of the
         caller will continue after this instruction. As a result, \texttt{spawn} can not return
         any value to the caller and the return value of the called method (if any) will be added
-        to the transaction output. If the invoked method completes abruptly it will cause all the call stack queue to
+        to the transaction output. If the invoked method completes abruptly, it will cause all the call stack queue to
         complete abruptly.
     \end{itemize}
 
@@ -279,7 +349,7 @@ CallInfo {
     normally in the invoking method's local frame with the returned
     value (if any) pushed onto the operand stack. If the method was invoked by a \texttt{spawn} instruction,
     the execution of the next call stack (if any) begins and the returned value
-    is appended at the end of the transaction output. When a method invocation completes normally
+    is appended at the end of the transaction output. When a method invocation completes normally,
     the \texttt{Heap.Discard()} function is called as a part of the return instruction.
 
     A method invocation completes abruptly if an exception is thrown and is not caught by the current method. A
@@ -305,7 +375,7 @@ CallInfo {
         \While{\Stack is not empty}
         {
             \Stack.\Pop{}\;
-            \eIf{\Stack is not empty \textbf{and} $\Stack[head].pc = catch$}
+            \eIf{\Stack is not empty \textbf{and} $\Stack[head].pc \rightarrow catch$}
             {
                 \Heap.\Restore{}\;
             }{
@@ -313,24 +383,80 @@ CallInfo {
             }
         }
         \Heap.\Restore{}\;
-        \caption{Abrupt Method Completion}\label{alg:Abrupt}
+        \caption{Abrupt method completion}\label{alg:Abrupt}
     \end{algorithm}
 
-    Closer investigation of Algorithm~\ref{alg:Abrupt} shows that when an invocation which was made by
+    A closer investigation of Algorithm~\ref{alg:Abrupt} shows that when an invocation which was made by
     a \texttt{spawn} instruction completes abruptly, the heap snapshot that was saved before the start of the
-    execution of the first call stack of the execution session is restored. This means
+    execution of the first call stack of the execution session is restored. Since the root
+    smart contract calls \texttt{Heap.Save()} function before spawning the requested method, this means
     that all changes made to the AVM heap during the execution session will be restored, but the changes made by
-    the root smart contract including the transferring of the transaction fee will not be restored.
-    See Section~\ref{subsec:execution-sessions} for more details.
+    the root smart contract including the transferring of the transaction fee will not be restored. See
+    Section~\ref{sec:execution-sessions} for more details.
 
 
-    \subsection{Heap Allocation and De-Allocation}\label{subsec:heap-allocation-instructions}
+    \subsection{Heap Allocation and Deallocation}\label{subsec:heap-allocation-instructions}
+
+    Heap allocation and deallocation in the Argennon Virtual Machine is done by the following instructions:
+
+    \begin{itemize}
+        \item \texttt{alloc}: creates a new memory chunk of the specifies size in the heap. the identifier
+        of the new chunk will be the concatenation of the \texttt{applicationID} of the creator of the chunk and
+        the \texttt{id} operand. The specified identifier must be concatenation of
+        an \texttt{accountID} and a prefix code
+        generated by the \emph{local} prefix tree: \texttt{id = accountID|localID}. If the identifier is not valid or
+        if it already exists in the heap a catchable exception will be thrown.
+
+        \item \texttt{delete}: deletes the chunk that its identifier is the concatenation of the current smart
+        contract \texttt{applicationID} to the specified \texttt{id}. If the identifier is not valid or
+        if the chunk was not found a catchable exception will be thrown.
+    \end{itemize}
+
+    When a smart contract allocates a new memory chunk, the identifier of the new chunk is not generated by
+    the AVM, instead the smart contract can choose an identifier itself. This is a very important feature of
+    the AVM heap which allows smart contracts to use the AVM heap as a dictionary (map) data structure.
+    Because the \texttt{chunkID} is a prefix code, any smart contract has its own identifier space and a smart contract
+    can easily generate unique identifiers for its chunks.
+
+    The AVM requires the chosen identifier to be a prefix code made by concatenating a code compatible with
+    the \emph{accounts} prefix tree to a code compatible with the \emph{local} prefix tree. This requirement will
+    enable AVM to detect invalid identifiers while smart contracts can easily associate data with account identifiers.
+    At the same time, A smart contract is able to create maps with costume keys by appending local identifiers
+    to the \texttt{accountID} zero, which does not correspond to a valid account in the Argennon.
+
+
+    \section{Execution Sessions}\label{sec:execution-sessions}
+
+    The execution of smart contracts code in the AVM is done in execution sessions. Every execution session in the
+    Argennon Virtual Machine consists of a single method invocation from the \emph{root} smart contract and a list
+    of resource allocation requests. These allocation requests always include a request for allocating some amount
+    of execution time and a request for accessing some memory locations for reading or writing. If after the start
+    an execution session tries to violate its allocated resources, an \textbf{uncatchable} exception will
+    be thrown by the AVM\@.
+
+    \note{The AVM does not have a \texttt{calldata} memory area. The arguments of the root smart contract method will
+    be copied from the transaction to the local frame of the invoked method, exactly like a normal method invocation.}
+
+    The root smart contract with the \texttt{applicationID} of zero, is a special smart contract in the Argennon
+    Virtual Machine. Its code is immutable and is a part of the AVM implementation. The root smart contract is always
+    run in the privileged mode, and every execution session starts with a call to a method of the root smart contract.
+    This method always transfers some amount of fee from an account ot the \texttt{feeSink} account and then it
+    performs the requested operation.
+
+    \note{Argennon transactions do not have a sender, and the payer of the transaction fee could be any
+    account who has provided the required digital signature.}
+
+    If the requested operation is a method invocation, the root smart contract will call the \texttt{Heap.Save()}
+    function once, and then it will invoke the requested method using \texttt{spawn} instruction. This means that the
+    invoked method will have a separate call stack and if it completes abruptly the changes made by the root
+    smart contract to the state will not be reverted.
+
 
     \section{Authorizing Operations}\label{sec:authorizing-operations}
 
     In blockchain applications, we usually need to authorize certain operations. For example, for sending an asset
     from a user to another user, first we need to make sure that the sender has authorized this operation. The
-    Argennon virtual machine has no built in mechanism for authorizing operations, but it provides a rich set of
+    Argennon virtual machine has no built-in mechanism for authorizing operations, but it provides a rich set of
     cryptographic instructions for validating signatures and cryptographic entities. By using these instructions and
     passing cryptographic signatures as parameters to methods, a programmer can implement the required logic
     for authorizing any operation.
@@ -344,41 +470,117 @@ CallInfo {
     the current smart contract.
 
 
-    \section{Execution Sessions}\label{subsec:execution-sessions}
-
-    The execution of smart contracts code in the AVM is done in execution sessions. Every execution session in the
-    Argennon Virtual Machine constitutes of a single method invocation from the \emph{root} smart contract and a list
-    of resource allocation requests. These allocation requests always include a request for allocating some amount
-    of execution time and a request for accessing some memory locations for reading or writing. If after the start of
-    execution an execution session tries to violate its allocated resources, an uncatchable exception will
-    be thrown by the AVM\@.
-
-    \note{The AVM does not have a \texttt{calldata} memory area. The arguments of the root smart contract's method will
-    be copied from the transaction to the local frame of the invoked method, exactly like a normal method invocation.}
-
-    The root smart contract with the \texttt{applicationID} of zero, is a special smart contract in the Argennon
-    Virtual Machine. Its code is immutable and a part of the AVM implementation and always is run in privileged mode.
-    Every execution session starts with a call to a method of the root smart contract. This method always transfers
-    some amount of fee from an account ot the \texttt{feeSink} account and then it performs the requested operation.
-
-    If the requested operation is a method invocation the root smart contract will call the \texttt{Heap.Save()}
-    function once and then it will invoke the requested method using \texttt{spawn} instruction. This means that the
-    invoked method will have a separate call stack and if it throws an exception it will not cause a rollback in
-    changes the is made by the root smart contract to the state.
-
-    \note{Argennon transactions do not have a sender, and the payer of a transaction fee could be any
-    account who has provided the required digital signature.}
-
-    \section{Cleanup Sessions}\label{sec:cleanup-sessions}
-
-
-
-    ...
-
-
     \section{The AVM Standard Library}\label{sec:the-avm-standard-library}
 
     ...
+
+    \chapter{The Argon Language}\label{ch:argon-lang}
+
+    \section{Introduction}\label{sec:introduction2}
+
+    The Argon programming language is a class-based, object-oriented language designed for writing Argennon's smart
+    contracts. The Argon programming language is inspired by Solidity and is similar to Java, with a number of aspects
+    of them omitted and a few ideas from other languages included. Argon is designed to be fully compatible with
+    the Argennon Virtual Machine and be able to use all advanced features of the Argennon blockchain.
+
+    Argon Programs are organized as sets of packages. Each package has its own set of names for types, which helps
+    to prevent name conflicts. Every package can contain an arbitrary number of classes and a single contract. Every
+    Argon package corresponds to at max one AVM smart contract.
+
+    \section{Features Overview}\label{sec:features-overview}
+
+    \subsection{Static Classes}\label{subsec:static-classes}
+
+    In Argon a static class is an uninstantiable class which all its members and methods are static. Every static
+    class can define a special method \texttt{initialize} which can only be called in the \texttt{initialize}
+    method of the single contract of the package the static class is defined in.
+
+    A Static class is like a normal class which can only have one instance. So like normal classes, static classes can
+    be a super class or a subclass of other static classes and can implement interfaces.
+
+    \subsection{Contracts}\label{subsec:contract}
+
+    Every package of an Argon program can have one or zero contracts. A contact is a special static class which is
+    allowed to define methods with \texttt{external} visibility. When an Argon package is deployed as an AVM smart
+    contract, these external methods will define the contract's public interface.
+
+    \subsection{Access Level Modifiers}\label{subsec:access-level-modifiers}
+
+    Access level modifiers determine whether other classes can use a particular field or invoke a particular method or
+    if a method can be invoked externally by other smart contracts.
+
+    \begin{center}
+        \begin{tabular}{lllllr}
+            \hline
+                    & Class & Package & Subclass & Program & World \\
+            \hline
+            private   & yes   & no      & no       & no      & no    \\
+            protected & yes   & no      & yes      & no      & no    \\
+            package   & yes   & yes     & yes      & no      & no    \\
+            public    & yes   & yes     & yes      & yes     & no    \\
+            external  & no    & no      & no       & no      & yes   \\
+            \hline
+        \end{tabular}\label{tab:table}
+    \end{center}
+
+
+
+    \begin{lstlisting}[frame=TB, float, title=Argon contracts are static classes,label={lst:code1}]
+// A contract is a static class and all its methods are automatically static.
+contract MirrorToken {
+    private SimpleToken token;
+    private SimpleToken reflection;
+
+    // `initialize` is a special static method that is called by the AVM after the code of a contract
+    // is stored in the AVM code area. It can not be called after that.
+    initialize(double supply1, double supply2) {
+    // `new` does not create a new smart contract. It just makes an ordinary object.
+        token = new SimpleToken(supply1);
+        reflection = new SimpleToken(supply2);
+    }
+
+    external void transfer(account sender, account recipient,
+        double amount, signature sig) {
+        // Checks if the signature is issued by the sender and verifies the calling of this function
+        // with the current parameters.
+        sig.verifyCallBy(sender);
+        token.transfer(sender, recipient, amount);
+        reflection.transfer(recipient, sender, Math.sqrt(amount));
+    }
+
+    external double balanceOf(account user) { return token.balanceOf(user); }
+
+    external double balanceOfReflection(account user) { return reflection.balanceOf(user); }
+}
+
+public static class Math {
+    public double sqrt(double x) {
+        return // calculate square root of x
+    }
+}
+
+package class SimpleToken {
+    private map(account -> double) balances;
+
+    // The visibility of a member without an access modifier will be the same as its defining
+    // class so `SimpleToken` constructor has package visibility.
+    constructor(double initialSupply) {
+        // initializes the object
+    }
+
+    void transfer(account sender, account recipient, double amount) {
+        if (balances[sender] < amount) throw("Not enough balance.");
+        // implements the required logic...
+    }
+    // implements other methods...
+}
+    \end{lstlisting}
+
+    \subsection{Shadowing}\label{subsec:shadowing}
+
+    If a declaration of a type (such as a member variable or a parameter name) in a particular scope (such as an
+    inner block or a method definition) has the same name as another declaration in the enclosing scope, it will
+    result in a compiler error. In other words, the Argon programming language does not allow shadowing.
 
 
     \chapter{The Argennon Blockchain}\label{ch:argennon-blockchain}

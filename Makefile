@@ -11,13 +11,21 @@ MD_FILES := $(TEX_FILES:${TEX_DIR}%.tex=${MD_DIR}%.md)
 GFM_FILES := $(TEX_FILES:${TEX_DIR}%.tex=${GFM_DIR}%.md)
 HTML_FILES := $(TEX_FILES:${TEX_DIR}%.tex=${HTML_DIR}%.html)
 
-all: md gfm html
+all: md gfm html pdf
+
+pdf: pdf/avm.pdf
 
 md: ${MD_FILES}
 
 gfm: ${GFM_FILES}
 
 html: ${HTML_FILES}
+
+pdf/avm.pdf: tex/avm.tex
+	mkdir -p pdf
+	pdflatex -output-directory=pdf/ tex/avm.tex
+	rm pdf/avm.pdf
+	pdflatex -output-directory=pdf/ tex/avm.tex
 
 ${TEX_DIR}%.tmp: ${TEX_DIR}%.tex
 	cp $< $@
@@ -51,4 +59,4 @@ ${GFM_DIR}%.md: ${TEX_DIR}%.tmp
 	sed -i 's/\\\[/\n${DISPLAY_EQ}/; s/\\\]/${END_EQ}\n/' $@
 
 clean:
-	rm -fr ${HTML_DIR} ${MD_DIR} ${GFM_DIR}
+	rm -fr ${HTML_DIR} ${MD_DIR} ${GFM_DIR} pdf
