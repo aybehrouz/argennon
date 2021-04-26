@@ -1,0 +1,65 @@
+%! suppress = TooLargeSection
+%! Author = aybehrouz
+%! Date = 2/28/21
+
+% Preamble
+\documentclass[11pt, a4paper]{report}
+\usepackage[a4paper]{geometry}
+
+% Packages
+%\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsfonts}
+\usepackage[ruled,boxed]{algorithm2e}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{amssymb}
+\usepackage{tcolorbox}
+\usepackage{amsmath}
+
+
+\lstset{
+    language=Java,
+    morekeywords={contract, initialize, constructor, external, virtual, map, account, signature, overrides, is, string},
+    basicstyle=\small\sffamily,
+    columns=fullflexible,
+%   keywordstyle=\bfseries,
+    breaklines=true,
+    showstringspaces=false,
+    mathescape
+}
+%\binoppenalty=99999
+%\relpenalty=99999
+\newcommand{\note}[1] {
+    \begin{tcolorbox}[colframe=white,colback=white]
+        \emph{#1}
+        %\emph{#1}\medskip
+    \end{tcolorbox}
+}
+
+\title{Argennon: A Scalable Smart Contract Platform}
+\author{aybehrouz}
+\date{January 2021}
+
+
+\begin{document}
+    %\maketitle
+    \tableofcontents
+
+
+    \chapter{The Argennon Virtual Machine}\label{ch:AVM}
+    \input{sections/avm}
+
+
+    \chapter{The Argon Language}\label{ch:argon-lang}
+    \input{sections/argon}
+
+
+    \chapter{The Argennon Blockchain}\label{ch:argennon-blockchain}
+    \input{sections/blockchain}
+
+
+\end{document}
+
+

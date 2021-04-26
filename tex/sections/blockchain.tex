@@ -1,0 +1,234 @@
+%! Author = aybehrouz
+
+
+\section{Persistence}\label{sec:persistence}
+\input{sections/persistence}
+
+\section{Transactions}\label{sec:transactions}
+
+Argennon has four types of transaction:
+
+\begin{itemize}
+    \item \texttt{avmCall} essentially is an \texttt{invoke\_external} instruction that invokes a method from an
+    AVM smart contract. Users interact with AVM smart contracts using these transactions. Transferring all
+    assets, including ARGs, is done by these transactions.
+    \item \texttt{installApp} installs an AVM smart contract and determines the update policy of the smart
+    contract: if the contract is updatable or not, which accounts can update or uninstall the contract, and so
+    on.
+    \item \texttt{unInstallApp} removes an AVM smart contract.
+    \item \texttt{updateApp} updates an AVM smart contract.
+\end{itemize}
+
+All types of Argennon transactions contain an \texttt{invoke\_external} instruction which calls a special method
+from ARG smart contract that transfers the proposed fee of the transaction in ARGs from a sender account to the
+fee sink accounts.
+
+Every transaction is required to exactly specify what heap locations or code area addresses it will access. This
+enables validators to start retrieving the required memory blocks from available ZK-EDB servers as soon as they
+see a transaction, and they won't need to wait for receiving the new proposed block. A transaction that tries to
+access a memory location that is not included in its access lists, will be rejected. Users could use smart contract
+oracles to predict the list of memory blocks their transactions need. See Section~\ref{sec:smart-contract-oracle}
+for more details.
+
+
+\section{Blockchain}\label{sec:blockchain}
+
+Every block of the Argennon blockchain corresponds to a set of transactions. We store the commitment of this
+transaction set in every block, but we don't keep the set itself. To be able to detect replay attacks, we require
+every signature that a user creates to have a nonce. This nonce consists of the issuance round of the signature
+and a sequence number: \texttt{(issuance,\ sequence)}. When a user creates more than one signature in a round, he
+must sequence his signatures starting from 0 (i.e.~the sequence number restarts from 0 in every round). We define
+a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound - issuance > maxLifeTime} or
+if a signature of the same user with a bigger or equal nonce is already used
+(i.e.~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
+nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
+
+To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. When the
+difference between \texttt{issuance} component of this nonce and the current round becomes bigger than the
+maximum allowed lifetime of a signature, this information can be safely deleted. \textbf{As a result, we will not
+have the problem of "un-removable empty accounts" like Ethereum.}
+
+The only information that Argennon nodes are required to store is \textbf{the most recent block} of the Argennon
+blockchain. Every block of the Argennon blockchain contains the following information:
+
+\begin{center}
+    \begin{tabular}{||c||}
+        \hline
+        Block \\ [0.5ex]
+        \hline\hline
+        commitment to the ZK-EDB storing heap pages \\ [0.7ex]
+        commitment to the ZK-EDB storing code areas \\ [0.7ex]
+        commitment to the set of transactions       \\ [0.7ex]
+        previous block hash                         \\ [0.7ex]
+        random seed                                 \\ [0.7ex]
+        \hline
+    \end{tabular}
+\end{center}
+
+For confirming a new block, nodes that are not validators only need to verify the block certificate. For
+verifying a block certificate, a node needs to know the ARG balances of validators, but it doesn't need to
+emulate the AVM execution.
+
+On the other hand, nodes that are chosen to be validators, for validating a new block, need to emulate the
+execution of the Argennon virtual machine. To do so, first they retrieve all heap pages and code area blocks they
+need from available ZK-EDBs. Then, they emulate the execution of AVM instructions and validate all the
+transactions included in the new block. This will modify some pages of the AVM memory, so they update the ZK-EDB
+commitments based on the modified pages and verify the commitments included in the new block. Validators also
+calculate and verify the commitment to the new block's transaction set.
+
+\note{Validators do not need to write the modified pages back to ZK-EDB servers. ZK-EDB servers will receive the new
+block, and they will update their database by emulating the AVM execution.}
+
+
+\section{Consensus}\label{sec:consensus}
+\input{sections/consensus}
+
+\section{Incentive mechanism}\label{sec:incentive-mechanism}
+
+\subsection{Transaction Fee}\label{subsec:transaction-fee}
+
+Every transaction in the Argennon blockchain starts with an \texttt{invoke\_external} instruction which calls a
+special method from ARG smart contract. This method will transfer the proposed fee of the transaction in ARGs
+from a sender account to the fee sink accounts. Argennon has two fee sink accounts: \texttt{execFeeSink} collects
+execution fees and \texttt{dbFeeSink} collects fees for ZK-EDB servers. The Protocol decides how to distribute the
+transaction fee between these two fee sink accounts.
+
+When a block is added to the blockchain, the proposer of that block will receive a share of the block fees.
+Consequently, a block proposer is always incentivized to include more transactions in his block. However, if he
+puts too many transactions in his block and the validation of the block becomes too difficult, some validators
+may not be able to validate all transactions on time. If a validator can not validate a block in the required
+time, he will consider the block invalid. So, when a proposed block contains too many transactions, the network
+may reach consensus on another block, and the proposer of that block will not receive any fees. As a result, a
+proposer is incentivized to use network transaction capacity optimally.
+
+On the other hand, we believe that the proposer does not have enough incentives for optimizing the storage size
+of the transaction set. Therefore, we require that \textbf{the size of the transaction set of every block in
+bytes be lower than a certain threshold.}
+
+Validators need to spend resources for validating transactions. When a validator starts the emulation of the AVM
+to validate a transaction, solely from the code he can't predict the time the execution will finish. This will
+give an adversary an opportunity to attack the network by broadcasting transactions that never ends. Since,
+validators can not finish the execution of these transactions, the network will not be able to charge the
+attacker any fees, and he would be able to waste validators resources for free.
+
+To mitigate this problem, we require that every transaction specify a cap for all the resources it needs. This
+will include memory, network and processor related resources. Also, the protocol defines an execution cost for
+every AVM instruction reflecting the amount of resources its emulation needs. This will define a standard way for
+measuring the execution cost of any \texttt{avmCall} transaction. Every \texttt{avmCall} transaction is required
+to specify a maximum execution cost. If during emulation it reaches this maximum cost, the transaction will be
+considered failed and the network can receive the proposed fee of that transaction.
+
+Every \texttt{avmCall} transaction is required to provide the following information as an upper bound for the
+resources it needs:
+
+\begin{itemize}
+    \item Execution cost
+    \item A list of heap/code-area locations for reading
+    \item A list of heap locations for writing
+    \item A list of heap pages it will deallocate
+    \item Number and size of heap pages it will allocate
+\end{itemize}
+
+If a transaction tries to violate any of these predefined limitations, for example, if it tries to read a memory
+location that is not included in its reading list, it will be considered failed and the network can receive the
+proposed fee of that transaction.
+
+\note{A transaction always pays all of its proposed fee, no matter how much of its predefined resources were not
+used in the final emulation.}
+
+\subsection{Incentives for ZK-EDB Servers}\label{subsec:zk-edb-servers}
+
+The incentive mechanism for ZK-EDB servers should have the following properties:
+
+\begin{itemize}
+    \item It incentivizes storing all memory blocks, whether a heap page or a code area block, and not only those
+    which are used more frequently.
+    \item It incentivizes ZK-EDB servers to actively provide the required memory blocks for validators.
+    \item Making more accounts will not provide any advantages for a ZK-EDB server.
+\end{itemize}
+
+For our incentive mechanism, we require that every time a validator receives a memory block from a ZK-EDB, after
+validating the data, he give a receipt to the ZK-EDB. In this receipt the validator signs the following information:
+
+\begin{itemize}
+    \item \texttt{ownerAddr}: the ARG address of the ZK-EDB\@.
+    \item \texttt{receivedBlockID}: the ID of the received memory block.
+    \item \texttt{round}: the current round number.
+\end{itemize}
+
+\note{In a round, an honest validator never gives a receipt for an identical memory block to two different ZK-EDBs.}
+
+To incentivize ZK-EDB servers, a lottery will be held every round and a predefined amount of ARGs from
+\texttt{dbFeeSink} account will be distributed between winners as a prize. This prize will be divided equally
+between all \emph{winning tickets} of the lottery.
+
+\note{One ZK-EDB server could own multiple winning tickets in a round.}
+
+To run this lottery, every round, based on the current block seed, a collection of \emph{valid} receipts will be
+selected randomly as the \emph{winning receipts} of the round. A receipt is \emph{valid} in round \(r\) if:
+
+\begin{itemize}
+    \item The signer was a validator in the round \(r - 1\) and voted for the agreed-upon block.
+    \item The data block in the receipt was needed for validating the \textbf{previous} block.
+    \item The receipt round number is \(r - 1\).
+    \item The signer did not sign a receipt for the same data block for two different ZK-EDBs in the previous round.
+\end{itemize}
+For selecting the winning receipts we could use a random generator:
+\begin{verbatim}
+IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
+    the receipt issued by validatorPK for receivedBlockID is a winner
+\end{verbatim}
+\begin{itemize}
+    \item \texttt{random()} produces uniform random numbers between 0 and 1, using its input argument as a seed.
+    \item \texttt{validatorPK} is the public key of the signer of the receipt.
+    \item \texttt{receivedBlockID} is the ID of the memory block that the receipt was issued for.
+    \item \texttt{winProbability} is the probability of winning in every round.
+    \item \texttt{seed} is the current block seed.
+    \item \texttt{|} is a concatenation operator.
+\end{itemize}
+
+\note{The winners of the lottery were validators one round before the lottery round.}
+
+Also, based on the current block seed, a random memory block, whether a heap page or a code area block, is
+selected as the challenge of the round. A ZK-EDB that owns a winning receipt needs to broadcast a \emph{winning
+ticket} to claim his prize. The winning ticket consists of a winning receipt and a \emph{solution} to the round
+challenge. Solving a round challenge requires the content of the memory block which was selected as the round
+challenge. This will encourage ZK-EDBs to store all memory blocks.
+
+A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge
+memory block combined with the ZK-EDB ARG address: \texttt{hash(challenge.content|ownerAddr)}
+
+The winning tickets of the lottery of round \(r\) need to be included in the block of the round \(r\),
+otherwise they will be considered expired. Validation and prize distribution for the winning tickets of round
+\(r\) will be done in the round \(r + 1\). This way, \textbf{the content of the challenge memory block could be
+kept secret during the lottery round.} Every winning ticket will get an equal share of the lottery prize.
+
+\subsection{Memory Allocation and De-allocation Fee}\label{subsec:memory-allocation-and-de-allocation}
+
+Every \(k\) round the protocol chooses a price per byte for AVM memory. When a smart contract executes a heap
+allocation instruction, the protocol will automatically deduce the cost of the allocated memory from the ARG
+address of the smart contract.
+
+To determine the price of AVM memory, Every \(k\) round, the protocol calculates \texttt{dbFee} and
+\texttt{memTraffic} values. \texttt{dbFee} is the aggregate amount of collected database fees, and
+\texttt{memTraffic} is the total memory traffic of the system. For calculating the memory traffic of the system
+the protocol considers the total size of all the memory pages that were accessed for either reading or writing
+during a time period. These two values will be calculated for the last \(k\) rounds and the price per byte of
+AVM memory will be a linear function of \texttt{dbFee/memTraffic}
+
+When a smart contract executes a heap de-allocation instruction, the protocol will refund the cost of
+de-allocated memory to the smart contract. Here, the current price of AVM memory does not matter and the protocol
+calculates the refunded amount based on the average price the smart contract had paid for that allocated memory.
+This will prevent smart contracts from profit taking by trading memory with the protocol.
+
+
+\section{Concurrency}\label{sec:concurrency}
+\input{sections/concurrency}
+
+
+\section{Smart Contract Oracle}\label{sec:smart-contract-oracle}
+
+A smart contract oracle is a full AVM emulator that keeps a full local copy of AVM memory and can emulate AVM
+execution without accessing a ZK-EDB. Smart contract oracles can be used for reporting useful information about
+\texttt{avmCall} transactions such as accessed AVM heap or code area locations, exact amount of execution cost,
+and so on.

@@ -1,0 +1,31 @@
+%! Author = aybehrouz
+
+
+For implementing the persistence layer of the AVM, we assume that we have access to an updatable zero-knowledge
+elementary database (ZK-EDB) with the following properties:
+
+\begin{itemize}
+    \item The ZK-EDB contains a mapping from a set of keys to a set of values.
+    \item Every state of the database has a commitment \(C\).
+    \item The ZK-EDB has a method \((D, p) = get(x)\), where \(x\) is a key and \(D\) is the associated data
+    with \(x\), and \(p\) is a proof.
+    \item A user can use \(C\) and \(p\) to verify that \(D\) is really associated with \(x\), and \(D\) is not
+    altered. Consequently, a user who can obtain \(C\) from a trusted source does not need to trust the ZK-EDB\@.
+    \item Having \(p\) and \(C\) a user can compute the commitment \(C'\) for the database in which \(D'\) is
+    associated with \(x\) instead of \(D\).
+\end{itemize}
+
+We use a ZK-EDB for storing the AVM heap. We include the commitment of the current state of this DB in every
+block of the Argennon blockchain, so ZK-EDB servers need not be trusted servers.
+
+Every page of AVM heap will be stored with a key of the form: \texttt{applicationID|pageIndex} (the \texttt{|}
+operator concatenates two numbers). Nodes do not keep a full copy of the AVM heap and for validating block
+certificates or emulating the AVM ( i.e.~validating transactions) they need to connect to a ZK-EDB and retrieve
+the required pages of AVM heap. For better performance, nodes keep a cache of heap pages to
+reduce the amount of ZK-EDB access.
+
+We also use a ZK-EDB for storing the code area of each segment, and we include the commitment of this DB in every
+block. Every code area will be divided into blocks and every block will be stored in the DB with
+\texttt{applicationID|blockID} as its key. Like heap pages, nodes keep a cache of code area blocks.
+
+\note{Unlike heap pages, the AVM is not aware of different blocks of code area.}

@@ -1,0 +1,7 @@
+pdf: ../pdf/A.pdf
+
+../pdf/A.pdf: A.tex
+	mkdir -p ../pdf
+	pdflatex -output-directory=../pdf/ A.tex
+	rm ../pdf/A.pdf
+	pdflatex -output-directory=../pdf/ A.tex

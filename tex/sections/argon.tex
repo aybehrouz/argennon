@@ -1,0 +1,109 @@
+%! Author = aybehrouz
+
+
+\section{Introduction}\label{sec:introduction2}
+
+The Argon programming language is a class-based, object-oriented language designed for writing Argennon's smart
+contracts. The Argon programming language is inspired by Solidity and is similar to Java, with a number of aspects
+of them omitted and a few ideas from other languages included. Argon is designed to be fully compatible with
+the Argennon Virtual Machine and be able to use all advanced features of the Argennon blockchain.
+
+Argon Programs are organized as sets of packages. Each package has its own set of names for types, which helps
+to prevent name conflicts. Every package can contain an arbitrary number of classes and a single contract. Every
+Argon package corresponds to at max one AVM smart contract.
+
+
+\section{Features Overview}\label{sec:features-overview}
+
+\subsection{Static Classes}\label{subsec:static-classes}
+
+In Argon a static class is an uninstantiable class which all its members and methods are static. Every static
+class can define a special method \texttt{initialize} which can only be called in the \texttt{initialize}
+method of the single contract of the package the static class is defined in.
+
+A Static class is like a normal class which can only have one instance. So like normal classes, static classes can
+be a super class or a subclass of other static classes and can implement interfaces.
+
+\subsection{Contracts}\label{subsec:contract}
+
+Every package of an Argon program can have one or zero contracts. A contact is a special static class which is
+allowed to define methods with \texttt{external} visibility. When an Argon package is deployed as an AVM smart
+contract, these external methods will define the contract's public interface.
+
+\subsection{Access Level Modifiers}\label{subsec:access-level-modifiers}
+
+Access level modifiers determine whether other classes can use a particular field or invoke a particular method or
+if a method can be invoked externally by other smart contracts.
+
+\begin{center}
+    \begin{tabular}{llllll}
+        \hline
+        & Class & Package & Subclass & Program & World \\
+        \hline
+        private   & yes   & no      & no       & no      & no    \\
+        protected & yes   & no      & yes      & no      & no    \\
+        package   & yes   & yes     & yes      & no      & no    \\
+        public    & yes   & yes     & yes      & yes     & no    \\
+        external  & no    & no      & no       & no      & yes   \\
+        \hline
+    \end{tabular}\label{tab:table}
+\end{center}
+
+
+
+\begin{lstlisting}[frame=TB, float, title=Argon contracts are static classes,label={lst:code1}]
+// A contract is a static class and all its methods are automatically static.
+contract MirrorToken {
+    private SimpleToken token;
+    private SimpleToken reflection;
+
+    // `initialize` is a special static method that is called by the AVM after the code of a contract
+    // is stored in the AVM code area. It can not be called after that.
+    initialize(double supply1, double supply2) {
+        // `new` does not create a new smart contract. It just makes an ordinary object.
+        token = new SimpleToken(supply1);
+        reflection = new SimpleToken(supply2);
+    }
+
+    external void transfer(account sender, account recipient,
+        double amount, signature sig) {
+        // Checks if the signature is issued by the sender and verifies the calling of this function
+        // with the current parameters.
+        sig.verifyCallBy(sender);
+        token.transfer(sender, recipient, amount);
+        reflection.transfer(recipient, sender, Math.sqrt(amount));
+    }
+
+    external double balanceOf(account user) { return token.balanceOf(user); }
+
+    external double balanceOfReflection(account user) { return reflection.balanceOf(user); }
+}
+
+public static class Math {
+    public double sqrt(double x) {
+        return // calculate square root of x
+    }
+}
+
+package class SimpleToken {
+    private map(account -> double) balances;
+
+    // The visibility of a member without an access modifier will be the same as its defining
+    // class so `SimpleToken` constructor has package visibility.
+    constructor(double initialSupply) {
+        // initializes the object
+    }
+
+    void transfer(account sender, account recipient, double amount) {
+        if (balances[sender] < amount) throw("Not enough balance.");
+        // implements the required logic...
+    }
+    // implements other methods...
+}
+\end{lstlisting}
+
+\subsection{Shadowing}\label{subsec:shadowing}
+
+If a declaration of a type (such as a member variable or a parameter name) in a particular scope (such as an
+inner block or a method definition) has the same name as another declaration in the enclosing scope, it will
+result in a compiler error. In other words, the Argon programming language does not allow shadowing.
