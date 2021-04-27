@@ -1,31 +1,64 @@
 %! Author = aybehrouz
 
 
-For implementing the persistence layer of the AVM, we assume that we have access to an updatable zero-knowledge
-elementary database (ZK-EDB) with the following properties:
+The Argennon Virtual Machine has two persistent memory areas: \emph{method area}, and \emph{heap}. Method area stores
+method byte codes \footnote{also it stores constant area blocks.}, and heap stores memory chunks. Both of these
+data elements, methods and chunks, can be considered as continuous pieces of byte addressable memory
+which we shall call \emph{objects} throughout this chapter.
 
+In the AVM persistence layer, similar objects are clustered together and constitute a bigger data element which we call a
+\emph{page}.\footnote{we avoided calling them a cluster, because usually a cluster refers to a \emph{set}. AVM object
+clusters are not sets. They are ordered lists, like a page containing an ordered list of words or sentences.}
+A page is an ordered list of an arbitrary number of objects, which their order reflects the order they were added to
+the page:
+\[
+    P = (O_1,O_2,\dots,O_n),\quad i < j \; \Leftrightarrow \; \textrm{$O_i$ was added before $O_j$}
+\]
+
+A page of the AVM storage should contain objects that have very similar access pattern. We expect that when a page
+is needed for validating a block, almost all of its objects are needed. We also prefer that the objects of the page
+are needed for the same access type. In other words, the objects of a page are chosen in a way that
+for validating a block, we usually need to either read all of them or modify\footnote{and probably read.} all of them.
+
+Pages of the AVM storage space are persisted using updatable zero-knowledge elementary databases (ZK-EDB). Argennon
+has three zero-knowledge databases. \emph{Staking} database which stores all the data that is associated with
+the Argennon agreement protocol. \emph{Method} database which stores the AVM method area, and \emph{Heap} database which
+stores the AVM heap. The commitment of these three ZK-EDBs are included in every block of the Argennon blockchain.
+
+We consider the following properties for a ZK-EDB:
 \begin{itemize}
     \item The ZK-EDB contains a mapping from a set of keys to a set of values.
     \item Every state of the database has a commitment \(C\).
-    \item The ZK-EDB has a method \((D, p) = get(x)\), where \(x\) is a key and \(D\) is the associated data
-    with \(x\), and \(p\) is a proof.
-    \item A user can use \(C\) and \(p\) to verify that \(D\) is really associated with \(x\), and \(D\) is not
+    \item The ZK-EDB has a method \((D, \pi) = get(x)\), where \(x\) is a key and \(D\) is the associated data
+    with \(x\), and \(\pi\) is a proof.
+    \item A user can use \(C\) and \(\pi\) to verify that \(D\) is really associated with \(x\), and \(D\) is not
     altered. Consequently, a user who can obtain \(C\) from a trusted source does not need to trust the ZK-EDB\@.
-    \item Having \(p\) and \(C\) a user can compute the commitment \(C'\) for the database in which \(D'\) is
+    \item Having \(\pi\) and \(C\) a user can compute the commitment \(C'\) for the database in which \(D'\) is
     associated with \(x\) instead of \(D\).
 \end{itemize}
 
-We use a ZK-EDB for storing the AVM heap. We include the commitment of the current state of this DB in every
-block of the Argennon blockchain, so ZK-EDB servers need not be trusted servers.
+Every page of the AVM storage is stored with an index as its key: \texttt{pageIndex}. The \texttt{pageIndex} is
+required to be smaller than a certain value determined by the
+protocol.\footnote{this facilitates the usage of ZK-EDBs that use vector commitments.}
+Therefore, the AVM clustering algorithm tries to reuse indices and keep the number of used indices as low as
+possible.
 
-Every page of AVM heap will be stored with a key of the form: \texttt{applicationID|pageIndex} (the \texttt{|}
-operator concatenates two numbers). Nodes do not keep a full copy of the AVM heap and for validating block
-certificates or emulating the AVM ( i.e.~validating transactions) they need to connect to a ZK-EDB and retrieve
-the required pages of AVM heap. For better performance, nodes keep a cache of heap pages to
-reduce the amount of ZK-EDB access.
+In Argennon \emph{light} nodes do not keep a full copy of the AVM storage and for emulating the Argennon Virtual Machine
+( i.e.~validating transactions) they need to connect to a ZK-EDB and retrieve the required pages.
+Because light node need to be able to validate block certificates, they usually cache a large part of the staking
+database, and keep their cache updated to make sure they can keep themselves in sync with the blockchain.
 
-We also use a ZK-EDB for storing the code area of each segment, and we include the commitment of this DB in every
-block. Every code area will be divided into blocks and every block will be stored in the DB with
-\texttt{applicationID|blockID} as its key. Like heap pages, nodes keep a cache of code area blocks.
+The commitments of the AVM databases are dependant to the clustering of data objects. So, the clustering algorithm of
+the AVM storage has to be a part of the Argennon agreement protocol. Clustering of objects is one of the
+tasks that a block proposer performs in Argennon.
 
-\note{Unlike heap pages, the AVM is not aware of different blocks of code area.}
+Every block of the Argennon blockchain contains a set of \emph{clustering directives}. These directives
+can only modify pages that were used for validating the block, and can
+include directives for moving an object from one page to another or directives specifying which pages will contain
+the newly created objects. These directives will always be run by nodes at the end of block validation.
+
+A block proposer usually obtains clustering directives from a third party source who enjoys a considerable amount of
+computational power. This federated approach does not affect Argennon security, because the integrity of a
+database can not be altered by clustering directives. Those
+directives can only affect the performance of the argennon blockchain, and directives of a single block can
+not change the performance much.
