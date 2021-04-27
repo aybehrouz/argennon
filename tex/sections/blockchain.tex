@@ -9,25 +9,25 @@
 Argennon has four types of transaction:
 
 \begin{itemize}
-    \item \texttt{avmCall} essentially is an \texttt{invoke\_external} instruction that invokes a method from an
+    \item \texttt{avmCall}: invokes a method from an
     AVM smart contract. Users interact with AVM smart contracts using these transactions. Transferring all
     assets, including ARGs, is done by these transactions.
-    \item \texttt{installApp} installs an AVM smart contract and determines the update policy of the smart
+    \item \texttt{installApp}: installs an AVM smart contract and determines the update policy of the smart
     contract: if the contract is updatable or not, which accounts can update or uninstall the contract, and so
     on.
-    \item \texttt{unInstallApp} removes an AVM smart contract.
-    \item \texttt{updateApp} updates an AVM smart contract.
+    \item \texttt{unInstallApp}: removes an AVM smart contract.
+    \item \texttt{updateApp}: updates an AVM smart contract.
 \end{itemize}
 
-All types of Argennon transactions contain an \texttt{invoke\_external} instruction which calls a special method
-from ARG smart contract that transfers the proposed fee of the transaction in ARGs from a sender account to the
-fee sink accounts.
+All types of Argennon transactions contain a single \texttt{invoke\_external} instruction which calls a method
+from the root smart contract that transfers the proposed fee of the transaction in ARGs from a sender account to the
+fee sink accounts and then performs the requested operation.
 
 Every transaction is required to exactly specify what heap locations or code area addresses it will access. This
-enables validators to start retrieving the required memory blocks from available ZK-EDB servers as soon as they
+enables validators to start retrieving the required storage pages from available ZK-EDB servers as soon as they
 see a transaction, and they won't need to wait for receiving the new proposed block. A transaction that tries to
 access a memory location that is not included in its access lists, will be rejected. Users could use smart contract
-oracles to predict the list of memory blocks their transactions need. See Section~\ref{sec:smart-contract-oracle}
+oracles to predict the list of memory locations their transactions need. See Section~\ref{sec:smart-contract-oracle}
 for more details.
 
 
@@ -48,7 +48,7 @@ difference between \texttt{issuance} component of this nonce and the current rou
 maximum allowed lifetime of a signature, this information can be safely deleted. \textbf{As a result, we will not
 have the problem of "un-removable empty accounts" like Ethereum.}
 
-The only information that Argennon nodes are required to store is \textbf{the most recent block} of the Argennon
+The only information that all Argennon nodes are required to store is \textbf{the most recent block} of the Argennon
 blockchain. Every block of the Argennon blockchain contains the following information:
 
 \begin{center}
@@ -67,13 +67,13 @@ blockchain. Every block of the Argennon blockchain contains the following inform
 \end{center}
 
 For confirming a new block, nodes that are not validators only need to verify the block certificate. For
-verifying a block certificate, a node needs to know the ARG balances of validators, but it doesn't need to
+verifying a block certificate, a node needs to know the staking information of validators, but it doesn't need to
 emulate the AVM execution.
 
 On the other hand, nodes that are chosen to be validators, for validating a new block, need to emulate the
-execution of the Argennon virtual machine. To do so, first they retrieve all heap pages and code area blocks they
+execution of the Argennon Virtual Machine. To do so, first they retrieve all storage pages they
 need from available ZK-EDBs. Then, they emulate the execution of AVM instructions and validate all the
-transactions included in the new block. This will modify some pages of the AVM memory, so they update the ZK-EDB
+transactions included in the new block. This will modify some pages of the AVM storage, so they update the ZK-EDB
 commitments based on the modified pages and verify the commitments included in the new block. Validators also
 calculate and verify the commitment to the new block's transaction set.
 
@@ -89,7 +89,7 @@ block, and they will update their database by emulating the AVM execution.}
 \subsection{Transaction Fee}\label{subsec:transaction-fee}
 
 Every transaction in the Argennon blockchain starts with an \texttt{invoke\_external} instruction which calls a
-special method from ARG smart contract. This method will transfer the proposed fee of the transaction in ARGs
+special method from the root smart contract. This method will transfer the proposed fee of the transaction in ARGs
 from a sender account to the fee sink accounts. Argennon has two fee sink accounts: \texttt{execFeeSink} collects
 execution fees and \texttt{dbFeeSink} collects fees for ZK-EDB servers. The Protocol decides how to distribute the
 transaction fee between these two fee sink accounts.
