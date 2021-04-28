@@ -7,7 +7,7 @@ data elements, methods and chunks, can be considered as continuous pieces of byt
 which we shall call \emph{objects} throughout this chapter.
 
 In the AVM persistence layer, similar objects are clustered together and constitute a bigger data element which we call a
-\emph{page}.\footnote{we avoided calling them a cluster, because usually a cluster refers to a \emph{set}. AVM object
+\emph{page}.\footnote{we avoided calling them clusters, because usually a cluster refers to a \emph{set}. AVM object
 clusters are not sets. They are ordered lists, like a page containing an ordered list of words or sentences.}
 A page is an ordered list of an arbitrary number of objects, which their order reflects the order they were added to
 the page:
@@ -16,14 +16,14 @@ the page:
 \]
 
 A page of the AVM storage should contain objects that have very similar access pattern. We expect that when a page
-is needed for validating a block, almost all of its objects are needed. We also prefer that the objects of the page
+is needed for validating a block, almost all of its objects are needed. We also prefer that the objects
 are needed for the same access type. In other words, the objects of a page are chosen in a way that
 for validating a block, we usually need to either read all of them or modify\footnote{and probably read.} all of them.
 
 Pages of the AVM storage space are persisted using updatable zero-knowledge elementary databases (ZK-EDB). Argennon
-has three zero-knowledge databases. \emph{Staking} database which stores all the data that is associated with
-the Argennon agreement protocol. \emph{Method} database which stores the AVM method area, and \emph{Heap} database which
-stores the AVM heap. The commitment of these three ZK-EDBs are included in every block of the Argennon blockchain.
+has three zero-knowledge databases. \emph{staking} database, which stores all the data that is associated with
+the Argennon agreement protocol. \emph{method} database, which stores the AVM method area, and \emph{heap} database,
+which stores the AVM heap. The commitment of these three ZK-EDBs are included in every block of the Argennon blockchain.
 
 We consider the following properties for a ZK-EDB:
 \begin{itemize}
@@ -48,9 +48,9 @@ In Argennon \emph{light} nodes do not keep a full copy of the AVM storage and fo
 Because light node need to be able to validate block certificates, they usually cache a large part of the staking
 database, and keep their cache updated to make sure they can keep themselves in sync with the blockchain.
 
-The commitments of the AVM databases are dependant to the clustering of data objects. So, the clustering algorithm of
-the AVM storage has to be a part of the Argennon agreement protocol. Clustering of objects is one of the
-tasks that a block proposer performs in Argennon.
+The commitments of the AVM databases are dependant to the shape of clusters of data objects. So,
+the clustering algorithm of the AVM storage has to be a part of the Argennon agreement protocol. Clustering of
+objects is one of the tasks that a block proposer performs in Argennon.
 
 Every block of the Argennon blockchain contains a set of \emph{clustering directives}. These directives
 can only modify pages that were used for validating the block, and can
@@ -58,7 +58,7 @@ include directives for moving an object from one page to another or directives s
 the newly created objects. These directives will always be run by nodes at the end of block validation.
 
 A block proposer usually obtains clustering directives from a third party source who enjoys a considerable amount of
-computational power. This federated approach does not affect Argennon security, because the integrity of a
-database can not be altered by clustering directives. Those
-directives can only affect the performance of the argennon blockchain, and directives of a single block can
+computational power.\footnote{we can say the AVM clustering algorithm is essentially off-chain.} This federated approach
+does not affect Argennon security, because the integrity of a database can not be altered by clustering directives.
+Those directives can only affect the performance of the argennon blockchain, and directives of a single block can
 not change the performance much.

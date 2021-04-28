@@ -1,6 +1,6 @@
 pdf: ../pdf/A.pdf
 
-../pdf/A.pdf: A.tex
+../pdf/A.pdf: A.tex sections
 	mkdir -p ../pdf
 	pdflatex -output-directory=../pdf/ A.tex
 	rm ../pdf/A.pdf
