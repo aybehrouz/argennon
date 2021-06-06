@@ -424,3 +424,21 @@ the current smart contract.
 
 
 \section{The AVM Standard Library}\label{sec:the-avm-standard-library}
+
+As we explained in Section~\ref{subsec:method-invocation} by using \texttt{invoke\_internal} instruction, a smart
+contract can invoke methods of another smart contract in its own context. This is how AVM smart contracts
+invoke methods of the AVM standard library. Methods of the AVM standard library are stored
+with the \texttt{applicationID} zero in the AVM method area. This implies that the AVM standard library is actually
+a part of the root smart contract.
+
+In Argennon, the root smart contract is an updatable smart contract, which can be updated by the Argennon consensus
+protocol. This means that bugs or security vulnerabilities in the AVM standard library could be quickly patched and
+smart contracts can use the AVM standard library safely. Many important and useful functionalities,
+such as fungible and non-fungible assets, access control mechanisms,
+and general purpose DAOs are implemented in the Argennon standard library.
+
+All Argennon standards, for instance ARC standard series, which defines standards regarding transferable assets,
+are defined based on how a contract should use the AVM standard library. As a result, Argennon standards are
+different from conventional blockchain standards. Argennon standards define some type of standard logic and
+behaviour for a smart contract, not only a set of method signatures. This enables users to expect certain type
+of behaviour from a contract which complies with an Argennon standard.
