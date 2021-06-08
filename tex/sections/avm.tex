@@ -38,7 +38,7 @@ its specific word size, and the addressable memory areas are byte addressable.
 
 \section{Identifiers}\label{sec:identifiers}
 
-In the Argennon Virtual Machine four distinct identifier values exist: \texttt{applicationID}, \texttt{accountID},
+In the Argennon Virtual Machine four distinct identifier types exist: \texttt{applicationID}, \texttt{accountID},
 \texttt{methodID} and \texttt{chunkID}.
 
 All these identifiers are \emph{prefix codes}, and hence can be represented by
@@ -426,7 +426,7 @@ the current smart contract.
 \section{The AVM Standard Library}\label{sec:the-avm-standard-library}
 
 As we explained in Section~\ref{subsec:method-invocation} by using \texttt{invoke\_internal} instruction, a smart
-contract can invoke methods of another smart contract in its own context. This is how AVM smart contracts
+contract can invoke methods of another smart contract in its own context. AVM smart contracts use this instruction to
 invoke methods of the AVM standard library. Methods of the AVM standard library are stored
 with the \texttt{applicationID} zero in the AVM method area. This implies that the AVM standard library is actually
 a part of the root smart contract.

@@ -3,8 +3,8 @@
 
 The Argennon Virtual Machine has two persistent memory areas: \emph{method area}, and \emph{heap}. Method area stores
 method byte codes\footnote{also it stores constant area blocks.}, and heap stores memory chunks. Both of these
-data elements, methods and chunks, can be considered as continuous pieces of byte addressable memory
-which we shall call \emph{objects} throughout this chapter.
+data elements, methods and chunks, can be considered as continuous pieces of byte addressable memory. Throughout this
+chapter, we shall call these data elements \emph{objects}.
 
 In the AVM persistence layer, similar objects are clustered together and constitute a bigger data element which we call a
 \emph{page}.\footnote{we avoided calling them clusters, because usually a cluster refers to a \emph{set}. AVM object
@@ -55,9 +55,9 @@ objects is one of the tasks that a block proposer performs in Argennon.
 Every block of the Argennon blockchain contains a set of \emph{clustering directives}. These directives
 can only modify pages that were used for validating the block, and can
 include directives for moving an object from one page to another or directives specifying which pages will contain
-the newly created objects. These directives will always be run by nodes at the end of block validation.
+the newly created objects. These directives are always executed by nodes at the end of block validation.
 
-A block proposer usually obtains clustering directives from a third party source who enjoys a considerable amount of
+A block proposer usually obtains clustering directives from a third party source that enjoys a considerable amount of
 computational power.\footnote{we can say the AVM clustering algorithm is essentially off-chain.} This federated approach
 does not affect Argennon security, because the integrity of a database can not be altered by clustering directives.
 Those directives can only affect the performance of the argennon blockchain, and directives of a single block can
