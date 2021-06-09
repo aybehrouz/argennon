@@ -380,10 +380,10 @@ blockchain.
 
 \section{Execution Sessions}\label{sec:execution-sessions}
 
-The execution of smart contracts code in the AVM is done in execution sessions. Every execution session in the
-Argennon Virtual Machine consists of a single method invocation from the \emph{root} smart contract and a list
+The execution of smart contracts code by the Argennon Virtual Machine is performed in execution sessions. Every
+execution session consists of a single method invocation from the \emph{root} smart contract and a list
 of resource allocation requests. These allocation requests always include a request for allocating some amount
-of execution time and a request for accessing some memory locations for reading or writing. If after the start
+of execution time and a request for accessing some memory locations for reading or writing. If after starting,
 an execution session tries to violate its allocated resources, an \textbf{uncatchable} exception will
 be thrown by the AVM\@.
 
@@ -391,18 +391,18 @@ be thrown by the AVM\@.
 be copied from the transaction to the local frame of the invoked method, exactly like a normal method invocation.}
 
 The root smart contract with the \texttt{applicationID} of zero, is a special smart contract in the Argennon
-Virtual Machine. Its code is immutable and is a part of the AVM implementation. The root smart contract is always
-run in the privileged mode, and every execution session starts with a call to a method of the root smart contract.
-This method always transfers some amount of fee from an account ot the \texttt{feeSink} account and then it
+Virtual Machine. Its code is mutable and is a part of the Argennon protocol. The root smart contract is always
+run in the privileged mode, and every Argennon transaction starts with a call to a method of the root smart contract.
+This method always transfers some amount of fee from an account to the \texttt{feeSink} accounts and then it
 performs the requested operation.
 
-\note{Argennon transactions do not have a sender, and the payer of the transaction fee could be any
-account who has provided the required digital signature.}
-
 If the requested operation is a method invocation, the root smart contract will call the \texttt{Heap.Save()}
-function once, and then it will invoke the requested method using \texttt{spawn} instruction. This means that the
-invoked method will have a separate call stack and if it completes abruptly the changes made by the root
-smart contract to the state will not be reverted.
+function, and then it will invoke the requested method using \texttt{spawn} instruction. This implies that the
+invoked method will always have a separate call stack, and if it completes abruptly the changes made by the root
+smart contract to the AVM state will not be reverted.
+
+\note{Argennon transactions do not have a sender, and the payer of the transaction fee could be any
+account who has provided the required digital signature for fee payment.}
 
 
 \section{Authorizing Operations}\label{sec:authorizing-operations}
