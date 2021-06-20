@@ -3,7 +3,7 @@
 
 \section{Introduction}\label{sec:introduction}
 
-The Argennon\footnote{the classical pronunciation should be used:\textipa{/ar"gen.non/}} Virtual Machine (AVM) is an
+The Argennon\footnote{the classical pronunciation should be used:\textipa{/Ar"gen.non/}} Virtual Machine (AVM) is an
 abstract computing machine for executing Argennon's smart contracts. The
 Argennon Virtual Machine knows nothing of the Argennon blockchain, only of Argennon's identifier tries and
 the concept of execution sessions.
@@ -42,24 +42,25 @@ In the Argennon Virtual Machine four distinct identifier types exist: \texttt{ap
 \texttt{methodID} and \texttt{chunkID}.
 
 All these identifiers are \emph{prefix codes}, and hence can be represented by
-\emph{prefix trees}\footnote{Also called a trie.}. The Argennon has three primitive prefix trees:
+\emph{prefix trees}\footnote{Also called tries.}. The Argennon has three primitive prefix trees:
 \emph{applications, accounts} and \emph{local}. Any identifier in Argennon is a
 prefix code built by using one or more of these prefix trees:
 \begin{itemize}
     \item \texttt{applicationID} is a prefix code built by \emph{applications} prefix tree.
     \item \texttt{accountID} is a prefix code built by \emph{accounts} prefix tree.
     \item \texttt{methodID} is a composite prefix code built by concatenating an \texttt{applicationID} to
-    a prefix code made by \emph{local} prefix tree.(\texttt{|} is the concatenating operator.)
+    a prefix code made by \emph{local} prefix tree: (\texttt{|} is the concatenating operator)
 
     \texttt{methodID = (applicationID|<local prefix code>)}
     \item \texttt{chunkID} is a composite prefix code built by concatenating an \texttt{applicationID} to
-    an \texttt{accountID} to a prefix code made by \emph{local} prefix tree
+    an \texttt{accountID} to a prefix code made by \emph{local} prefix tree:
 
     \texttt{chunkID = (applicationID|accountID|<local prefix code>)}
 \end{itemize}
 
 All Argennon prefix trees have an equal branching factor \(\beta\). Therefore, we can represent an Argennon
-prefix tree as a sequence of fractional numbers in base \(\beta\):
+prefix tree as a sequence of fractional numbers\footnote{It's possible to have \(a_i=0\). For
+instance, \(A^{(4)}=(0.2000)_{10}\) is a valid prefix tree.} in base \(\beta\):
 \[
     (A^{(1)},A^{(2)},A^{(3)},\dots)
 \]
@@ -383,7 +384,7 @@ blockchain.
 The execution of smart contracts code by the Argennon Virtual Machine is performed in execution sessions. Every
 execution session consists of a single method invocation from the \emph{root} smart contract and a list
 of resource allocation requests. These allocation requests always include a request for allocating some amount
-of execution time and a request for accessing some memory locations for reading or writing. If after starting,
+of execution cost and a request for accessing some memory locations for reading or writing. If after starting,
 an execution session tries to violate its allocated resources, an \textbf{uncatchable} exception will
 be thrown by the AVM\@.
 
@@ -402,7 +403,7 @@ invoked method will always have a separate call stack, and if it completes abrup
 smart contract to the AVM state will not be reverted.
 
 \note{Argennon transactions do not have a sender, and the payer of the transaction fee could be any
-account who has provided the required digital signature for fee payment.}
+account who has provided the required digital signature for the fee payment.}
 
 
 \section{Authorizing Operations}\label{sec:authorizing-operations}

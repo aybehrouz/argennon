@@ -15,9 +15,7 @@
   
 - Transaction validation should be done in parallel in different layers of the system to make sure we can benefit from
   both multicore architectures and node clustering techniques.
-
-- We should have a scalable randomized proof of stake consensus protocol which is not vulnerable to bribe attacks 
-  unlike Algorand.
+  
 
 <!---
 *α* =  − ln (1 − *M*<sub>*n* + *k*</sub>/*X*) / *n*

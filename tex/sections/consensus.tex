@@ -1,51 +1,178 @@
 %! Author = aybehrouz
 
+Argennon has two primary certificate committees: the committee of \emph{delegates} and the committee
+of \emph{validators}. A block is considered final only after it gets a certificate from both of these committees.
 
-\note{not yet written....}
+The delegates committee generates a certificate for every block of the Argennon blockchain, and the
+validators committee generates a certificate every $m$ blocks. The validators committee will
+certify a block only if it has already been certified by the committee of delegates.
 
-\subsection{Estimating A User's Stake}\label{subsec:estimating-a-user's-stake}
+In addition to primary committees, Argennon has several community driven committees. Certificates of these
+committees are not required for block validation, but they could be used by the members of the validators
+committee to better decide about the validity of a block.
+
+When an anomaly is detected in the consensus mechanism, the \emph{recovery} protocol is initiated by nodes. The
+recovery protocol is designed to be resilient to many types of attacks in order to be able to restore the normal
+system functionality.
+
+\subsection{The Committee of Delegates}\label{subsec:the-committee-of-delegates}
+
+The committee of delegates is a small committee of trusted delegates, elected by Argennon users either through the
+Argennon Decentralized Autonomous Governance system (ADAGs\footnote{pronounced \textipa{/eI-dagz/}.}) or by emergency
+voting during the recovery protocol. At the start of the Argennon mainnet, this committee will have
+five members, and later its size could be changed by the ADAGs in a procedure described
+in Section~\ref{sec:governance}.
+
+The committee of delegates is responsible for creating new blocks of the Argennon blockchain, and it issues a
+certificate for every block of the Argennon blockchain. A certificate needs to be signed
+by \textbf{all} of the committee members in order to be considered valid.
+
+Usually, the delegates are large organizations, and they have enough computational resources to generate blocks
+very fast. However, a block is not completely final if it does not have the certificate of the validators committee.
+A certified block by the delegates will not be accepted by the network, if the last block certified by
+the validators committee is behind more than a certain number of blocks.
+
+The committee of delegates may use any type of agreement protocol to reach consensus on the
+next block. Usually a very simple and fast protocol can do the job: one of the members
+is randomly chosen as the proposer, and other members vote "yes" or "no" on the proposed block.
+
+If one of the delegates lose its network connectivity, no new blocks can be generated. For this reason,
+the delegates should invest on different types of communication infrastructure, to make sure they never lose
+connectivity to each other and to the Argennon network.
+
+\subsection{The Committee of Validators}\label{subsec:validators-committee}
+
+The Argennon protocol calculates a stake value for every account, which is an estimate of a user's stake in the
+system. This value is measured in ARGs. The committee of validators is composed of
+\textbf{all} accounts whose stake value is higher than \texttt{minValidatorsStake} threshold. This
+threshold is determined by the ADAGs, but it can never be higher
+than $100$ ARGs.
+
+Every member of the validators committee has a status which can be either \texttt{online} or \texttt{offline}.
+This status is stored in the ARG smart contract, and it can be changed through a method invocation
+from this smart contract. When an account sets its status to \texttt{offline}, it receives a small reward, and
+it can not change it back to \texttt{online} for \texttt{statusCoolDown} number of blocks.
+
+\note{When an account changes its status, the change has no effect until the block containing the status
+change transaction gets certified by the committee of validators.}
+
+A block certificate issued by some members of the validators committee is considered valid, if according to
+the staking database of the previous \textbf{certified block by the validators committee}, we have:
+\begin{itemize}
+    \item The total stake of \texttt{online} accounts is higher than \texttt{minOnlineStake} percent of the
+    total stake of all accounts. This threshold can be changed by the ADAGs, but it can never be lower
+    than 70 percent.
+    \item All signers of the certificate have \texttt{online} status.
+    \item The sum of stake values of the certificate signers is higher than 80 percent of the total stake
+    of accounts that have \texttt{online} status.
+\end{itemize}
+
+If the total online stake goes lower than \texttt{minOnlineStake} threshold, nodes initiate the recovery
+consensus protocol.
+
+As we mentioned before, every $m$ blocks of the Argennon blockchain needs a certificate from the committee
+of validators. This means that assuming the last certified block by the validators is valid, for issuing the block
+certificate, the committee needs to conditionally validate $m$ blocks. We call these $m$ blocks the
+validation set. To reduce resource usage of validators' nodes, the protocol requires honest nodes to only
+conditionally validate a subset of the validation set. Validators that have a stake lower than
+average should only validate one block in expectation.
+
+More precisely, to decide about signing the block certificate, every honest member of the validators
+committee iterates over blocks of the validation set, and selects a block with
+probability $p_u$. In this way, a member of the validators committee will select $p_{u}m$ blocks in expectation.
+Then, the honest member conditionally validates the selected blocks. If the member has selected more than one block,
+he may validate the selected blocks in parallel.
+If all checked blocks are valid, the validator issues an "accept"
+signature, otherwise he issues a "reject" signature.
+
+One recommended formula for calculating the probability of selecting a block for validation by user $u$ is:
+\begin{equation}
+    p_u=\max\left(\frac{s_u}{m\mu},\ \frac{1}{m}\right),\label{eq:block-selection}
+\end{equation}
+where $\mu$ is the average stake of committee members and $s_u$ is the stake of user $u$.
+
+If the committee of validators, at any point issues a "reject" certificate for a block, the network will initiate the
+recovery protocol.
+
+\subsubsection{Signature Aggregation}
+
+In Argennon, signature aggregation is mostly performed by ZK-EDB servers. To distribute the aggregation workload
+between different servers, The committee of validators is divided into pre-determined groups, and each ZK-EDB
+server is responsible for signature aggregation of one group. To make sure that there is enough redundancy, the number
+of groups should be less than the number of ZK-EDB servers and each group should be assigned to
+multiple ZK-EDB servers.
+
+Any member of a group knows all the servers that are responsible for signature aggregation of his group. When a member
+signs a block certificate, he sends his signature to \textbf{all} the severs that aggregate the signatures of his group.
+These servers aggregate the signatures they receive, and then send the aggregated signature to the delegates.
+Furthermore, the delegates aggregate these signatures to produce the final block certificate,
+and then include it in the next block.
+
+The role of the delegates in the signature aggregation is limited. The important part of the work is done by ZK-EDB
+servers. As long as there are enough honest ZK-EDB servers, the network will be able to perform signature aggregation
+even if the delegates are malicious. (See Section~\ref{subsec:recovery})
+
+\subsection{Estimating A User's Stake}\label{subsec:user's-stake}
 
 In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount
-of stake the user has in the system. Conventionally in these systems, for estimating a user's stake, we use the
-amount of native system tokens the user is holding. Unfortunately, one problem with this approach is that a
-strong attacker may be able to obtain a considerable amount of system tokens, for example by borrowing from a
-DEFI application, and use this stake to attack the system.
+of stake the user has in the system. Conventionally in these systems, a user's stake is considered to be equal with the
+amount of native system tokens, the user has "staked" in the system. A user stakes his tokens by locking them in
+his account or a staking account for some period of time, and during this time he will not be able to transfer
+his tokens.
 
-To mitigate this problem, for calculating a user's stake at time step \(t\), instead of using the raw ARG
-balance, we use the minimum of a \emph{trust value} the system has calculated for the user and the user's
-ARG balance:
+Unfortunately, there is a subtle problem with this approach. It is not clear that in a real world economic system
+how much of the main currency of the system can be locked and kept out of the circulation indefinitely. It seems that
+this amount for currencies like US dollar, is quite low comparing to the total market cap of the currency.
+This means that for a real world currency this type of staking mechanisms will result in putting the
+fate of the system in the hands of the owners of a small fraction of the total supply of a currency.
+
+To mitigate this problem, Argennon uses a hybrid approach for estimating the stake of a user.
+Every \texttt{stakingDuration} blocks, which is called a \emph{staking period}, Argennon calculates
+a \emph{trust value} for each user. The user's stake
+at time step \(t\), is estimated based on the user's trust value and his ARG balance:
 \[
-    S_{u,t} = \min (B_{u,t}, Trust_{u,t})
+    S_{u,t} = \min (B_{u,t}, Trust_{u,k}),
 \]
-Where:
+where:
 \begin{itemize}
     \item \(S_{u,t}\) is the stake of user \(u\) at time step \(t\).
     \item \(B_{u,t}\) is the ARG balance of user \(u\) at time step \(t\).
-    \item \(Trust_{u,t}\) is an estimated trust value for user \(u\) at time step \(t\).
+    \item \(Trust_{u,k}\) is an estimated trust value for user \(u\) at staking period \(k\).
 \end{itemize}
 
-The agreement protocol, at time step \(t\), will use \(\sum_{u}S_{u,t}\) to determine the required
-number of votes for the confirmation of a block, and we let \(Trust_{u,t} = M_{u,t}\), where \(M_{u,t}\) is the
-exponential moving average of the ARG balance of user \(u\) at time step \(t\).
+Argennon users can lock their ARG tokens in their account for any period of time. During this time a user
+will not be able to transfer his tokens and there is no way for cancelling a lock.
+The trust value of a user is calculated based on the amount of his locked tokens and the
+Exponential Moving Average (EMA) of his ARG balance:
+\[
+    Trust_{u,k} = \max (L_{u,k}, M_{u,t_k}),
+\]
+where
+\begin{itemize}
+    \item $L_{u,k}$ is the amount of locked tokens of user $u$, whose release time is \textbf{after the end} of
+    the staking period $k+1$.
+    \item $M_{u,t_k}$ is the Exponential Moving Average (EMA) of the ARG balance of user \(u\) at time step \(t_k\).
+    $t_k$ is the start time of the staking period $k$.
+\end{itemize}
 
-In our system a user who held ARGs and participated in the consensus for a long time is more trusted
+In Argennon a user who held ARGs and participated in the consensus for a long time is more trusted
 than a user with a higher balance whose balance has increased recently. An attacker who has obtained a large
 amount of ARGs, also needs to hold them for a long period of time before being able to attack the system.
 
-For calculating the exponential moving average of a user's balance at time step \(t\), we can use the following
+For calculating the EMA of a user's balance at time step \(t\), we can use the following
 recursive formula:
 \[
     M_{u,t} = (1 - \alpha) M_{u,t-1} + \alpha B_{u,t} = M_{u,t-1} + \alpha (B_{u,t} - M_{u,t-1})
 \]
-Where the coefficient \(\alpha\) is a constant smoothing factor between \(0\) and \(1\) which represents the
-degree of weighting decrease, A higher \(\alpha\) discounts older observations faster.
+where the coefficient \(\alpha\) is a constant smoothing factor between \(0\) and \(1\), which represents the
+degree of weighting decrease. A higher \(\alpha\) discounts older observations faster.
 
 Usually an account balance will not change in every time step, and we can use older values of EMA for calculating
 \(M_{u,t}\): (In the following equations the \(u\) subscript is dropped for simplicity)
 \[
     M_{t} = (1 - \alpha)^{t-k}M_{k} + [1 - (1 - \alpha)^{t - k}]B
 \]
-Where:
+where:
 \[
     B = B_{k+1} = B_{k+2} = \dots = B_{t}
 \]
@@ -65,38 +192,7 @@ The value of \(\alpha\) for a desired configuration can be calculated by this eq
 calculate the \(\alpha\) for a relatively good configuration in which \(M_{n+k} = 0.8B\) and \(n\) equals to the
 number of time steps of 10 years.
 
-In our system a newly created account will not have voting power for some time, no matter how high its
-balance is. While this is a desirable property, in case a large proportion of total system tokens are
-transferred to newly created accounts, it can result in too much voting power for older accounts. This may decrease
-the degree of decentralization in our system.
 
-However, this situation is easily detectable by comparing the total stake of the system with the total balance of
-users. If after confirming a block the total stake of the system goes too low and we have:
-\[
-    \sum_{u}S_{u,t} < \gamma \sum_{u}B_{u,t}
-\]
-The protocol will perform a \emph{time shift} in the system: the time step of the system
-will be incremented for \(m\) steps while no blocks will be confirmed. This will increase the value of \(M_{u,t}\)
-for new accounts with a non-zero balance, giving them more influence in the agreement protocol.
+\subsection{The Recovery Protocol}\label{subsec:recovery}
 
-For calculating the value of \(m\) which determines the amount of time shift in the system, we should note that when
-\(B_{u,t} = B_{u, t-1} = B_u\), we can derive a simple recursive rule for the stake of a user:
-\[
-    S_{u,t} = (1 - \alpha) S_{u,t-1} + \alpha B_u
-\]
-Therefore, we have:
-\[
-    \sum_{u}S_{u,t} = (1 - \alpha) \sum_{u}S_{u,t - 1} + \alpha \sum_{u}B_u
-\]
-This equation shows that when the balance of users is not changing over time the total stake of the system is the
-exponential average of the total ARGs of the system. Consequently, when we shift the time for \(m\) steps, we can
-calculate the new total stake of the system from the following equation:
-
-\[
-    \sum_{u}S_{u,t+m} = (1 - \alpha)^{m}\sum_{u}S_{u,t} + [1 - (1 - \alpha)^{m}]\sum_{u}B_u
-\]
-Hence, if we want to increase the total stake of the system from \(\gamma \sum_{u}B_u\) to \(\lambda \sum_{u}B_u\),
-we can obtain \(m\) from the following formula, assuming \(\alpha\) is small enough:
-\[
-    m = \frac{1}{\alpha} \ln \left(\frac{1 - \gamma}{1 - \lambda}\right)
-\]
+\note{not yet written...}

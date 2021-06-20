@@ -1,0 +1,130 @@
+%! Author = aybehrouz
+
+
+In Argennon \emph{light} nodes do not keep a full copy of the AVM storage and for emulating the Argennon Virtual Machine
+( i.e.~validating transactions) they need to connect to a ZK-EDB and retrieve the required pages.
+Because light node need to be able to validate block certificates, they usually cache a large part of the staking
+database, and keep their cache updated to make sure they can keep themselves in sync with the blockchain.
+
+
+On the other hand, nodes that are chosen to be validators, for validating a new block, need to emulate the
+execution of the Argennon Virtual Machine. To do so, first they retrieve all storage pages they
+need from available ZK-EDBs. Then, they emulate the execution of AVM instructions and validate all the
+transactions included in the new block. This will modify some pages of the AVM storage, so they update the ZK-EDB
+commitments based on the modified pages and verify the commitments included in the new block. Validators also
+calculate and verify the commitment to the new block's transaction set.
+
+\note{Validators do not need to write the modified pages back to ZK-EDB servers. ZK-EDB servers will receive the new
+block, and they will update their database by emulating the AVM execution.}
+
+
+The only information that all Argennon nodes are required to store is \textbf{the most recent block} of the Argennon
+blockchain.
+We store the commitment of this
+transaction set in every block, but we don't keep the set itself. To be able to detect replay attacks, we require
+every signature that a user creates to have a nonce. This nonce consists of the issuance round of the signature
+and a sequence number: \texttt{(issuance,\ sequence)}. When a user creates more than one signature in a round, he
+must sequence his signatures starting from 0 (i.e.~the sequence number restarts from 0 in every round). We define
+a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound - issuance > maxLifeTime} or
+if a signature of the same user with a bigger or equal nonce is already used
+(i.e.~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
+nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
+
+To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. When the
+difference between \texttt{issuance} component of this nonce and the current round becomes bigger than the
+maximum allowed lifetime of a signature, this information can be safely deleted. \textbf{As a result, we will not
+have the problem of "un-removable empty accounts" like Ethereum.}
+
+
+
+In our system a newly created account will not have voting power for some time, no matter how high its
+balance is. While this is a desirable property, in case a large proportion of total system tokens are
+transferred to newly created accounts, it can result in too much voting power for older accounts. This may decrease
+the degree of decentralization in our system.
+
+However, this situation is easily detectable by comparing the total stake of the system with the total balance of
+users. If after confirming a block the total stake of the system goes too low and we have:
+\[
+    \sum_{u}S_{u,t} < \gamma \sum_{u}B_{u,t}
+\]
+The protocol will perform a \emph{time shift} in the system: the time step of the system
+will be incremented for \(m\) steps while no blocks will be confirmed. This will increase the value of \(M_{u,t}\)
+for new accounts with a non-zero balance, giving them more influence in the agreement protocol.
+
+For calculating the value of \(m\) which determines the amount of time shift in the system, we should note that when
+\(B_{u,t} = B_{u, t-1} = B_u\), we can derive a simple recursive rule for the stake of a user:
+\[
+    S_{u,t} = (1 - \alpha) S_{u,t-1} + \alpha B_u
+\]
+Therefore, we have:
+\[
+    \sum_{u}S_{u,t} = (1 - \alpha) \sum_{u}S_{u,t - 1} + \alpha \sum_{u}B_u
+\]
+This equation shows that when the balance of users is not changing over time the total stake of the system is the
+exponential average of the total ARGs of the system. Consequently, when we shift the time for \(m\) steps, we can
+calculate the new total stake of the system from the following equation:
+
+\[
+    \sum_{u}S_{u,t+m} = (1 - \alpha)^{m}\sum_{u}S_{u,t} + [1 - (1 - \alpha)^{m}]\sum_{u}B_u
+\]
+Hence, if we want to increase the total stake of the system from \(\gamma \sum_{u}B_u\) to \(\lambda \sum_{u}B_u\),
+we can obtain \(m\) from the following formula, assuming \(\alpha\) is small enough:
+\[
+    m = \frac{1}{\alpha} \ln \left(\frac{1 - \gamma}{1 - \lambda}\right)
+\]
+
+
+An Argennon block certificate is not a part of the block data. This means that the Argennon blockchain does not have a
+unique certificate sequence. Any node may have its own valid certificate sequence based on the signatures
+it has collected over time.
+
+
+
+
+\subsection{Memory Shards}\label{subsec:memory-shards}
+
+In order to further increase the concurrency level of Argennon, we can divide the AVM memory into \emph{shards}.
+Each memory shard can be persisted using a different ZK-EDB, hence having its own commitment. Then, the
+consensus on new values of the commitment of any shard can be achieved by a different voting committee.
+
+If a transaction does not modify a memory shard and in the transaction ordering of the block it comes after
+any transaction which modifies that shard, then the execution of that transaction is not needed for calculating
+the new commitment of the shard. Consequently, the voting committee of that memory shard can safely ignore such a
+transaction. The execution DAG of transactions can be used for finding and pruning these transactions as
+we see in Algorithm~\ref{alg:prune_dag}.
+
+%##\includegraphics[width=17cm]{../img/Alg4s.png}
+\begin{algorithm}
+    \DontPrintSemicolon
+    \SetKwData{V}{$v_0$}\SetKwData{Graph}{$G_e$}\SetKwData{Shard}{$Sh_k$}\SetKwData{Txns}{$T$}
+    \SetKwFunction{RPrune}{RecursivePrune}
+    \SetKwProg{Fn}{Function}{}{}
+    \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+    \Input{An execution dag \Graph and a memory shard \Shard}
+    \Output{The pruned execution dag based on \Shard}
+    \BlankLine
+    \For{each vertex \V with out degree $0$}
+    {
+        \RPrune{\V}\;
+    }
+    \BlankLine
+    \Fn{\RPrune{\V}}
+    {
+        \If{$Adj[\V] = \varnothing$ {\bf and} \V does not modify \Shard}
+        {
+            remove \V from \Graph\;
+            \For{each $u$ such that edge $(u,\V)$ was in \Graph}
+            {
+                \RPrune{u}\;
+            }
+        }
+    }
+    \caption{Pruning an execution DAG}\label{alg:prune_dag}
+\end{algorithm}
+
+If we choose shards in a way that most transactions only modify memory locations of one shard,
+likely many transactions of a block only need to be validated by one voting committee and can be validated in
+parallel by different committees.
+
+Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure
+that having multiple voting committees will not change the security properties of the Argennon agreement protocol.
