@@ -1,0 +1,151 @@
+%! Author = aybehrouz
+
+The Argennon blockchain is a sequence of blocks. Every block represents an ordered list of transactions, intended to be
+executed by the Argennon Virtual Machine. The first block of the blockchain, the \emph{genesis} block, is a spacial
+block that fully describes the initial state of the AVM. Every block of the Argennon blockchain thus corresponds to a
+unique AVM state which can be calculated deterministically from the genesis block.
+
+A block of the Argennon blockchain contains the following information:
+
+\begin{center}
+    \begin{tabular}{||c||}
+        \hline
+        \textbf{Block} \\ [0.5ex]
+        \hline\hline
+        commitment to the staking database            \\ [1.2ex]
+        commitment to the method database             \\ [1.2ex]
+        commitment to the heap database               \\ [1.2ex]
+        commitment to the set of transactions         \\ [1.2ex]
+        last block certificate issued by         \\
+        the validators committee                      \\ [1.2ex]
+        clustering directives                         \\ [1.2ex]
+        random seed                                   \\ [1.2ex]
+        previous block hash                           \\ [1.2ex]
+        \hline
+    \end{tabular}
+\end{center}
+
+\subsection{Block Validation}\label{subsec:block-validation}
+
+Having the previous AVM state, the transaction list and the clustering directives of a block, a node can calculate
+commitments to the staking, method and heap databases of the current block by emulating the AVM execution. If the
+node can obtain the previous block information from a trusted source, it does not need to have a trusted local
+copy of the AVM state,
+and it can reliably retrieve the required storage pages from a ZK-EDB server. We call this type of block verification
+\emph{conditional} block validation. This validation is conditional because the validity of the current block is
+conditioned on the validity of the previous block.
+
+Interestingly, conditional block validation of multiple blocks can be done in parallel. If a node has enough bandwidth
+and computational resources, it can conditionally verify any number of blocks from a previously created blockchain
+simultaneously and in parallel. As we will see in Section~\ref{subsec:validators-committee}, this property plays an
+important role in the Argennon consensus protocol.
+
+To some extent, conditional validation of a single block could be parallelized as well. Many transactions
+in a block are actually independent and the order of their execution does not
+matter. These transactions can be safely validated in parallel. Section~\ref{sec:concurrency} further
+develops this concept.
+
+
+\subsection{Block Certificate}\label{subsec:block-certificate}
+
+An Argennon block certificate is an aggregate signature of some predefined subset of accounts. This predefined subset
+is called the certificate committee and their signature ensures that the certified block is conditionally
+valid given the validity of some previous block.
+
+Argennon uses BLS aggregate signatures to represent block certificates. To better understand block certificates and
+the Argennon consensus protocol, we need to briefly review the BLS signature scheme and its aggregation mechanism.
+
+The BLS signature scheme operates in a prime order group and supports simple threshold signature generation,
+threshold key generation, and signature aggregation. To review, the scheme uses the following ingredients:
+
+\newcommand{\G}{\mathbb{G}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\adv}{{\cal A}}
+\newcommand{\bdv}{{\cal B}}
+\newcommand{\deq}{\mathrel{\mathop:}=}
+\newcommand{\SK}{\mathit{sk}}
+\newcommand{\PK}{\mathit{pk}}
+\newcommand{\C}{\mathit{cert}}
+\newcommand{\APK}{\mathit{apk}}
+\newcommand{\DPK}{\mathit{\Delta pk}}
+\newcommand{\MM}{\mathcal{M}}
+\newcommand{\xwedge}{\, \operatorname{\text{$\wedge$}}\, }
+\newcommand{\abs}[1]{\lvert #1 \rvert}
+\newcommand{\Hm}{H_0}
+\newcommand{\Hpk}{H_1}
+\newcommand{\qHpk}{Q_{\Hpk}}
+\newcommand{\qHm}{Q_{\Hm}}
+\newcommand{\qsig}{Q_{\text{sig}}}
+
+\begin{itemize}
+    \item An efficiently computable \emph{non-degenerate} pairing $e:\G_0 \times \G_1 \to \G_T$
+    in groups $\G_0$, $\G_1$ and $\G_T$ of prime order $q$. We let $g_0$ and $g_1$ be generators
+    of $\G_0$ and $\G_1$ respectively.
+    \item A hash function $H_0: \mathcal{M} \rightarrow \mathbb{G}_0$, where $\mathcal{M}$ is the message space.
+    The hash function will be treated as a random oracle.
+\end{itemize}
+
+The BLS signature scheme is defined as follows:
+
+\begin{itemize}
+    \item $\textbf{KeyGen}()$: choose a random $\alpha$ from $\Z_q$ and set $h \gets g_1^\alpha \in \G_1$.
+    output $\PK \deq (h)$ and $\SK \deq (\alpha)$.
+    \item $\textbf{Sign}(\SK, m)$: output $\sigma \gets \Hm(m)^\alpha \in \G_0$.
+    The signature $\sigma$ is a \emph{single} group element.
+    \item $\textbf{Verify}(\PK,m,\sigma)$: if $e(g_1, \sigma) = e\big(\PK,\ \Hm(m)\big)$  then output "accept",
+    otherwise output "reject".
+\end{itemize}
+
+Given triples $(\PK_i,\ m_i,\ \sigma_i)$ for $i=1,\ldots,n$,
+anyone can aggregate the signatures $\sigma_1,\ldots,\sigma_n \in \G_0$
+into a short convincing aggregate signature $\sigma$ by computing
+\begin{equation}
+    \label{eq:agg}
+    \sigma \gets \sigma_1 \cdots \sigma_n \in \G_0.
+\end{equation}
+Verifying an aggregate signature $\sigma \in \G_0$ is done by checking that
+\begin{equation}
+    \label{eq:aggdiff}
+    e(g_1, \sigma) = e\big(\PK_1,\ \Hm(m_1)\big) \cdots e\big(\PK_n,\ \Hm(m_n)\big).
+\end{equation}
+When all the messages are the same ($m = m_1 = \ldots = m_n$), the verification relation~\eqref{eq:aggdiff} reduces to
+a simpler test that requires only two pairings:
+\begin{equation}
+    \label{eq:aggsame}
+    e(g_1, \sigma) = e\Big(\PK_1 \cdots \PK_n,\ \Hm(m)\Big).
+\end{equation}
+We call $\APK=\PK_1 \cdots \PK_n$ the aggregate public key.
+
+To defend against \emph{rogue public key} attacks, Argennon uses Prove Knowledge of the Secret Key (KOSK) scheme. As we
+explained in Section~\ref{sec:accounts}, when an account is created its public keys need to be registered in
+the ARG smart contract. Therefore, the KOSK scheme can be easily implemented in Argennon.
+
+Because it is not usually possible to collect the signatures of all members of a certificate committee, an Argennon
+block certificate essentially is an Accountable-Subgroup Multi-signature (ASM). Argennon uses a simple ASM scheme
+based on BLS aggregate signatures.
+
+Argennon block certificates constitute an ordered sequence based on the order of blocks they certify. If we show
+the certificate of committee $C$ for the $i$-th block\footnote{note that the $i$-th block certificate is not
+necessarily the certificate of the $i$-th block.} with $\C_i$, and the set of signers
+with $S_i$, then the block certificate $\C_i$ can be considered as a tuple:
+\begin{equation}
+    \C_i=(\sigma_i,\ C-S_{i})\label{eq:cert},
+\end{equation}
+where $\sigma_i$ is the aggregate signature issued by $S_i$.
+
+The aggregate public key of the certificate can
+be calculated from:
+\begin{equation}
+    \APK_i=\APK_C\APK_{C-S_i}^{-1}\label{eq:aggCertPK}\ ,
+\end{equation}
+where $\APK_{A}$ shows the aggregate public key of all accounts in $A$.
+
+Alternately we can use $\APK_{i-1}$ to calculate the aggregate public key:
+\begin{equation}
+    \APK_i=\APK_{i-1}\APK_{S_i-S_{i-1}}\APK_{S_{i-1}-S_i}^{-1}\ .\label{eq:aggPK-2}
+\end{equation}
+
+When an Argennon account is created, both its $\PK$ and $\PK^{-1}$ is registered in the ARG smart contract, so the
+inverse of any aggregate public key can be easily computed.\footnote{since the group operator of a cyclic
+group is commutative, we have $(ab)^{-1}=a^{-1}b^{-1}$.}
+
