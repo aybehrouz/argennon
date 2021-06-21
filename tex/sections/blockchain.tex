@@ -51,6 +51,9 @@ Knowledge of the Secret Key (KOSK) scheme.} and can not be already registered in
 If the owner of the new account is an application, the \texttt{applicationID} of the owner will be registered in the
 ARG smart contract and no public keys are needed. An application can own an arbitrary number of accounts.
 
+\note{Explicit key registration enables Argennon to decouple cryptography from blockchain design. In this way,
+    if the used cryptographic algorithms turn out to be insecure for some reason, for example because
+    of the introduction of quantum computers, the cryptographic algorithms could be easily upgraded.}
 
 \section{Transactions}\label{sec:transactions}
 
@@ -70,8 +73,27 @@ has four public methods:
     \item \texttt{updateApp}: updates an AVM smart contract (if allowed).
 \end{itemize}
 
+\subsection{Authorization}\label{subsec:txn-auth}
+
 Argennon transactions do not have a sender. The authorization of the requested operation is always done by checking the
 digital signatures that are provided as a part of the argument list to the root smart contract method.
+
+While every block of the Argennon blockchain stores the commitment of the transaction list, Argennon does not enforce
+storage of the transaction history. To be able to detect replay attacks, we require
+every signature that a user creates to have a nonce. This nonce consists of the issuance round of the signature
+and a sequence number: \texttt{(issuance,\ sequence)}. When a user creates more than one signature in a round, he
+must sequence his signatures starting from 0 (i.e.~the sequence number restarts from 0 in every round). We define
+a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound - issuance > maxLifeTime} or
+if a signature of the same user with a bigger or equal nonce is already used
+(i.e.~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
+nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
+
+To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. When the
+difference between \texttt{issuance} component of this nonce and the current round becomes bigger than the
+maximum allowed lifetime of a signature, this information can be safely deleted.\footnote{in some conventional
+blockchains, the nonce data can never be deleted, even if the account has zero balance and is not used anymore.}
+
+\subsection{Resource Declaration}\label{subsec:resource-declaration}
 
 Every Argennon transaction is required to specify a cap for all the resources it needs. This
 will include memory, network and processor related resources. The protocol defines an execution cost for
@@ -388,11 +410,11 @@ calculates the refunded amount based on the average price the smart contract had
 This will prevent smart contracts from profit taking by trading memory with the protocol.
 
 
-\section{Governance}\label{sec:governance}
+\section{Concurrency}\label{sec:concurrency}
+\input{sections/concurrency}
 
+
+\section{Governance}\label{sec:governance}
 The Argennon Decentralized Autonomous Governance system (ADAGs)
 \note{not yet written...}
 
-
-\section{Concurrency}\label{sec:concurrency}
-\input{sections/concurrency}

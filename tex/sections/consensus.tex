@@ -77,8 +77,8 @@ validation set. To reduce resource usage of validators' nodes, the protocol requ
 conditionally validate a subset of the validation set. Validators that have a stake lower than
 average should only validate one block in expectation.
 
-More precisely, to decide about signing the block certificate, every honest member of the validators
-committee iterates over blocks of the validation set, and selects a block with
+More precisely, to decide about signing the block certificate, a honest member of the validators
+committee iterates over every block of the validation set, and selects a block for validation with
 probability $p_u$. In this way, a member of the validators committee will select $p_{u}m$ blocks in expectation.
 Then, the honest member conditionally validates the selected blocks. If the member has selected more than one block,
 he may validate the selected blocks in parallel.
@@ -90,6 +90,9 @@ One recommended formula for calculating the probability of selecting a block for
     p_u=\max\left(\frac{s_u}{m\mu},\ \frac{1}{m}\right),\label{eq:block-selection}
 \end{equation}
 where $\mu$ is the average stake of committee members and $s_u$ is the stake of user $u$.
+
+The value of $m$ is determined by the ADAGs. but it can never be set higher than $100$. This way, it is guaranteed
+that on average, any block of the Argennon blockchain is validated by at least $0.005$ of the total ARG supply.
 
 If the committee of validators, at any point issues a "reject" certificate for a block, the network will initiate the
 recovery protocol.
@@ -145,7 +148,7 @@ will not be able to transfer his tokens and there is no way for cancelling a loc
 The trust value of a user is calculated based on the amount of his locked tokens and the
 Exponential Moving Average (EMA) of his ARG balance:
 \[
-    Trust_{u,k} = \max (L_{u,k}, M_{u,t_k}),
+    Trust_{u,k} = L_{u,k} + M_{u,t_k}\ ,
 \]
 where
 \begin{itemize}
@@ -194,5 +197,7 @@ number of time steps of 10 years.
 
 
 \subsection{The Recovery Protocol}\label{subsec:recovery}
+\note{not yet written...}
 
+\subsection{Analysis}\label{subsec:consensus-math}
 \note{not yet written...}
