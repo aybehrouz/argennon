@@ -30,7 +30,8 @@ Both of these smart contracts are mutable smart contracts and can be updated by 
 \section{Accounts}\label{sec:accounts}
 
 Argennon accounts are entities defined inside the ARG smart contract.
-Every Argennon account is uniquely identified by a prefix code generated using \emph{accounts} prefix tree. An account
+Every Argennon account is uniquely identified by a prefix code generated using \emph{accounts} prefix
+tree. (See Section~\ref{sec:identifiers}) An account
 identifier can be considered as the address of an account and has the following standard symbolic representation:
 \begin{verbatim}
 <account-id> ::= "["<decimal-prefix-code>"]"
@@ -87,10 +88,11 @@ if a signature of the same user with a bigger or equal nonce is already used
 (i.e.~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
 nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
 
-To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. When the
-difference between \texttt{issuance} component of this nonce and the current round becomes bigger than the
-maximum allowed lifetime of a signature, this information can be safely deleted.\footnote{in some conventional
-blockchains, the nonce data can never be deleted, even if the account has zero balance and is not used anymore.}
+To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. This information
+is stored in the ARG smart contract and when the difference between \texttt{issuance} component of the nonce and
+the current round becomes bigger than the maximum allowed lifetime of a signature, it can be safely
+deleted.\footnote{in some conventional
+blockchains, the nonce data can never be deleted, even if the account has zero balance and is no longer used.}
 
 \subsection{Resource Declaration}\label{subsec:resource-declaration}
 

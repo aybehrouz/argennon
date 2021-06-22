@@ -8,12 +8,12 @@ chapter, we shall call these data elements \emph{objects}.
 \subsection{Storage Pages}\label{subsec:pages}
 
 In the AVM persistence layer, similar objects are clustered together and constitute a bigger data element which we call
-a \emph{page}.\footnote{we avoided calling them clusters, because usually a cluster refers to a \emph{set}. AVM object
+a \emph{page}.\footnote{we avoid calling them clusters, because usually a cluster refers to a \emph{set}. AVM object
 clusters are not sets. They are ordered lists, like a page containing an ordered list of words or sentences.}
 A page is an ordered list of an arbitrary number of objects, which their order reflects the order they were added to
 the page:
 \[
-    P = (O_1,O_2,\dots,O_n),\quad i < j \; \Leftrightarrow \; \textrm{$O_i$ was added before $O_j$}
+    P = (O_1,O_2,\dots,O_n),\quad i < j \; \Leftrightarrow \; \textrm{$O_i$ was added before $O_j$}\ .
 \]
 
 A page of the AVM storage should contain objects that have very similar access pattern. We expect that when a page
@@ -34,7 +34,7 @@ We consider the following properties for a ZK-EDB:
     \item Every state of the database has a commitment \(C\).
     \item The ZK-EDB has a method \((D, \pi) = \text{get}(x)\), where \(x\) is a key and \(D\) is the associated data
     with \(x\), and \(\pi\) is a proof.
-    \item A user can use \(C\) and \(\pi\) to verify that \(D\) is really associated with \(x\), and \(D\) is not
+    \item A user having \(C\) and \(\pi\) can verify that \(D\) is really associated with \(x\), and \(D\) is not
     altered. Consequently, a user who can obtain \(C\) from a trusted source does not need to trust the ZK-EDB\@.
     \item Having \(\pi\) and \(C\) a user can compute the commitment \(C'\) for the database in which \(D'\) is
     associated with \(x\) instead of \(D\).
@@ -46,8 +46,8 @@ protocol, to facilitate the usage of ZK-EDBs that are based on vector commitment
 For this reason, the AVM clustering algorithm always tries to reuse indices and keep the number of used indices
 as low as possible.
 
-The commitments of the AVM ZK-EDBs are affected by the way the clustering of data objects is done. So,
-the clustering algorithm has to be a part of the Argennon consensus protocol.
+The commitments of the AVM ZK-EDBs are affected by the way data objects are clustered. Therefore,
+the Argennon clustering algorithm has to be a part of the consensus protocol.
 
 Every block of the Argennon blockchain contains a set of \emph{clustering directives}. These directives
 can only modify pages that were used for validating the block, and can
@@ -57,7 +57,7 @@ the newly created objects. These directives are always executed by nodes at the 
 A block proposer could obtain clustering directives from any third party source\footnote{we can say the AVM clustering
 algorithm is essentially off-chain.}. This will not
 affect Argennon security, since the integrity of a database can not be altered by clustering directives.
-Those directives can only affect the performance of the argennon blockchain, and directives of a single block can
+Those directives can only affect the performance of the Argennon network, and directives of a single block can
 not affect the performance considerably.
 
 \subsubsection[Implementation]{Implementation Based on Vector Commitments}\label{subsubsec:impl-zk-edbs}

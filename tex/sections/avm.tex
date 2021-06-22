@@ -51,20 +51,20 @@ prefix code built by using one or more of these prefix trees:
     \item \texttt{methodID} is a composite prefix code built by concatenating an \texttt{applicationID} to
     a prefix code made by \emph{local} prefix tree: (\texttt{|} is the concatenating operator)
 
-    \texttt{methodID = (applicationID|<local prefix code>)}
+    \texttt{methodID = (applicationID|<local-prefix-code>)}
     \item \texttt{chunkID} is a composite prefix code built by concatenating an \texttt{applicationID} to
     an \texttt{accountID} to a prefix code made by \emph{local} prefix tree:
 
-    \texttt{chunkID = (applicationID|accountID|<local prefix code>)}
+    \texttt{chunkID = (applicationID|accountID|<local-prefix-code>)}
 \end{itemize}
 
 All Argennon prefix trees have an equal branching factor \(\beta\). Therefore, we can represent an Argennon
 prefix tree as a sequence of fractional numbers\footnote{It's possible to have \(a_i=0\). For
-instance, \(A^{(4)}=(0.2000)_{10}\) is a valid prefix tree.} in base \(\beta\):
+exmaple \(A^{(4)}=(0.2000)_{10}\) is correct.} in base \(\beta\):
 \[
-    (A^{(1)},A^{(2)},A^{(3)},\dots)
+    (A^{(1)},A^{(2)},A^{(3)},\dots)\ ,
 \]
-Where \(A^{(i)}=(0.a_{1}a_{2}\dots a_{i})_\beta\), and we have \(A^{(i)}<A^{(i+1)}\). A typical choice for \(\beta\)
+where \(A^{(i)}=(0.a_{1}a_{2}\dots a_{i})_\beta\), and we have \(A^{(i)}<A^{(i+1)}\). A typical choice for \(\beta\)
 could be \(2^8\).
 
 One important property of prefix identifiers is that while they have variable and unlimited length, they are
