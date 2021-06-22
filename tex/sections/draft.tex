@@ -1,6 +1,39 @@
 %! Author = aybehrouz
 
 
+
+Every transaction in the Argennon blockchain starts with an \texttt{invoke\_external} instruction which calls a
+special method from the root smart contract. This method will transfer the proposed fee of the transaction in ARGs
+from a sender account to the fee sink accounts. Argennon has two fee sink accounts: \texttt{execFeeSink} collects
+execution fees and \texttt{dbFeeSink} collects fees for ZK-EDB servers. The Protocol decides how to distribute the
+transaction fee between these two fee sink accounts.
+
+When a block is added to the blockchain, the proposer of that block will receive a share of the block fees.
+Consequently, a block proposer is always incentivized to include more transactions in his block. However, if he
+puts too many transactions in his block and the validation of the block becomes too difficult, some validators
+may not be able to validate all transactions on time. If a validator can not validate a block in the required
+time, he will consider the block invalid. So, when a proposed block contains too many transactions, the network
+may reach consensus on another block, and the proposer of that block will not receive any fees. As a result, a
+proposer is incentivized to use network transaction capacity optimally.
+
+On the other hand, we believe that the proposer does not have enough incentives for optimizing the storage size
+of the transaction set. Therefore, we require that \textbf{the size of the transaction set of every block in
+bytes be lower than a certain threshold.}
+
+Validators need to spend resources for validating transactions. When a validator starts the emulation of the AVM
+to validate a transaction, solely from the code he can't predict the time the execution will finish. This will
+give an adversary an opportunity to attack the network by broadcasting transactions that never ends. Since,
+validators can not finish the execution of these transactions, the network will not be able to charge the
+attacker any fees, and he would be able to waste validators resources for free.
+
+To mitigate this problem, we require that every transaction specify a cap for all the resources it needs. This
+will include memory, network and processor related resources. Also, the protocol defines an execution cost for
+every AVM instruction reflecting the amount of resources its emulation needs. This will define a standard way for
+measuring the execution cost of any \texttt{avmCall} transaction. Every \texttt{avmCall} transaction is required
+to specify a maximum execution cost. If during emulation it reaches this maximum cost, the transaction will be
+considered failed and the network can receive the proposed fee of that transaction.
+
+
 In Argennon \emph{light} nodes do not keep a full copy of the AVM storage and for emulating the Argennon Virtual Machine
 ( i.e.~validating transactions) they need to connect to a ZK-EDB and retrieve the required pages.
 Because light node need to be able to validate block certificates, they usually cache a large part of the staking
@@ -72,7 +105,6 @@ we can obtain \(m\) from the following formula, assuming \(\alpha\) is small eno
 \[
     m = \frac{1}{\alpha} \ln \left(\frac{1 - \gamma}{1 - \lambda}\right)
 \]
-
 
 An Argennon block certificate is not a part of the block data. This means that the Argennon blockchain does not have a
 unique certificate sequence. Any node may have its own valid certificate sequence based on the signatures
