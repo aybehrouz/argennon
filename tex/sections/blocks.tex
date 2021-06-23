@@ -101,18 +101,18 @@ anyone can aggregate the signatures $\sigma_1,\ldots,\sigma_n \in \G_0$
 into a short convincing aggregate signature $\sigma$ by computing
 \begin{equation}
     \label{eq:agg}
-    \sigma \gets \sigma_1 \cdots \sigma_n \in \G_0.
+    \sigma \gets \sigma_1 \cdots \sigma_n \in \G_0\ .
 \end{equation}
 Verifying an aggregate signature $\sigma \in \G_0$ is done by checking that
 \begin{equation}
     \label{eq:aggdiff}
-    e(g_1, \sigma) = e\big(\PK_1,\ \Hm(m_1)\big) \cdots e\big(\PK_n,\ \Hm(m_n)\big).
+    e(g_1, \sigma) = e\big(\PK_1,\ \Hm(m_1)\big) \cdots e\big(\PK_n,\ \Hm(m_n)\big)\ .
 \end{equation}
 When all the messages are the same ($m = m_1 = \ldots = m_n$), the verification relation~\eqref{eq:aggdiff} reduces to
 a simpler test that requires only two pairings:
 \begin{equation}
     \label{eq:aggsame}
-    e(g_1, \sigma) = e\Big(\PK_1 \cdots \PK_n,\ \Hm(m)\Big).
+    e(g_1, \sigma) = e\Big(\PK_1 \cdots \PK_n,\ \Hm(m)\Big)\ .
 \end{equation}
 We call $\APK=\PK_1 \cdots \PK_n$ the aggregate public key.
 

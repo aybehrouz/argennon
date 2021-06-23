@@ -5,8 +5,6 @@ bytecodes of methods\footnote{also it stores constant area blocks.}, and heap st
 data elements, bytecodes and chunks, can be considered as continuous pieces of byte addressable memory. Throughout this
 chapter, we shall call these data elements \emph{objects}.
 
-\subsection{Storage Pages}\label{subsec:pages}
-
 In the AVM persistence layer, similar objects are clustered together and constitute a bigger data element which we call
 a \emph{page}.\footnote{we avoid calling them clusters, because usually a cluster refers to a \emph{set}. AVM object
 clusters are not sets. They are ordered lists, like a page containing an ordered list of words or sentences.}
@@ -21,7 +19,7 @@ is needed for validating a block, almost all of its objects are needed for eithe
 that the objects are needed for the same access type. In other words, the objects of a page are chosen in a way that
 for validating a block, we usually need to either read all of them or modify\footnote{and probably read.} all of them.
 
-\subsection{Zero-knowledge Databases}\label{subsec:zk-edb}
+\section{Zero-knowledge Databases}\label{sec:zk-edb}
 
 Pages of the AVM storage are persisted using updatable zero-knowledge elementary databases (ZK-EDB). Argennon
 has three zero-knowledge databases: \emph{staking} database, which stores all the data that is associated with
@@ -60,11 +58,11 @@ affect Argennon security, since the integrity of a database can not be altered b
 Those directives can only affect the performance of the Argennon network, and directives of a single block can
 not affect the performance considerably.
 
-\subsubsection[Implementation]{Implementation Based on Vector Commitments}\label{subsubsec:impl-zk-edbs}
+\subsection[Implementation]{Implementation Based on Vector Commitments}\label{subsec:impl-zk-edbs}
 
 \note{not yet written...}
 
-\subsection{Object Clustering Algorithm}\label{subsec:clustering}
+\section{Object Clustering Algorithm}\label{sec:clustering}
 
 \note{not yet written...}
 
