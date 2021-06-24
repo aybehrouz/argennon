@@ -97,7 +97,7 @@ blockchains, the nonce data can never be deleted, even if the account has zero b
 \subsection{Resource Declaration}\label{subsec:resource-declaration}
 
 Every Argennon transaction is required to specify a cap for all the resources it needs. This
-will include memory, network and processor related resources. The protocol defines an execution cost for
+includes memory, network and processor related resources. The protocol defines an execution cost for
 every AVM instruction, reflecting the amount of resources its emulation needs, and every transaction is required
 to specify a maximum execution cost. If during emulation, a transaction reaches this maximum cost, it will be
 considered failed and the network can receive the proposed fee of that transaction.
@@ -128,7 +128,12 @@ resources it needs:
 If a transaction tries to violate any of these predefined limitations, it will be considered failed, and the network
 can receive the proposed fee of that transaction.
 
+\subsection{Transaction Fee}\label{subsec:fee}
+
+Every Argennon transaction is required to pay two types of fees: execution fee and storage fee. A transaction pays
+its fees by providing digital signatures of one or more accounts authorizing the transfer of the amount of fee in
+ARG from one or more accounts to the fee sink accounts.
 \note{An Argennon transaction always pays all of its proposed fee, no matter how much of its predefined resources
-were not used in the final emulation. This will incentivize users to exactly report their
-transactions resource usage.}
+were not used in the final emulation. This will incentivize users to report the resource usage of their
+transactions more accurately.}
 

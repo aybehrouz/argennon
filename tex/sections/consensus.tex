@@ -69,21 +69,21 @@ the staking database of the previous \textbf{certified block by the validators' 
 
 If the total online stake goes lower than \texttt{minOnlineStake} threshold, nodes initiate the recovery
 consensus protocol.
-
-As we mentioned before, every $m$ blocks of the Argennon blockchain needs a certificate from the committee
-of validators. This means that assuming the last certified block by the validators is valid, for issuing the block
-certificate, the committee needs to conditionally validate $m$ blocks. We call these $m$ blocks the
-validation set. To reduce resource usage of validators' nodes, the protocol requires honest nodes to only
-conditionally validate a subset of the validation set. Validators that have a stake lower than
-average should only validate one block in expectation.
-
-More precisely, to decide about signing the block certificate, a honest member of the validators'
-committee iterates over every block of the validation set, and selects a block for validation with
-probability $p_u$. In this way, a member of the validators' committee will select $p_{u}m$ blocks in expectation.
-Then, the honest member conditionally validates the selected blocks. If the member has selected more than one block,
-he may validate the selected blocks in parallel.
-If all checked blocks are valid, the validator issues an "accept"
-signature, otherwise he issues a "reject" signature.
+%
+%As we mentioned before, every $m$ blocks of the Argennon blockchain needs a certificate from the committee
+%of validators. This means that assuming the last certified block by the validators is valid, for issuing the block
+%certificate, the committee needs to conditionally validate $m$ blocks. We call these $m$ blocks the
+%validation set. To reduce resource usage of validators' nodes, the protocol requires honest nodes to only
+%conditionally validate a subset of the validation set. Validators that have a stake lower than
+%average should only validate one block in expectation.
+%
+%More precisely, to decide about signing the block certificate, a honest member of the validators'
+%committee iterates over every block of the validation set, and selects a block for validation with
+%probability $p_u$. In this way, a member of the validators' committee will select $p_{u}m$ blocks in expectation.
+%Then, the honest member conditionally validates the selected blocks. If the member has selected more than one block,
+%he may validate the selected blocks in parallel.
+%If all checked blocks are valid, the validator issues an "accept"
+%signature, otherwise he issues a "reject" signature.
 
 One recommended formula for calculating the probability of selecting a block by user $u$ for validation is:
 \begin{equation}
