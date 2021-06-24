@@ -49,19 +49,20 @@ system. This value is measured in ARGs. Every $n$ block randomly $m$ committees 
 accounts whose stake value is higher than \texttt{minValidatorsStake} threshold. This
 threshold is determined by the ADAGs, but it can never be higher than $100$ ARGs.
 These committees are chosen in a
-way that the total stake of members of each committee is approximately equal and every account is a member of at
-least one committee.
+way that the total stake of members of each committee is approximately equal and every account is a member of
+\textbf{at least} one committee.
 
-Every member of a validators committee has a status which can be either \texttt{online} or \texttt{offline}.
-This status is stored in the ARG smart contract, and it can be changed through a method invocation
+Every member of a validators' committee has a status which can be either \texttt{online} or \texttt{offline}.
+This status is stored in the ARG smart contract and is a part of the staking database. A validator can change
+his status through a method invocation
 from this smart contract. When an account sets its status to \texttt{offline}, it receives a small reward, and
 it can not change it back to \texttt{online} for \texttt{statusCoolDown} number of blocks.
 
-\note{When an account changes its status, the change has no effect until the block containing the status
-change transaction gets certified by the committee of validators.}
+\note{When a validator changes his status, the change has no effect until the block containing the status
+change transaction gets certified by his committee.}
 
-A block certificate issued by some members of a validators committee is considered valid, if according to
-the staking database of the previous \textbf{block certified by the same committee}, we have:
+A block certificate issued by some members of a validators' committee is considered valid, if according to
+the staking database of the previous block \textbf{certified by the same committee}, we have:
 \begin{itemize}
     \item The total stake of \texttt{online} members is higher than \texttt{minOnlineStake} percent of the
     total stake of all members. This threshold can be changed by the ADAGs, but it can never be lower
@@ -74,10 +75,13 @@ the staking database of the previous \textbf{block certified by the same committ
 If the total online stake of a committee goes lower than \texttt{minOnlineStake} threshold, nodes initiate the recovery
 consensus protocol.
 
-As we mentioned before, every $m$ blocks of the Argennon blockchain needs a certificate from a specific committee
-of validators. To decide about signing the block certificate, an honest member of the validators'
-committee checks the conditional validity of the committee block, and if the block is valid he issues an "accept"
-signature, otherwise he issues a "reject" signature.
+As we mentioned before, every block of the Argennon blockchain needs a certificate from a specific committee of
+validators, which repeats every $m$ blocks. To decide about signing the block certificate, an honest member of a
+validators' committee checks the conditional validity of the committee block, and if the block is valid he issues
+an "accept" signature, otherwise he issues a "reject" signature.
+
+block certificates issued by validators' committees are included in the Argennon blockchain. A block may contain
+multiple certificates, provided that those certificates belong to consecutive blocks.
 
 The value of $m$ is determined by the ADAGs. but it can never be higher than $25$. This way, it is guaranteed
 that on average, any block of the Argennon blockchain is validated by at least $0.02$ of the total ARG supply.
@@ -88,9 +92,9 @@ recovery protocol.
 \subsubsection{Signature Aggregation}
 
 In Argennon, signature aggregation is mostly performed by ZK-EDB servers. To distribute the aggregation workload
-between different servers, The committee of validators is divided into pre-determined groups, and each ZK-EDB
-server is responsible for signature aggregation of one group. To make sure that there is enough redundancy, the number
-of groups should be less than the number of ZK-EDB servers and each group should be assigned to
+between different servers, Every committee of validators is divided into pre-determined groups, and each ZK-EDB
+server is responsible for signature aggregation of one group. To make sure that there is enough redundancy, the
+total number of groups should be less than the number of ZK-EDB servers and each group should be assigned to
 multiple ZK-EDB servers.
 
 Any member of a group knows all the servers that are responsible for signature aggregation of his group. When a member
