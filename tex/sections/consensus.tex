@@ -1,13 +1,17 @@
 %! Author = aybehrouz
 
-There is two primary types of certificate committees in Argennon: the committee of \emph{delegates} and the committee
+There are two primary types of certificate committees in Argennon: the committee of \emph{delegates} and the committee
 of \emph{validators}. Argennon has one committee of delegates and $m$ committees of validators.
 
 The committee of delegates generates a certificate for every block of the Argennon blockchain, and each
 committee of validators generates a certificate every $m$ blocks. A validators' committee will
-certify a block only if it has already been certified by the committee of delegates and every committee
-generates a certificate for a different block. A block is considered
-final only after it gets a certificate from both of these committees.
+certify a block only if it has already been certified by the committee of delegates. Every committee of validators has
+an index between $0$ and $m - 1$, and it issues a certificate for block number $n$, if $n\mod m$ equals
+the committee index.
+
+A block is considered final only if it has a valid certificate from both the delegates and the
+validators. A valid certificate from validators could be either a valid certificate from the committee of
+validators with the appropriate index or a certificate from all the validators.
 
 In addition to primary committees, Argennon has several community driven committees. Certificates of these
 committees are not required for block finality, but they could be used by the members of the
@@ -23,14 +27,19 @@ The committee of delegates is a small committee of trusted delegates, elected by
 Argennon Decentralized Autonomous Governance system (ADAGs\footnote{pronounced \textipa{/eI-dagz/}.}) or by emergency
 voting during the recovery protocol. At the start of the Argennon mainnet, this committee will have
 five members, and later its size could be changed by the ADAGs in a procedure described
-in Section~\ref{ch:governance}.
+in Chapter~\ref{ch:governance}.
 
 The committee of delegates is responsible for creating new blocks of the Argennon blockchain, and it issues a
 certificate for every block of the Argennon blockchain. A certificate needs to be signed
 by \textbf{all} of the committee members in order to be considered valid.
 
+Besides the main delegates' committee, a reserve committee of delegates consists of three members is elected by users
+through the ADAGs. In case the main committee fails to generate new blocks or behaves maliciously, the task of
+block generation will be assigned to the reserve committee until a new main delegates' committee is elected
+through the ADAGs.
+
 Usually, the delegates are large organizations, and they have enough computational resources to generate blocks
-very fast. However, a block is not completely final if it does not have the certificate of the validators' committee.
+very fast. However, a block is not completely final if it does not have the certificate of the validators.
 A certified block by the delegates will not be accepted by the network, if the last block certified by
 the validators is behind it more than a certain number of blocks.
 
@@ -42,20 +51,22 @@ If one of the delegates lose its network connectivity, no new blocks can be gene
 the delegates should invest on different types of communication infrastructure, to make sure they never lose
 connectivity to each other and to the Argennon network.
 
-\subsection{The Committee of Validators}\label{subsec:validators-committee}
+\subsection{Validators}\label{subsec:validators-committee}
 
 The Argennon protocol calculates a stake value for every account, which is an estimate of a user's stake in the
-system. This value is measured in ARGs. Every $n$ block randomly $m$ committees are selected from
-accounts whose stake value is higher than \texttt{minValidatorsStake} threshold. This
+system, and is measured in ARGs. Any account whose stake value s higher than
+\texttt{minValidatorsStake} threshold is considered a validator.
+The \texttt{minValidatorsStake}
 threshold is determined by the ADAGs, but it can never be higher than $100$ ARGs.
-These committees are chosen in a
-way that the total stake of members of each committee is approximately equal and every account is a member of
-\textbf{at least} one committee.
+
+Every $n$ blocks randomly $m$ committees are selected from
+validators, in a way that the total stake of members of each committee is approximately equal and every
+account is a member of \textbf{at least} one committee.
 
 Every member of a validators' committee has a status which can be either \texttt{online} or \texttt{offline}.
 This status is stored in the ARG smart contract and is a part of the staking database. A validator can change
 his status through a method invocation
-from this smart contract. When an account sets its status to \texttt{offline}, it receives a small reward, and
+from the ARG smart contract. When an account sets its status to \texttt{offline}, it receives a small reward, and
 it can not change it back to \texttt{online} for \texttt{statusCoolDown} number of blocks.
 
 \note{When a validator changes his status, the change has no effect until the block containing the status
@@ -64,30 +75,33 @@ change transaction gets certified by his committee.}
 A block certificate issued by some members of a validators' committee is considered valid, if according to
 the staking database of the previous block \textbf{certified by the same committee}, we have:
 \begin{itemize}
-    \item The total stake of \texttt{online} members is higher than \texttt{minOnlineStake} percent of the
-    total stake of all members. This threshold can be changed by the ADAGs, but it can never be lower
+    \item The total stake of \texttt{online} members of the committee is higher than \texttt{minOnlineStake} percent
+    of the total stake of all members. This threshold can be changed by the ADAGs, but it can never be lower
     than 70 percent.
     \item All signers of the certificate have \texttt{online} status.
     \item The sum of stake values of the certificate signers is higher than 80 percent of the total stake
     of committee members that have \texttt{online} status.
 \end{itemize}
 
-If the total online stake of a committee goes lower than \texttt{minOnlineStake} threshold, nodes initiate the recovery
-consensus protocol.
+If the total online stake of a committee goes lower than \texttt{minOnlineStake} threshold, a partial reshuffling
+of committee members will be performed by the protocol in order to move some online members to the committee without
+enough online stake. If the reshuffling can not solve the problem, nodes will initiate the recovery consensus
+protocol.
 
 As we mentioned before, every block of the Argennon blockchain needs a certificate from a specific committee of
-validators, which repeats every $m$ blocks. To decide about signing the block certificate, an honest member of a
+validators. To decide about signing the block certificate, an honest member of a
 validators' committee checks the conditional validity of the committee block, and if the block is valid he issues
 an "accept" signature, otherwise he issues a "reject" signature.
 
-block certificates issued by validators' committees are included in the Argennon blockchain. A block may contain
-multiple certificates, provided that those certificates belong to consecutive blocks.
+block certificates issued by validators' committees are included in the blocks of the Argennon blockchain.
+A block can contain multiple certificates, provided that those certificates belong to consecutive blocks.
 
 The value of $m$ is determined by the ADAGs. but it can never be higher than $25$. This way, it is guaranteed
 that on average, any block of the Argennon blockchain is validated by at least $0.02$ of the total ARG supply.
 
-If a committee of validators, at any point issues a "reject" certificate for a block, the network will initiate the
-recovery protocol.
+If a committee of validators, at any point issues a "reject" certificate or does not issue a certificate for its
+block, after \texttt{certificateTimeOut} period of time,
+nodes will initiate the recovery protocol.
 
 \subsubsection{Signature Aggregation}
 
@@ -190,6 +204,11 @@ number of time steps of 10 years.
 
 \subsection{The Recovery Protocol}\label{subsec:recovery}
 \note{not yet written...}
-
+%
+%Validators stop issuing certificates for normal blocks and they will only issue certificates for \emph{statuts} blocks.
+%A status block is a special block which can only contain status change transactions. Status blocks need to be
+%certified by all the validators.
+%all online validators will check the
+%validity of that block. if they do not issue a certificate for that black either
 \subsection{Analysis}\label{subsec:consensus-math}
 \note{not yet written...}

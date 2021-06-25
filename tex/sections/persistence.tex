@@ -5,6 +5,9 @@ bytecodes of methods\footnote{also it stores constant area blocks.}, and heap st
 data elements, bytecodes and chunks, can be considered as continuous pieces of byte addressable memory. Throughout this
 chapter, we shall call these data elements \emph{objects}.
 
+
+\section{Storage Pages}\label{sec:storage-pages}
+
 In the AVM persistence layer, similar objects are clustered together and constitute a bigger data element which we call
 a \emph{page}.\footnote{we avoid calling them clusters, because usually a cluster refers to a \emph{set}. AVM object
 clusters are not sets. They are ordered lists, like a page containing an ordered list of words or sentences.}
