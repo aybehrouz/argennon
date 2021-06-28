@@ -160,3 +160,119 @@ parallel by different committees.
 
 Because the voting committees are selected by random sampling, by choosing large enough samples we can make sure
 that having multiple voting committees will not change the security properties of the Argennon agreement protocol.
+
+
+If a block receives a "reject" certificate from its committee or does not receive a certificate
+after \texttt{certificateTimeOut} period of time, it will be conditionally validated by \textbf{all} validators. If
+it does not receive an "accept" certificate, the validators initiate the recovery protocol.
+
+
+
+
+The recovery protocol can recover the functionality
+of the Argennon blockchain as long as more than 2/3 of the total stake of the system is controlled by honest users
+and any network partition resolves after a finite amount of time. The recovery protocol uses two main emergency
+procedures to recover the : emergency forking and emergency agreement protocol.
+
+\subsubsection{Emergency Forking}
+
+The reserve committee of delegates can fork the Argennon blockchain, if it gets a valid fork request from
+the validators. A valid fork request at
+block $b$ is a signature issued by at least $0.8$ of the total \texttt{online} stake
+of the validators. The stake values are calculated based on the staking database at block $b - 1$.
+
+For forking at block $b$, the reserve committee of delegates
+makes a special fork block which only contains a valid fork request at block $b$, and its parent block is block $b$.
+The fork block needs a valid certificate from all $m$ validator committees in order to be valid. A valid fork block
+will force the fork, in the sense that any validator receiving it considers the forked chain as the new valid chain.
+
+A validator will issue
+an "accept" certificate for a fork block at position $b + 1$ if
+\begin{itemize}
+    \item the fork block is signed by the reserve committee of delegates.
+    \item the fork block contains a valid fork request at block $b$ and block $b$ is its parent.
+    \item the validator has not issued a certificate for any block $\geq b + 2$.
+    \item the validator has not seen a certificate of validators for any block $\geq b + 2$.
+\end{itemize}
+
+Emergency forking may discard at max one block with a valid validator's certificate
+from the blockchain, in the worst case scenario.
+
+\subsubsection{Emergency Agreement Protocol}
+
+Emergency agreement protocol is a protocol for deciding between a set of proposals when no committee of
+delegates is available. For initiating the protocol, a validator signs a message containing
+the hash of a block which will the stake values during voting rounds will be calculated based on its
+staking database. A validator starts the protocol if he
+receives a message containing a valid block signed by more than 2/3 of the total stake of the validators.
+if the block is too old the validator will not enter the agreement protocol.
+
+Emergency agreement is done by voting in rounds. Each round lasts for approximately $\lambda$ units of time.
+Users cast two type of votes: \emph{$i$-votes}, which are votes that are valid only in round $i$,
+and \emph{final-votes}, which are votes that are valid in any round. A user executes the
+following procedure in round $r$ of the voting phase:
+\begin{itemize}
+    \item if the user has not yet final-voted any value or if $r\mod k = 1$ he $r$-votes a desired proposal
+    \item if he sees more than 2/3 round $r$-votes for a proposal $p$ he final-votes $p$
+    \item if he sees more than 2/3 final-votes for a proposal he goes to the confirmation phase for $p$
+    \item if $clock > r \cdot \lambda$ user goes to the round $r + 1$
+\end{itemize}
+
+the confirmation phase
+\begin{itemize}
+    \item user confirm-votes $p$
+    \item if he sees more than 2/3 confirm votes for $p$ he selects $p$ and ends the agreement protocol
+    \item if $clock > k \cdot \lambda$ user goes to the round $k + 1$ of voting
+\end{itemize}
+
+\subsubsection{Initiating the Recovery Protocol}
+
+A validator will try to initiate the recovery protocol in two situations: when he does not receive any blocks for
+\texttt{blockTimeOut} amount of time, or when he sees an evidence which proves the delegates are malicious.
+
+When a validator is not receiving any blocks, first he switches his network to censorship resilient mode. If still he
+does not receive any new blocks, he will start validating all the blocks in his blockchain that does not have
+a validators' certificate. After he successfully validates the last block, if still he does not receive any blocks,
+he will sign and broadcast an \textbf{emergency fork request} message at the last block he has
+verified.
+
+If the reserve committee of delegates is already active or If a validator sees a fork request signed
+by 2/3 of the total stake of the validators, but does not receive the fork
+block after a certain amount of time he will sign and broadcast a request for
+emergency agreement on a new reserve committee. the validator puts the last valid block of his
+blockchain in the request.
+
+If a validator sees an evidence that proves the delegates are behaving maliciously, he signs and broadcasts a
+fork request at approprate block. if the reserve committee is generating blocks he signs a agreement for choosing
+a new reserve committee of delegates.
+
+A validator finds a block that conditionally is not valid. in this case validators start validating previous blocks of the
+invalid block that does not have a validators' certificate. then the validator sign a fork request at the last valid
+block before the invalid block.
+the block depends on the specific evidence
+recieving a malformed block signed by the delegates for example a block which does not contain all the required feilds
+
+two different blocks signed by the delegates at the same height (same block number)
+a block signed by the delegates which is not conditionlly valid and its previous block has a valid certificate from the validators commitee
+
+
+
+time out in receiving validators certificate
+
+time out in receiving a new block
+
+finds an invalid block in his blockchain
+
+Online stake goes too low
+
+
+The delegates stop generating blocks
+
+
+\paragraph{The delegates fork the blockchain}
+%
+%Validators stop issuing certificates for normal blocks and they will only issue certificates for \emph{statuts} blocks.
+%A status block is a special block which can only contain status change transactions. Status blocks need to be
+%certified by all the validators.
+%all online validators will check the
+%validity of that block. if they do not issue a certificate for that black either
