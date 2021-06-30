@@ -1,11 +1,31 @@
 %! Author = aybehrouz
 
-\note{TODO: update this section!}
 
-\subsection{Transaction Fee}\label{subsec:transaction-fee}
+\subsection{Certificate Rewards}\label{subsec:rewards}
 
-\subsection{Rewards}\label{subsec:rewards}
+When the certificate of a committee of validators is included in a block, the signers of that certificate and the
+delegates will be rewarded. Every validator will be rewarded equally. The delegates will be rewarded
+proportional to the total stake of the signers of the certificate and their reward increases if the
+certificate has more signers.
 
+Rewards will not be distributed instantly, instead they will be distributed at the end of the staking period.
+This will facilitate efficient implementations which avoid frequent updates in the AVM storage.
+Rewards of every staking period depends on the amount of fees that are collected during that period.
+
+\subsection{Stashing}\label{subsec:stashing}
+
+If an account behaves maliciously, and that behaviour could not have happened due to a mistake, by providing a proof
+in a block, the account will be disabled forever in the ARG smart contract. Disabling an account in the
+ARG smart contract will prevent that account from signing any valid signature in the future.
+
+Only behaviours will be stashed that can not happen due to a mistake or an attack. These behaviours include:
+\begin{itemize}
+    \item Signing a certificate for a block that is not conditionally valid.
+    \item Signing a certificate for two different blocks at the same height if none of them
+    is a fork block or a seal block.\footnote{signing
+    a fork block and a normal block at the same height usually is a malicious behaviour. However, it will not be
+    stashed because there are circumstances that a honest user could mistakenly do that.}
+\end{itemize}
 
 \subsection{Incentives for ZK-EDB Servers}\label{subsec:zk-edb-servers}
 

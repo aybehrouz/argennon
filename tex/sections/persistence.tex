@@ -63,6 +63,16 @@ not affect the performance considerably.
 
 \subsection{Vector Commitments}\label{subsec:impl-zk-edbs}
 
+Informally, vector commitments allow committing to an ordered sequence of $q$ values
+(i.e.\ a vector), rather than to single messages. This is done in a way such that it is later possible
+to open the commitment with respect to specific positions (e.g., to prove that $m_i$ is the $i$-th committed
+message). More precisely, vector commitments are required to satisfy what is called position binding.
+Position binding states that an adversary should not be able to open a commitment to two different
+values at the same position. While this property, by itself, would be trivial to realize using standard
+commitment schemes, what makes vector commitments interesting is that they are concise, i.e.,
+the size of the commitment string as well as the size of each opening \textbf{is independent of the
+vector length}.
+
 \note{not yet written...}
 
 \section{Object Clustering Algorithm}\label{sec:clustering}
