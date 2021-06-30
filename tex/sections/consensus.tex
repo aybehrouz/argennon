@@ -12,14 +12,15 @@ an index between $0$ and $m - 1$, and it issues a certificate for block number $
 the committee index.
 
 Every block of the Argennon blockchain needs a certificate from both the committee of delegates and
-the committee of validators. \textbf{A block is considered final after its next block receives both of
-its certificates.}
+the committee of validators. \textbf{A block is considered final after it receives both of
+its certificates.} In Argennon as long as more than half of the total stake of validators is controlled by honest users,
+the probability of discarding a final block is near zero even if all the delegates are malicious.
 
 In addition to primary committees, Argennon has several community driven committees. Certificates of these
 committees are not required for block finality, but they could be used by members of the
 validators' committee to better decide about the validity of a block.
 
-When an anomaly is detected in the consensus mechanism, the \emph{recovery} protocol is initiated by nodes. The
+When an anomaly is detected in the consensus mechanism, the \emph{recovery} protocol is initiated by validators. The
 recovery protocol is designed to be resilient to many types of attacks in order to be able to restore the normal
 functionality of the system.
 
@@ -42,7 +43,7 @@ block generation will be assigned to the reserve committee until a new main dele
 through the ADAGs.
 
 Usually, the delegates are large organizations, and they have enough computational resources to generate blocks
-very fast. However, a block is not completely final if it does not have the certificate of the validators.
+very fast. However, a block is not completely final if it does not have the certificate of its validators.
 A certified block by the delegates will not be accepted by the network, if the last block certified by
 the validators is behind it more than a certain number of blocks.
 
@@ -62,7 +63,7 @@ system, and is measured in ARGs. Any account whose stake value is higher than
 The \texttt{minValidatorsStake}
 threshold is determined by the ADAGs, but it can never be higher than $500$ ARGs.
 
-Every \texttt{committeeLifeTime} blocks, randomly $m$ committees are selected from
+Every \texttt{committeeLifeTime} number of blocks, randomly $m$ committees are selected from
 validators, in a way that the total stake of members of each committee is approximately equal, and every
 account is a member of \textbf{at least} one committee.
 
@@ -77,18 +78,18 @@ change transaction gets certified by his committee.}
 
 A block certificate issued by some members of a validators' committee is considered valid, if according to
 the staking database of the previous block \textbf{certified by the same committee}, we have:\footnote{If we calculate
-the stake values based on the previous block a malicious committee can affect the validators of the next block.}
+the stake values based on the previous block a malicious committee can select the validators of the next block.}
 \begin{itemize}
     \item The total stake of \texttt{online} members of the committee is higher than \texttt{minOnlineStake} percent
     of the total stake of the committee. This threshold can be changed by the ADAGs, but it can never be lower
     than $2/3$.
     \item All signers of the certificate have \texttt{online} status.
-    \item The sum of stake values of certificate signers is higher than 80 percent of the total stake
+    \item The sum of stake values of certificate signers is higher than $3/4$ of the total stake
     of the committee members that have \texttt{online} status.
 \end{itemize}
 
 The delegates can generate blocks very fast. Therefore, the Argennon blockchain always has an
-unvalidated part which contains blocks that have a certificate from the committee of delegates but have not received
+unvalidated part, which contains blocks that have a certificate from the committee of delegates but have not received
 a certificate from the validators yet.
 
 As we mentioned before, the block with height $n$ needs a certificate from the committee of
@@ -97,13 +98,14 @@ checks the conditional validity\footnote{See Section~\ref{subsec:block-validatio
 if the block is valid he issues
 an "accept" signature. If the block is invalid, he initiates the recovery protocol. The validator will broadcast the
 certificate \textbf{only after} he sees the certificate of the validators of the previous block.
-
 Some validators may also require seeing a certificate from
-some community driven committee for the previous block, before they broadcast an "accept" certificate for a block.
+some community driven committee. An honest validator never signs a certificate for two different blocks with the
+same height.
 
 So in Argennon, the block validation by committees is performed in parallel, and validators
 do not wait for seeing the validators' certificate of the previous block to start transaction validation. On the
-other hand, the block certificates are published and broadcast sequentially. This ensures that an invalid
+other hand, the block certificates are published and broadcast sequentially. A validator does not publish its
+certificate if the certificate of the previous block has not been published yet. This ensures that an invalid
 fork made by malicious delegates will not receive any certificates from validators.
 
 The value of $m$ is determined by the ADAGs. but it can never be higher than $25$. This way, it is guaranteed
@@ -124,9 +126,9 @@ In this reshuffling which is based on the block random seed, some online members
 be moved to the committee without enough online stake to make it active again.
 
 If the reshuffling can not solve the problem due to low total online stake, the protocol requires the next block
-of the blockchain to be a special \emph{status} block. A status block is a special block which can only contain
+of the blockchain to be a special \emph{status block}. A status block is a special block which can only contain
 status change transactions. The status block need to be certified by the delegates and by 2/3 of the total stake of
-the validators. The \texttt{online}/\texttt{offline} status of validators will not be considered in the validity of
+validators. The \texttt{online}/\texttt{offline} status of validators will not be considered in the validity of
 the status block certificate.\footnote{Theoretically at the status block, the total online stake of the system could
 be very low, even zero. Therefore, the status block should not be certified only by online stake.} After applying
 the transactions of the status block, the total online stake of validators
@@ -152,12 +154,143 @@ even if the delegates are malicious.
 
 \subsection{The Recovery Protocol}\label{subsec:recovery}
 
-The recovery protocol is a resilient protocol intended for recovering the Argennon blockchain from critical situations.
+The recovery protocol is a resilient protocol designed for recovering the Argennon blockchain from critical situations.
 In the terminology of the CAP theorem, the recovery protocol is designed to choose consistency over availability
 and is not a protocol supposed to be executed occasionally. Ideally this protocol should never be used
 during the lifetime of the Argennon blockchain.
 
-\subsection{Estimating A User's Stake}\label{subsec:user's-stake}
+The recovery protocol can recover the functionality
+of the Argennon blockchain as long as more than 2/3 of the total stake of the system is controlled by honest users
+and any network partition resolves after a finite amount of time. The recovery protocol uses two main emergency
+procedures to recover the functionality of the Argennon blockchain: \emph{emergency forking} and \emph{emergency
+agreement} protocol.
+
+\subsubsection{Emergency Forking}
+
+The reserve committee of delegates is able to fork the Argennon blockchain, if it receives a valid fork request
+from the validators.
+This fork needs to be confirmed by the validators and can not discard any blocks that has been already certified
+by validators.
+A valid fork request is an unexpired request signed by more than half of the
+total \texttt{online} stake of the validators.
+
+For forking at block $b$, the reserve committee of delegates
+makes a special \emph{fork block} which only contains a valid fork request, and its parent is the block $b$.
+The height of the fork block is
+$b + 1$ so it needs a valid certificate from the committee of validator with the index $b+1$ modulo $m$.
+
+Validators always choose a valid fork block over a block of the main chain. However, as we mentioned before,
+a validator never signs a certificate for two different blocks with the same height. Consequently, if a validator
+has already signed the block $b$ of the main chain, he will not sign the fork block and vice versa.
+
+When the fork block is broadcast, it is possible that the validators of the committee with index $b+1$ modulo $m$
+get divided between the fork block and the block $b+1$ of the main chain, in a way that no block gets enough validators.
+This will cause the blockchain to halt. To prevent this, the protocol allows the reserve delegates to revoke a
+fork block. After a fork block
+is revoked, the validators who voted for it are allowed to vote for another block with the same
+height.
+
+To revoke a fork block with height $b+1$, the delegates need to seal the fork by adding a special
+\emph{seal block} after the fork block.\footnote{The parent of the seal block must be the fork block.} The seal block
+has the height $b+2$ and needs to be certified by the validators' committee with the
+index $b+2$ modulo $m$. The fork block is considered revoked only after the seal block is certified by the validators.
+
+A member of the appropriate committee will sign the certificate of a seal block only if he has not already signed
+a block after the fork block (i.e., a block with the same parent as the seal block).
+
+The seal block is not a normal block and validators who signed a certificate for a seal block are allowed
+to sign a certificate for a block with the same height if the parent of that block is not the fork
+block. In other words, the signers of the seal block are not allowed to sign a certificate for
+any blocks on the sealed chain, but are allowed to sign certificates for other chains.
+
+As long as more than half of the total online stake of every committee of validators is controlled
+by honest users, a malicious committee of delegates can not use the emergency forking procedure to discard blocks
+that have a validators' certificate.
+
+Moreover, an honest committee of delegates will always try to perform the emergency forking in such a way that
+valid blocks do not get discarded, including blocks that are not certified by the validators yet.
+
+\subsubsection{Emergency Agreement}
+
+The emergency agreement protocol is a resilient protocol for deciding between a set of proposals when no committee of
+delegates can be trusted. For initiating the protocol, a validator signs a message containing the subject
+of the agreement and a start time.
+
+A validator enters the agreement protocol if he
+receives a request that is signed by more than half of the total stake
+of the validators and its start time has not passed. The validator calculates
+the stake values based on the staking database of the last final block in his blockchain without
+considering the \texttt{online}/\texttt{offline} status of validators.
+
+The agreement protocol consists of two phases: the \emph{voting phase}, which selects a single proposal
+and the \emph{confirmation phase} which confirms the selected proposal. The voting phase is done in rounds.
+Each round lasts for approximately $\lambda$ units of time, and after $k$ rounds, the current session ends and a new
+agreement session starts. All votes and messages are tagged in a way that the messages of one session can
+not be used in another session.
+
+Users cast three type of votes: \emph{$i$-votes}, which are votes that are valid only in
+round $i$, \emph{final-votes}, which are votes that are valid in any round, and \emph{c-votes}, which are votes
+used only in the confirmation phase.
+
+A user executes the following procedure
+in round $r$ of the voting phase:
+\paragraph{Voting Phase:}
+\begin{itemize}
+    \item if the user has not yet final-voted any value, he $r$-votes a single desired proposal.
+    \item if he sees more than 2/3 $r$-votes for a proposal $p$, he final-votes $p$.
+    \item if he sees more than 2/3 final-votes for a proposal, he goes to the confirmation phase for $p$.
+    \item if $clock > r \cdot \lambda$ and $r < k$ user goes to the round $r + 1$ and if $r = k$ user starts a
+    new agreement session.
+\end{itemize}
+\paragraph{Confirmation Phase for Proposal $p$:}
+\begin{itemize}
+    \item user c-votes $p$.
+    \item if he sees more than 2/3 c-votes for $p$ he selects $p$ and ends the agreement protocol.
+    \item if $clock > k \cdot \lambda$ user starts a new agreement session.
+\end{itemize}
+
+We assume that users have clocks with the same speed, and $\lambda \gg \epsilon$, where $\epsilon$ is the maximum
+clock difference between users. We also assume that more than 2/3 of the total stake of the system is controlled
+by honest users, and network partitions are resolved after a finite amount of time. With these assumptions it can be
+shown that the emergency recovery protocol has the following important properties:
+\begin{itemize}
+    \item no two users will end the agreement protocol with two different proposals as the result of the agreement.
+    \item if honest users can agree upon some proposal value, the agreement protocol will converge to that value
+    after a finite number of sessions.
+\end{itemize}
+
+When the emergency agreement protocol is used for electing a new reserve committee to fork the blockchain, the
+confirmation phase could be skipped. In that case, the confirmation of the fork block by the committee of validators
+acts like the confirmation phase.
+
+\subsubsection{Initiating the Recovery Protocol}
+
+When a validator does not receive any blocks for \texttt{blockTimeOut} amount of time, or when he sees an
+evidence which proves the delegates are malicious, he initiates the recovery protocol.
+
+To do so, first the validator activates the censorship resilient mode of his networking module, then he checks the
+validity of the blocks in his blockchain that do not have a validators' certificate and determines the
+last valid block of his blockchain.
+
+In the next step, he will sign and broadcast an \textbf{emergency fork request} message, alongside some useful metadata
+such as the last valid block of his blockchain and the evidence of delegates' misbehaviour.\footnote{this metadata is
+not a part of the fork request.}
+
+If the reserve committee of delegates is already active, or if a validator sees a valid fork request signed
+by more than half of the total online stake of the validators, but does not receive the fork
+block after a certain amount of time, he will sign and broadcast a request for
+\textbf{emergency agreement} on a new reserve committee. The agreement on new delegates usually needs user
+interaction and is not a fully automatic process.
+
+The evidence which proves a committee of delegates is malicious is an invalid block that is signed by at least
+one delegate:
+\begin{itemize}
+    \item a block that is not conditionally valid
+    \item two different blocks at the same height
+    \item a block that has an invalid format
+\end{itemize}
+
+\subsection{Estimating Stake Values}\label{subsec:user's-stake}
 
 In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount
 of stake the user has in the system. Conventionally in these systems, a user's stake is considered to be equal with the
