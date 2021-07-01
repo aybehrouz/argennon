@@ -77,7 +77,7 @@ IF random(seed|validatorPK|receivedPageID) < winProbability THEN
     \item \texttt{receivedPageID} is the ID of the storage page that the receipt was issued for.
     \item \texttt{winProbability} is the probability of winning in every round.
     \item \texttt{seed} is the current block seed.
-    \item \texttt{|} is a concatenation operator.
+    \item \texttt{|} is the concatenation operator.
 \end{itemize}
 
 Also, based on the current block seed, a random storage page is
@@ -92,6 +92,6 @@ page combined with the server account address:
 \texttt{hash(challenge.content|ownerAddr)}
 
 The winning tickets of the lottery of round $r$ need to be included in the block of the round $r$,
-otherwise they will be considered expired. Validation and prize distribution for the winning tickets of round
-$r$ will be done in the round $r + 1$. This way, \textbf{the content of the challenge page could be
+otherwise they will be considered expired. However, finalizing and prize distribution for the winning tickets
+should be done in a later round. This way, \textbf{the content of the challenge page could be
 kept secret during the lottery round.} Every winning ticket will get an equal share of the lottery prize.
