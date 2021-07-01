@@ -95,21 +95,3 @@ The winning tickets of the lottery of round $r$ need to be included in the block
 otherwise they will be considered expired. Validation and prize distribution for the winning tickets of round
 $r$ will be done in the round $r + 1$. This way, \textbf{the content of the challenge page could be
 kept secret during the lottery round.} Every winning ticket will get an equal share of the lottery prize.
-
-\subsection{Memory Allocation and De-allocation Fee}\label{subsec:memory-allocation-and-de-allocation}
-
-Every $k$ round the protocol chooses a price per byte for AVM memory. When a smart contract executes a heap
-allocation instruction, the protocol will automatically deduce the cost of the allocated memory from the ARG
-address of the smart contract.
-
-To determine the price of AVM memory, Every $k$ round, the protocol calculates \texttt{dbFee} and
-\texttt{memTraffic} values. \texttt{dbFee} is the aggregate amount of collected database fees, and
-\texttt{memTraffic} is the total memory traffic of the system. For calculating the memory traffic of the system
-the protocol considers the total size of all the memory pages that were accessed for either reading or writing
-during a time period. These two values will be calculated for the last $k$ rounds and the price per byte of
-AVM memory will be a linear function of \texttt{dbFee/memTraffic}
-
-When a smart contract executes a heap de-allocation instruction, the protocol will refund the cost of
-de-allocated memory to the smart contract. Here, the current price of AVM memory does not matter and the protocol
-calculates the refunded amount based on the average price the smart contract had paid for that allocated memory.
-This will prevent smart contracts from profit taking by trading memory with the protocol.
