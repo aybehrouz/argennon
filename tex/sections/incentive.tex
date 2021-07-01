@@ -22,7 +22,7 @@ Only behaviours will be punished that can not happen due to a mistake or an atta
 \begin{itemize}
     \item Signing a certificate for a block that is not conditionally valid.
     \item Signing a certificate for two different blocks at the same height if none of them
-    is a fork block or a seal block.\footnote{signing
+    is a fork block or a seal block.\footnote{Signing
     a fork block and a normal block at the same height usually is a malicious behaviour. However, it will not be
     penalized because there are circumstances that a honest user could mistakenly do that.}
 \end{itemize}
@@ -32,24 +32,25 @@ Only behaviours will be punished that can not happen due to a mistake or an atta
 The incentive mechanism for ZK-EDB servers should have the following properties:
 
 \begin{itemize}
-    \item It incentivizes storing all memory blocks, whether a heap page or a code area block, and not only those
-    which are used more frequently.
-    \item It incentivizes ZK-EDB servers to actively provide the required memory blocks for validators.
-    \item Making more accounts will not provide any advantages for a ZK-EDB server.
+    \item It incentivizes storing all storage pages and not only those pages that are used more frequently.
+    \item It incentivizes ZK-EDB servers to actively provide the required storage pages for validators.
+    \item Making more accounts will not provide any advantage for a ZK-EDB server.
 \end{itemize}
 
-For our incentive mechanism, we require that every time a validator receives a memory block from a ZK-EDB, after
-validating the data, he give a receipt to the ZK-EDB. In this receipt the validator signs the following information:
+For our incentive mechanism, we require that every time a validator receives a storage page from a ZK-EDB, after
+validating the data, he give a receipt to the ZK-EDB server. In this receipt the validator signs the
+following information:
 
 \begin{itemize}
-    \item \texttt{ownerAddr}: the ARG address of the ZK-EDB\@.
-    \item \texttt{receivedBlockID}: the ID of the received memory block.
-    \item \texttt{round}: the current round number.
+    \item \texttt{ownerAddr}: the account address of the ZK-EDB server.
+    \item \texttt{receivedPageID}: the ID of the received page.
+    \item \texttt{round}: the current block number.
 \end{itemize}
 
-\note{In a round, an honest validator never gives a receipt for an identical memory block to two different ZK-EDBs.}
+\note{In a round, an honest validator never gives a receipt for an identical page to two different ZK-EDB servers.}
 
-To incentivize ZK-EDB servers, a lottery will be held every round and a predefined amount of ARGs from
+To incentivize ZK-EDB servers, a lottery will be held every round,\footnote{A round is the time interval between
+two consecutive blocks.} and a predefined amount of ARGs from
 \texttt{dbFeeSink} account will be distributed between winners as a prize. This prize will be divided equally
 between all \emph{winning tickets} of the lottery.
 
@@ -59,39 +60,40 @@ To run this lottery, every round, based on the current block seed, a collection 
 selected randomly as the \emph{winning receipts} of the round. A receipt is \emph{valid} in round $r$ if:
 
 \begin{itemize}
-    \item The signer was a validator in the round $r - 1$ and voted for the agreed-upon block.
-    \item The data block in the receipt was needed for validating the \textbf{previous} block.
+    \item The signer was a member of the validators' committee of the block $r - 1$ and signed the block certificate.
+    \item The page in the receipt was needed for validating the \textbf{previous} block.
     \item The receipt round number is $r - 1$.
-    \item The signer did not sign a receipt for the same data block for two different ZK-EDBs in the previous round.
+    \item The signer did not sign a receipt for the same storage page for two different ZK-EDB servers in
+    the previous round.
 \end{itemize}
 For selecting the winning receipts we could use a random generator:
 \begin{verbatim}
-IF random(seed|validatorPK|receivedBlockID) < winProbability THEN
-    the receipt issued by validatorPK for receivedBlockID is a winner
+IF random(seed|validatorPK|receivedPageID) < winProbability THEN
+    the receipt issued by validatorPK for receivedPageID is a winner
 \end{verbatim}
 \begin{itemize}
     \item \texttt{random()} produces uniform random numbers between 0 and 1, using its input argument as a seed.
     \item \texttt{validatorPK} is the public key of the signer of the receipt.
-    \item \texttt{receivedBlockID} is the ID of the memory block that the receipt was issued for.
+    \item \texttt{receivedPageID} is the ID of the storage page that the receipt was issued for.
     \item \texttt{winProbability} is the probability of winning in every round.
     \item \texttt{seed} is the current block seed.
     \item \texttt{|} is a concatenation operator.
 \end{itemize}
 
-\note{The winners of the lottery were validators one round before the lottery round.}
-
-Also, based on the current block seed, a random memory block, whether a heap page or a code area block, is
-selected as the challenge of the round. A ZK-EDB that owns a winning receipt needs to broadcast a \emph{winning
+Also, based on the current block seed, a random storage page is
+selected as the challenge of the round. A ZK-EDB server that owns a winning receipt needs to broadcast a \emph{winning
 ticket} to claim his prize. The winning ticket consists of a winning receipt and a \emph{solution} to the round
-challenge. Solving a round challenge requires the content of the memory block which was selected as the round
-challenge. This will encourage ZK-EDBs to store all memory blocks.
+challenge. Solving a round challenge requires the content of the storage page which was selected as the round
+challenge. This will encourage ZK-EDB servers to store all storage pages.
 
 A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge
-memory block combined with the ZK-EDB ARG address: \texttt{hash(challenge.content|ownerAddr)}
+page combined with the server account address:
+
+\texttt{hash(challenge.content|ownerAddr)}
 
 The winning tickets of the lottery of round $r$ need to be included in the block of the round $r$,
 otherwise they will be considered expired. Validation and prize distribution for the winning tickets of round
-$r$ will be done in the round $r + 1$. This way, \textbf{the content of the challenge memory block could be
+$r$ will be done in the round $r + 1$. This way, \textbf{the content of the challenge page could be
 kept secret during the lottery round.} Every winning ticket will get an equal share of the lottery prize.
 
 \subsection{Memory Allocation and De-allocation Fee}\label{subsec:memory-allocation-and-de-allocation}
