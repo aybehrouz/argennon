@@ -1,9 +1,9 @@
 %! Author = aybehrouz
 
-The credibility of a block of the Argennon blockchain is determined based on the certificates it has received
-from different sets of users, knows as committees. There are two primary types of certificate committees in
+The credibility of a block of the Argennon blockchain is determined by the certificates it has received
+from different sets of users, knows as committees. There are two primary type of certificate committees in
 Argennon: the committee of \emph{delegates} and the committee
-of \emph{validators}. Argennon has one committee of delegates and $m$ committees of validators.
+of \emph{validators}. Argennon has \emph{one} committee of delegates and $m$ committees of validators.
 
 The committee of delegates issues a certificate for every block of the Argennon blockchain, and each
 committee of validators issues a certificate every $m$ blocks. A validators' committee will
@@ -64,7 +64,7 @@ The \texttt{minValidatorsStake}
 threshold is determined by the ADAGs, but it can never be higher than $500$ ARGs.
 
 Every \texttt{committeeLifeTime} number of blocks, randomly $m$ committees are selected from
-validators, in a way that the total stake of members of each committee is approximately equal, and every
+validators, in a way that the total stakes of committees are almost equal, and every
 account is a member of \textbf{at least} one committee.
 
 Every validator has a status which can be either \texttt{online} or \texttt{offline}.
@@ -80,17 +80,17 @@ A block certificate issued by some members of a validators' committee is conside
 the staking database of the previous block \textbf{certified by the same committee}, we have:\footnote{If we calculate
 the stake values based on the previous block a malicious committee can select the validators of the next block.}
 \begin{itemize}
-    \item The total stake of \texttt{online} members of the committee is higher than \texttt{minOnlineStake} percent
+    \item The total stake of \texttt{online} members of the committee is higher than \texttt{minOnlineStake} fraction
     of the total stake of the committee. This threshold can be changed by the ADAGs, but it can never be lower
     than $2/3$.
     \item All signers of the certificate have \texttt{online} status.
-    \item The sum of stake values of certificate signers is higher than $3/4$ of the total stake
+    \item The sum of stake values of the certificate signers is higher than $3/4$ of the total stake
     of the committee members that have \texttt{online} status.
 \end{itemize}
 
 The delegates can generate blocks very fast. Therefore, the Argennon blockchain always has an
-unvalidated part, which contains blocks that have a certificate from the committee of delegates but have not received
-a certificate from the validators yet.
+unvalidated part, which contains blocks that have a certificate from the committee of delegates but have not
+yet received a certificate from the validators.
 
 As we mentioned before, the block with height $n$ needs a certificate from the committee of
 validators with index $n$ modulo $m$. To decide about signing a block certificate, a validator
@@ -103,7 +103,7 @@ some community driven committee. An honest validator never signs a certificate f
 same height.
 
 So in Argennon, the block validation by committees is performed in parallel, and validators
-do not wait for seeing the validators' certificate of the previous block to start transaction validation. On the
+do not wait for seeing the certificate of the previous block validators to start transaction validation. On the
 other hand, the block certificates are published and broadcast sequentially. A validator does not publish its
 certificate if the certificate of the previous block has not been published yet. This ensures that an invalid
 fork made by malicious delegates will not receive any certificates from validators.
@@ -130,8 +130,8 @@ of the blockchain to be a special \emph{status block}. A status block is a speci
 status change transactions. The status block need to be certified by the delegates and by 2/3 of the total stake of
 validators. The \texttt{online}/\texttt{offline} status of validators will not be considered in the validity of
 the status block certificate.\footnote{Theoretically at the status block, the total online stake of the system could
-be very low, even zero. Therefore, the status block should not be certified only by online stake.} After applying
-the transactions of the status block, the total online stake of validators
+be very low. Therefore, the status block should not be certified only by online stake.} After applying
+the transactions of the status block, the total online stake of all committees of validators
 must go higher than \texttt{minOnlineStake} threshold.
 
 \subsection{Signature Aggregation}\label{subsec:sig-agg}
@@ -155,7 +155,7 @@ even if the delegates are malicious.
 \subsection{The Recovery Protocol}\label{subsec:recovery}
 
 The recovery protocol is a resilient protocol designed for recovering the Argennon blockchain from critical situations.
-In the terminology of the CAP theorem, the recovery protocol is designed to choose consistency over availability
+In the terminology of the CAP theorem, the recovery protocol is designed to choose consistency over availability,
 and is not a protocol supposed to be executed occasionally. Ideally this protocol should never be used
 during the lifetime of the Argennon blockchain.
 
@@ -169,7 +169,7 @@ agreement} protocol.
 
 The reserve committee of delegates is able to fork the Argennon blockchain, if it receives a valid fork request
 from the validators.
-This fork needs to be confirmed by the validators and can not discard any blocks that has been already certified
+This fork needs to be confirmed by validators and can not discard any blocks that has been already certified
 by validators.
 A valid fork request is an unexpired request signed by more than half of the
 total \texttt{online} stake of the validators.
@@ -205,7 +205,7 @@ any blocks on the sealed chain, but are allowed to sign certificates for other c
 
 As long as more than half of the total online stake of every committee of validators is controlled
 by honest users, a malicious committee of delegates can not use the emergency forking procedure to discard blocks
-that have a validators' certificate.
+that have a certificate from validators.
 
 Moreover, an honest committee of delegates will always try to perform the emergency forking in such a way that
 valid blocks do not get discarded, including blocks that are not certified by the validators yet.
@@ -224,8 +224,8 @@ considering the \texttt{online}/\texttt{offline} status of validators.
 
 The agreement protocol consists of two phases: the \emph{voting phase}, which selects a single proposal
 and the \emph{confirmation phase} which confirms the selected proposal. The voting phase is done in rounds.
-Each round lasts for approximately $\lambda$ units of time, and after $k$ rounds, the current session ends and a new
-agreement session starts. All votes and messages are tagged in a way that the messages of one session can
+Each round lasts for approximately $\lambda$ units of time, and after $k$ rounds, the current agreement session ends and a
+new session starts. All votes and messages are tagged in a way that the messages of one session can
 not be used in another session.
 
 Users cast three type of votes: \emph{$i$-votes}, which are votes that are valid only in
@@ -269,7 +269,7 @@ When a validator does not receive any blocks for \texttt{blockTimeOut} amount of
 evidence which proves the delegates are malicious, he initiates the recovery protocol.
 
 To do so, first the validator activates the censorship resilient mode of his networking module, then he checks the
-validity of the blocks in his blockchain that do not have a validators' certificate and determines the
+validity of the blocks that do not have a validators' certificate and determines the
 last valid block of his blockchain.
 
 In the next step, he will sign and broadcast an \textbf{emergency fork request} message, alongside some useful metadata
@@ -294,19 +294,21 @@ one delegate:
 
 In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount
 of stake the user has in the system. Conventionally in these systems, a user's stake is considered to be equal with the
-amount of native system tokens, the user has "staked" in the system. A user stakes his tokens by locking them in
-his account or a staking account for some period of time, and during this time he will not be able to transfer
+amount of native system tokens, he has "staked" in the system. A user stakes his tokens by locking them in
+his account or a separate staking account for some period of time. During this time, he will not be able to transfer
 his tokens.
 
 Unfortunately, there is a subtle problem with this approach. It is not clear that in a real world economic system
 how much of the main currency of the system can be locked and kept out of the circulation indefinitely. It seems that
 this amount for currencies like US dollar, is quite low comparing to the total market cap of the currency.
 This means that for a real world currency this type of staking mechanisms will result in putting the
-fate of the system in the hands of the owners of a small fraction of the total supply of a currency.
+fate of the system in the hands of the owners of a small fraction of the total supply.
 
 To mitigate this problem, Argennon uses a hybrid approach for estimating the stake of a user.
 Every \texttt{stakingDuration} blocks, which is called a \emph{staking period}, Argennon calculates
-a \emph{trust value} for each user. The user's stake
+a \emph{trust value} for each user.
+
+The user's stake
 at time step \(t\), is estimated based on the user's trust value and his ARG balance:
 \begin{equation}
     S_{u,t} = \min (B_{u,t}, Trust_{u,k})\ ,\label{eq:stake}

@@ -51,9 +51,9 @@ Knowledge of the Secret Key (KOSK) scheme.} and can not be already registered in
 If the owner of the new account is an application, the \texttt{applicationID} of the owner will be registered in the
 ARG smart contract and no public keys are needed. An application can own an arbitrary number of accounts.
 
-\note{Explicit key registration enables Argennon to decouple cryptography from blockchain design. In this way,
-    if the used cryptographic algorithms turn out to be insecure for some reason, for example because
-    of the introduction of quantum computers, the cryptographic algorithms could be easily upgraded.}
+\note{Explicit key registration enables Argennon to decouple cryptography from the blockchain design. In this way,
+    if the cryptographic algorithms used become insecure for some reason, for example because
+    of the introduction of quantum computers, they could be easily upgraded.}
 
 \section{Transactions}\label{sec:transactions}
 
@@ -64,8 +64,8 @@ has four public methods:
 
 \begin{itemize}
     \item \texttt{avmCall}: invokes a method from an
-    AVM smart contract. Users interact with AVM smart contracts using these transactions. Transferring all
-    assets, including ARGs, is done by these transactions.
+    AVM smart contract. Users interact with AVM smart contracts using this method of the root smart contract.
+    Transferring all assets, including ARG, is done by these transactions.
     \item \texttt{installApp}: installs an AVM smart contract and determines the update policy of the smart
     contract: if the contract is updatable or not, which accounts can update or uninstall the contract, and so
     on.
@@ -104,10 +104,10 @@ considered failed and the network can receive the proposed fee of that transacti
 
 Also, Argennon transactions are required to specify what heap or code area addresses they will access. This will
 enable validators to parallelize transaction validation as we will see in Section~\ref{sec:concurrency}. A transaction
-that tries to access a memory location that is not in its access lists, will be rejected.
+that tries to access a memory location that is not in its access list, will be rejected.
 Users could use off-chain \emph{smart contract oracles} to predict the list of memory locations their transactions need.
 
-A smart contract oracle is a full AVM emulator that keeps a full local copy of the AVM memory and can emulate AVM
+A smart contract oracle is a full AVM emulator that keeps a full local copy of the AVM storage and can emulate AVM
 execution without accessing a ZK-EDB server. Smart contract oracles can be used for reporting useful information about
 Argennon transactions such as accessed AVM heap or code area locations, exact amount of execution cost,
 and so on.
@@ -131,7 +131,7 @@ can receive the proposed fee of that transaction.
 \subsection{Transaction Fee}\label{subsec:fee}
 
 Every Argennon transaction is required to pay two types of fees: execution fee and storage fee. A transaction pays
-its fees by providing digital signatures of one or more accounts authorizing the transfer of the amount of fee in
+its fees by providing digital signatures of one or more accounts, authorizing the transfer of the amount of fee in
 ARG from one or more accounts to the fee sink accounts.
 
 \note{An Argennon transaction always pays all of its proposed fee, no matter how much of its predefined resources

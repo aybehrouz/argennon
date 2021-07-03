@@ -29,10 +29,10 @@ A block of the Argennon blockchain contains the following information:
 
 Having the previous AVM state, the transaction list and the clustering directives of a block, a node can calculate
 commitments to the staking, method and heap databases of the current block by emulating the AVM execution. If the
-node can obtain the previous block information from a trusted source, it does not need to have a trusted local
+node can obtain the previous block commitments from a trusted source, it does not need to have a trusted local
 copy of the AVM state,
 and it can reliably retrieve the required storage pages from a ZK-EDB server. We call this type of block verification
-\emph{conditional} block validation. This validation is conditional because the validity of the current block is
+\emph{conditional} block validation, since the validity of the current block is
 conditioned on the validity of the previous block.
 
 Interestingly, conditional block validation of multiple blocks can be done in parallel. If a node has enough bandwidth
@@ -125,8 +125,8 @@ block certificate essentially is an Accountable-Subgroup Multi-signature (ASM). 
 based on BLS aggregate signatures.
 
 Argennon block certificates constitute an ordered sequence based on the order of blocks they certify. If we show
-the certificate of committee $C$ for the $i$-th block\footnote{note that the $i$-th block certificate is not
-necessarily the certificate of the $i$-th block.} with $\C_i$, and the set of signers
+the $i$-th certificate\footnote{note that the $i$-th certificate is not
+necessarily the certificate of the $i$-th block.} of committee $C$ with $\C_i$, and the set of signers
 with $S_i$, then the block certificate $\C_i$ can be considered as a tuple:
 \begin{equation}
     \C_i=(\sigma_i,\ C-S_{i})\label{eq:cert}\ ,
@@ -140,7 +140,7 @@ be calculated from:
 \end{equation}
 where $\APK_{A}$ shows the aggregate public key of all accounts in $A$.
 
-Alternately we can use $\APK_{i-1}$ to calculate the aggregate public key:
+Alternately, we can use $\APK_{i-1}$ to calculate the aggregate public key:
 \begin{equation}
     \APK_i=\APK_{i-1}\APK_{S_i-S_{i-1}}\APK_{S_{i-1}-S_i}^{-1}\ .\label{eq:aggPK-2}
 \end{equation}
