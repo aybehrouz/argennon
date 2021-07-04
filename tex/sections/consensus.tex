@@ -12,8 +12,8 @@ an index between $0$ and $m - 1$, and it issues a certificate for block number $
 the committee index.
 
 Every block of the Argennon blockchain needs a certificate from both the committee of delegates and
-the committee of validators. \textbf{A block is considered final after it receives both of
-its certificates.} In Argennon as long as more than half of the total stake of validators is controlled by honest users,
+the committee of validators. A block is considered final after its \textbf{next} block receives \textbf{both} of
+its certificates. In Argennon as long as more than half of the total stake of validators is controlled by honest users,
 the probability of discarding a final block is near zero even if all the delegates are malicious.
 
 In addition to primary committees, Argennon has several community driven committees. Certificates of these
@@ -179,7 +179,14 @@ makes a special \emph{fork block} which only contains a valid fork request, and 
 The height of the fork block is
 $b + 1$ so it needs a valid certificate from the committee of validator with the index $b+1$ modulo $m$.
 
-Validators always choose a valid fork block over a block of the main chain. However, as we mentioned before,
+For signing a fork block, a validator ensures that the block is signed by the reserve committee and contains
+a valid fork request. The parent of the fork block does not necessarily need a validators' certificate. If the
+parent does not have a certificate, the validator checks the certificate of the block before the parent and
+the conditional validity of the parent instead. This enables the reserve committee
+to recover the liveliness of
+the blockchain in a situation where a malicious committee has generated multiple blocks at the same height.
+
+A validator always choose a valid fork block over a block of the main chain. However, as we mentioned before,
 a validator never signs a certificate for two different blocks with the same height. Consequently, if a validator
 has already signed the block $b$ of the main chain, he will not sign the fork block and vice versa.
 
@@ -195,13 +202,10 @@ To revoke a fork block with height $b+1$, the delegates need to seal the fork by
 has the height $b+2$ and needs to be certified by the validators' committee with the
 index $b+2$ modulo $m$. The fork block is considered revoked only after the seal block is certified by the validators.
 
-A member of the appropriate committee will sign the certificate of a seal block only if he has not already signed
-a block after the fork block (i.e., a block with the same parent as the seal block).
-
 The seal block is not a normal block and validators who signed a certificate for a seal block are allowed
-to sign a certificate for a block with the same height if the parent of that block is not the fork
-block. In other words, the signers of the seal block are not allowed to sign a certificate for
-any blocks on the sealed chain, but are allowed to sign certificates for other chains.
+to sign a certificate for a block with the same height and vice versa. However, it should be noted that
+generating a block with the same parent as the seal block is considered a malicious behaviour of the reserve
+committee and validators will not sign such a block.
 
 As long as more than half of the total online stake of every committee of validators is controlled
 by honest users, a malicious committee of delegates can not use the emergency forking procedure to discard blocks
@@ -286,7 +290,7 @@ The evidence which proves a committee of delegates is malicious is an invalid bl
 one delegate:
 \begin{itemize}
     \item a block that is not conditionally valid
-    \item two different blocks at the same height
+    \item two different blocks with the same parent
     \item a block that has an invalid format
 \end{itemize}
 
