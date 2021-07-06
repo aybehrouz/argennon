@@ -8,13 +8,14 @@
 
 - Most of the arithmetic in the Argennon Virtual Machine is done using floating point operations instead of unsigned
   integer operations. This way, there will be almost no need for a word size bigger than 64 bits. At the same time
-  operations will have a bounded fractional error in contrast with integer operations that have an infinite fractional
+  operations will have a bounded fractional error in contrast to integer operations that have an infinite fractional
   error.
 
-- The Argennon Virtual Machine has a standard library. This standard library provides a secure and convenient way for
-  implementing many frequently used functionalities. In addition, this library is updatable through the Argennon
-  governance system, and non-updatable smart contracts that use the avm library can benefit from improvements and bug
-  fixes as well.
+- The Argennon Virtual Machine has a built-in standard library. This standard library provides a secure and convenient
+  way for implementing many frequently used functionalities. In addition, this library is updatable through the Argennon
+  governance system. This means that bugs or security vulnerabilities in the AVM standard library could be quickly
+  patched and smart contracts that use this library, including non-updatable smart contracts, can benefit from
+  improvements and bug fixes as well.
 
 - Argennon standards are defined based on how a contract should use the AVM standard library and not only how its
   interface should look. As a result, users can expect certain type of behaviour from a contract which complies with an
@@ -24,27 +25,35 @@
   wrappers and also makes the transfer logic of ARG more transparent and trustable.
 
 - Memory architecture of the AVM completely hides the complexities of the Argennon blockchain. This enables AVM
-  languages to have a flavour completely similar to conventional programming languages. For instance, the Argon
-  language, which is the primary AVM OO programming language, supports *composition*, which is a very important OO
-  design pattern.
+  compatible programming languages to have a flavour completely similar to conventional programming languages. For
+  instance, the Argon language, which is the primary AVM OOP language, supports *composition*, which is a very important
+  OO design pattern.
 
-- The Argennon Virtual Machine is a cloud based virtual machine and uses zero knowledge database servers as its
-  persistence layer. By using a smart clustering algorithm the AVM is able to keep the network usage manageable.
+- The Argennon Virtual Machine is a cloud based virtual machine and uses trust-less zero knowledge database servers as
+  its persistence layer. By using a smart clustering algorithm the AVM is able to keep the network usage manageable.
 
-- Argennon uses a hybrid consensus protocol. A democratically elected committee of delegates is responsible for minting
-  new blocks and each block is validated by a committee of validators. Every Argennon user is a member of at least one
-  committee of validators. Thanks to the cloud based design of the AVM, transaction validation does not require a large
-  storage space for storing the state of the Argennon blockchain. This way being a validator does not require huge
-  computational resources and everyone with an Argennon wallet can participate in the Argennon consensus protocol.
+- Argennon uses a hybrid POS consensus protocol. A democratically elected committee of trusted delegates is responsible
+  for minting new blocks and each block is validated by a large committee of normal validators. Every Argennon user is a
+  member of at least one committee of validators. Thanks to the cloud based design of the AVM, transaction validation
+  does not require a large storage space for storing the state of the Argennon blockchain. This way being a validator
+  does not require huge computational resources and everyone with an Argennon wallet can participate in the Argennon
+  consensus protocol. This makes Argennon a truly democratic and decentralized blockchain.
 
-- Argennon does not need shards because the validation of multiple blocks can be done in parallel by different
-  committees. Moreover, by using a dependency detection algorithm, Argennon is also able to parallelize transaction
-  validation of a single block.
+- Argennon does not need shards because the validation of multiple blocks is done in parallel by different committees.
+  Moreover, by using a dependency detection algorithm, Argennon is also able to parallelize transaction validation of a
+  single block.
 
-- the hybrid Argennon consensus protocol makes Argennon one of the most secure blockchains. Only one honest delegate can
-  stop any type of attack against the integrity of the Argennon blockchain, and if all the delegates are malicious as
-  long as more than half of the Argennon total stake is controlled by honest users the Argennon blockchain will be
-  completely safe.
+- The hybrid Argennon consensus protocol makes Argennon one of the most secure blockchains. Only one honest delegate can
+  stop any attack against the integrity of the Argennon blockchain, and if all the delegates are malicious, as long as
+  more than half of the Argennon total stake is controlled by honest users the Argennon blockchain will be completely
+  safe.
+
+- The Argennon network relies on a permission-less network of ZK-EDB servers. A ZK-EDB server is a conventional data
+  server which uses its computational and storage resources to help the Argennon network process transactions. A large
+  portion of incentive rewards in the Argennon blockchain is devoted to ZK-EDB servers. This will incentivize the
+  development of conventional networking, storage and computational hardware, which can benefit all areas of information
+  technology. This contrasts with the approach of other blockchains that incentivize development of a totally useless
+  technology of hash calculation.
 
 <!---
 *α* =  − ln (1 − *M*<sub>*n* + *k*</sub>/*X*) / *n*
