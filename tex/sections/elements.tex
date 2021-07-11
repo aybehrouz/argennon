@@ -17,14 +17,34 @@ letters \texttt{[a-f]} for showing digits greater than $9$.
 
 For example \texttt{[0x24.0xff.0xda]}, \texttt{[0x0]} and \texttt{[0x3.0xa0.0x0.0x0]}, are valid application addresses.
 
-Argennon has two special smart contracts: the \emph{root} smart contract\footnote{also called the root app} and
-the \emph{ARG} smart contract\footnote{also called the Argennon smart contract or the Argennon app.}.
-The root smart contract, with \texttt{applicationID=[0x0]}, is a privileged smart contract responsible for
-method invocation and installation/uninstallation of other smart contracts.
-On the other hand, the ARG smart contract, with \texttt{applicationID=[0x1]}, controls the ARG token, the main
-currency of the Argennon blockchain, and also manages a database of public keys and handles signature verification.
+Argennon has two special smart contracts: the \emph{root smart contract}, also called the \emph{root application}, and
+the \emph{ARG smart contract}, which is also called the Argennon smart contract or the \emph{ARG application}.
 
-Both of these smart contracts are mutable smart contracts and can be updated by the Argennon governance protocol.
+\subsection{The Root Application}\label{subsec:the-root-app}
+
+The root application or the root smart contract, with \texttt{applicationID=[0x0]}, is a privileged smart contract
+responsible for installation/uninstallation of other smart contracts. The Argennon root smart contract
+performs three main operations:
+
+\begin{itemize}
+    \item Installation of AVM smart contracts and determining the update policy of a smart
+    contract: if the contract is updatable or not, which accounts can update or uninstall the contract, and so
+    on.
+    \item Removing AVM smart contracts.
+    \item Updating an AVM smart contract (if allowed).
+\end{itemize}
+
+The root smart contract is a mutable smart contract and can be updated by the Argennon governance system.
+(See Section~\ref{sec:adags})
+
+\subsection{The ARG Application}\label{subsec:the-arg-app}
+
+The ARG application or the ARG smart contract,
+with \texttt{applicationID=[0x1]}, controls the ARG token, the main
+currency of the Argennon blockchain. This smart contract also manages a database of public keys and
+handles signature verification.
+
+The ARG smart contract is a mutable smart contract and can be updated by the Argennon governance system.
 
 
 \section{Accounts}\label{sec:accounts}
@@ -57,21 +77,13 @@ ARG smart contract and no public keys are needed. An application can own an arbi
 
 \section{Transactions}\label{sec:transactions}
 
-Every Argennon transaction is a single \texttt{invoke\_external} instruction which calls a method from the Argennon
-root smart contract. This method always transfers the proposed fee of the transaction in ARGs from a
-sender account to the fee sink accounts and then performs the requested operation. The Argennon root smart contract
-has four public methods:
+Every Argennon transaction consists of two \texttt{i\_invoke\_dispatcher} instructions, the first instruction always
+transfers the proposed fee of the transaction in ARG from a sender account to the fee sink accounts, and
+the second performs the requested operation.
 
-\begin{itemize}
-    \item \texttt{avmCall}: invokes a method from an
-    AVM smart contract. Users interact with AVM smart contracts using this method of the root smart contract.
-    Transferring all assets, including ARG, is done by these transactions.
-    \item \texttt{installApp}: installs an AVM smart contract and determines the update policy of the smart
-    contract: if the contract is updatable or not, which accounts can update or uninstall the contract, and so
-    on.
-    \item \texttt{unInstallApp}: removes an AVM smart contract.
-    \item \texttt{updateApp}: updates an AVM smart contract (if allowed).
-\end{itemize}
+Users interact with AVM smart contracts using
+the second \texttt{i\_invoke\_dispatcher} instruction of a transaction,
+Transferring all assets, including ARG, is done by that instruction.
 
 \subsection{Authorization}\label{subsec:txn-auth}
 
@@ -97,10 +109,27 @@ blockchains, the nonce data can never be deleted, even if the account has zero b
 \subsection{Resource Declaration}\label{subsec:resource-declaration}
 
 Every Argennon transaction is required to specify a cap for all the resources it needs. This
-includes memory, network and processor related resources. The protocol defines an execution cost for
-every AVM instruction, reflecting the amount of resources its emulation needs, and every transaction is required
-to specify a maximum execution cost. If during emulation, a transaction reaches this maximum cost, it will be
-considered failed and the network can receive the proposed fee of that transaction.
+includes memory, network and processor related resources. When a transaction reaches one of its
+pre-declared resource caps, executing any AVM instruction which uses that resource, will result in an AVM exception.
+
+As we know, every Argennon transaction consists of two \texttt{i\_invoke\_dipatcher} instructions. The first
+instruction is always considered as a \emph{free} instruction and resources spent during its execution
+session will not be counted. As a result, only the second instruction could fail due to exceeding resource limits.
+
+The Argennon protocol defines an execution cost for
+every AVM instruction, reflecting the amount of resources its emulation needs. Every
+transaction is required to specify two maximum execution costs: \texttt{maxInternalCost}
+and \texttt{maxExternalCost}. The \emph{external} execution cost of a transaction is the \textbf{overall} cost of its
+\texttt{invoke\_dispatcher} and \texttt{invoke\_later} instructions,\footnote{By overall cost, we mean the execution
+cost needed for reaching the next instruction.} and the remaining execution cost will be considered as
+the \emph{internal} cost. If a transaction reaches one of its maximum costs, executing any instruction which has
+that type of cost, will throw an AVM exception.
+
+\note{When a transaction reaches its \texttt{maxExternalCost}, it can still keep executing
+its own code, while it can not call other smart contracts.
+This way the execution cost of a smart contract is completely decoupled from the
+smart contract it calls, and a malicious contract can not make its invoker fail unconditionally
+by using infinite loops.}
 
 Also, Argennon transactions are required to specify what heap or code area addresses they will access. This will
 enable validators to parallelize transaction validation as we will see in Section~\ref{sec:concurrency}. A transaction
@@ -116,7 +145,8 @@ Every Argennon transaction is required to provide the following information as a
 resources it needs:
 
 \begin{itemize}
-    \item Maximum execution cost
+    \item Maximum internal execution cost
+    \item Maximum external execution cost
     \item A list of heap/code-area locations for reading
     \item A list of heap locations for writing
     \item A list of heap chunks it will deallocate
@@ -130,9 +160,13 @@ can receive the proposed fee of that transaction.
 
 \subsection{Transaction Fee}\label{subsec:fee}
 
-Every Argennon transaction is required to pay two types of fees: execution fee and storage fee. A transaction pays
+Every Argennon transaction is required to pay two types of fees: execution fee, which is paid for executing the
+transaction, and storage fee, which is paid for the amount of storage the transaction allocates.
+
+A transaction pays
 its fees by providing digital signatures of one or more accounts, authorizing the transfer of the amount of fee in
-ARG from one or more accounts to the fee sink accounts.
+ARG from one or more accounts to the fee sink accounts, and the fee is transferred by the first
+\texttt{i\_invoke\_dispatcher} instruction of the transaction.
 
 \note{An Argennon transaction always pays all of its proposed fee, no matter how much of its predefined resources
 were not used in the final emulation. This will incentivize users to report the resource usage of their

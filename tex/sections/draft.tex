@@ -202,3 +202,42 @@ When a smart contract executes a heap de-allocation instruction, the protocol wi
 de-allocated memory to the smart contract. Here, the current price of AVM memory does not matter and the protocol
 calculates the refunded amount based on the average price the smart contract had paid for that allocated memory.
 This will prevent smart contracts from profit taking by trading memory with the protocol.
+
+
+
+If the pc register points to an \texttt{invoke} instruction, the current method completes abruptly too.
+including its local frame and operand stack, with the \texttt{pc} register appropriately restored and incremented
+to skip past the method invocation instruction. If the current call stack is empty the next call stack in the call
+stack queue will be used for continuing the execution, and when there are no call stacks left in the queue the
+current execution session ends.
+
+When an exception is thrown
+Algorithm~\ref{alg:Abrupt} is used to restore the state of the AVM heap.
+
+\begin{algorithm}
+    \DontPrintSemicolon
+    \SetKwData{Heap}{Heap}\SetKwData{Stack}{CallStack}
+    \SetKwFunction{Discard}{Discard}\SetKwFunction{Pop}{pop}\SetKwFunction{Restore}{Restore}
+    \SetKwProg{Fn}{Function}{}{}
+
+    \While{\Stack is not empty}
+    {
+        \Stack.\Pop{}\;
+        \eIf{\Stack is not empty \textbf{and} $\Stack[head].pc \rightarrow catch$}
+        {
+            \Heap.\Restore{}\;
+        }{
+            \Heap.\Discard{}\;
+        }
+    }
+    \Heap.\Restore{}\;
+    \caption{Abrupt method completion}\label{alg:Abrupt}
+\end{algorithm}
+
+A closer investigation of Algorithm~\ref{alg:Abrupt} shows that when an invocation which was made by
+a \texttt{spawn} instruction completes abruptly, the heap snapshot that was saved before the start of the
+execution of the first call stack of the execution session is restored. Since the root
+smart contract calls \texttt{Heap.Save()} function before spawning the requested method, this means
+that all changes made to the AVM heap during the execution session will be restored, but the changes made by
+the root smart contract including the transferring of the transaction fee will not be restored. See
+Section~\ref{sec:execution-sessions} for more details.

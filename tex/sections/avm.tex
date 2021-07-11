@@ -5,13 +5,16 @@
 
 The Argennon\footnote{the classical pronunciation should be used:\textipa{/Ar"gen.non/}} Virtual Machine (AVM) is an
 abstract computing machine for executing Argennon's smart contracts. The
-Argennon Virtual Machine knows nothing of the Argennon blockchain, only of Argennon's identifier tries and
-the concept of execution sessions.
+Argennon Virtual Machine knows nothing of the Argennon blockchain, transactions or any concept of gas usage, only of
+Argennon's identifier tries and the concept of execution sessions.
 
-Execution sessions are separate sessions of executing smart contact's code by the Argennon Virtual Machine.
-These sessions are usually correspondent to the concept of a transaction in a blockchain. (See
-Section~\ref{sec:execution-sessions})
+Execution sessions are separate sessions of executing smart contract's code by the Argennon Virtual Machine.
+Every execution session starts with a single method invocation, but does not necessarily end when
+that method invocation completes. During an execution session additional method invocations could be scheduled,
+which will be executed after the initial method completion.
 
+An execution session may complete normally or abruptly. When an execution session completes abruptly, it will
+not have any effects on the AVM state.
 
 \section{Data Types}\label{sec:data-types}
 
@@ -118,30 +121,29 @@ is native, the value of the Argennon Virtual Machine's \texttt{pc} register is u
 \subsection{Call Stack Queue}\label{subsec:call-stack}
 
 Every AVM execution session has a queue of call stacks. A call stack contains all the information that is needed for
-restoring the state, and continuing the execution after the method invocation completes.
+restoring the AVM state, and continuing the execution after the method invocation completes.
 This information is represented by a \texttt{CallInfo} struct:
 \begin{verbatim}
 CallInfo {
-    applicationID,
     methodID,
     pc,
-    canModify,
     localFrame,
     operandStack
-}
+}.
 \end{verbatim}
-The \texttt{applicationID} field is the unique identifier that the AVM assigns to every smart contract,
-\texttt{methodID} is the unique identifier of a method's bytecode and \texttt{canModify} is a flag
-indicating whether a method is allowed to execute state modifying instructions or not.
+
+The \texttt{methodID} field is the unique identifier of a method's bytecode that
+is a composite prefix code built by concatenating an \texttt{applicationID} to
+a local identifier.
 
 Every method invocation has a corresponding \texttt{CallInfo} struct and when a method is invoked its
 \texttt{CallInfo} struct is pushed onto the call stack. Hence, the top of the call stack always contains
-the \texttt{CallInfo} struct of the current method. When a method invocation completes its call
+the \texttt{CallInfo} struct of the current method. When a method invocation completes, its call
 information is popped from the call stack.
 
 An AVM execution session will continue as long as there is a non-empty call stack in the call stack queue. When the
-execution of the current call stack finishes the execution of the next call stack in the call stack queue starts.
-It's possible that an AVM method invocation creates new call stacks. These newly created call stacks will be a part
+execution of the current call stack finishes, the execution of the next call stack in the call stack queue starts.
+It is possible that an AVM method invocation creates new call stacks. These newly created call stacks will be a part
 of the current execution session and are added at the end of the call stack queue. A newly created call stack always
 contains a single \texttt{CallInfo} struct. See Section~\ref{subsec:method-invocation} for more details.
 
@@ -170,17 +172,23 @@ The method area contains the byte-code of any method which can be called by a no
 instruction. In the Argennon Virtual Machine every method has a unique identifier:
 \texttt{methodID}, and the method area is a map from method identifiers to their byte codes.
 
-Instructions that modify the code area can only be run in privileged mode which means they can only be executed
+Every smart contract is required to have a special \texttt{dispatcher} method. The \texttt{dispatcher} method is the
+only method of a smart contract that can be called by other smart contracts and has a
+predefined \texttt{methodID}: \texttt{(ApplicationID|0)}.
+
+\note{The Argennon Virtual Machine does not have internal or external methods. All methods are considered internal
+except the \texttt{dispatcher} method, which is the only external method of any smart contract.
+This design enables the AVM to execute smart contracts with \emph{RESTful} APIs more efficiently.}
+
+Instructions that modify the code area can only be run in privileged mode, which means they can only be executed
 by the \emph{root} smart contract. As a result, the access of smart contracts to the code area is essentially
 read-only.
 
 \subsubsection{Constant Area}
 
 Every smart contract has a single constant area which is stored in the AVM code area as a special type of
-non-executable method. The constant area of a smart contract contains several kinds of constants, ranging from user
-defined constants to method address tables. A method address table stores the list of methods of a smart
-contract and their access type. The access type of method can be either \texttt{external} or \texttt{internal}.
-Only external methods can be invoked by \texttt{invoke\_external} instruction.
+non-executable method. The constant area of a smart contract contains user
+defined constants.
 
 \note{Instructions that modify the constant area can only be run in privileged mode.}
 
@@ -207,13 +215,12 @@ the heap area can be considered as a pair: \texttt{(chunkID, offset)}.
 
 A smart contract can read any chunk stored in the heap by having its \texttt{chunkID}. However, it can only modify
 those chunks that was created by itself. In other words, every memory chunk in the AVM heap has an owner. Only
-the owner can modify a chunk while anyone can read that chunk. In addition, for modifying a chunk the \texttt{canModify}
-flag of the current method's \texttt{callInfo} struct must be true. The owner of a chunk can be easily determined
+the owner can modify a chunk while anyone can read that chunk. The owner of a chunk can be easily determined
 by the \texttt{applicationID} part of the chunk identifier.
 
 \note{The reason behind this type of access control design is the fact that smart contract code is usually
 immutable. That means if a smart contract does not implement a getter mechanism for some parts of its internal
-data, this functionality can never be added later. Although the internal data is publicly available, there will
+data, this functionality can never be added later, and despite the internal data is publicly available, there will
 be no way for other smart contracts to use this data on-chain. This design eliminates the need for implementing
 \emph{trivial} getters.}
 
@@ -243,110 +250,106 @@ The number and size of the operands are determined solely by the opcode.
 The Argennon Virtual Machine has four types of method invocation instruction:
 \begin{itemize}
     \item \texttt{invoke\_internal}: invokes a method without changing the context of method execution. In other
-    words, \texttt{applicationID} and \texttt{canModify} fields of the invoked method in the
-    call stack will be the same as the invoker.
+    words, the invoked method can only modify the state of the current smart contract.
     A smart contract can invoke any method by \texttt{invoke\_internal} instruction, even if that method is an
     internal method of another smart contract. Since the invoked method will always be executed in the context of
     the invoking smart contract, a smart contract will not be able to modify another smart contract state by
     this instruction. This instruction facilitates code reuse and the usage of libraries.
-    \item \texttt{invoke\_external}: invokes a method and changes the context of method execution to another
-    smart contract. Only external methods of another smart contract can be called by this instruction. For changing
-    the context of method execution this instruction sets the \texttt{applicationID} field of the invoked method
-    to the \texttt{applicationID} of the called smart contract. Then it searches the call stack and if
-    the \texttt{applicationID} of the called smart contract is found in the current call stack it sets
-    \texttt{canModify} to \texttt{false}, otherwise \texttt{canModify} is set to \texttt{true}.
-    As a result, if the called smart contract is already called, the invoked method will not be
-    able to modify the heap area.
+    If the invoked method completes abruptly, that will cause the invoker method to complete abruptly too.
+    \item \texttt{invoke\_dispatcher}: invokes the \texttt{dispatcher} method of a smart contract and changes the
+    context of method execution to that
+    smart contract. If the invoked method completes abruptly, that will cause the invoker method to complete
+    abruptly too.
+    \item \texttt{i\_invoke\_dispatcher, i\_invoke\_internal}: independently invokes a method. These instructions
+    are similar to their \texttt{invoke} counterparts, with the difference that when
+    the invoked method completes abruptly, the invoker method can continue execution. When a method invoked by
+    an \texttt{i\_invoke} instruction completes abruptly, all changes made
+    by the invoked method to the AVM state will be reverted and the instruction will act like
+    a jump to the specified error handling code.
     \item \texttt{invoke\_native}: invokes a method that is not hosted by the Argennon Virtual Machine. By this
-    instruction, high performance native methods of the hosting machine could become available to AVM smart
-    contracts. This instruction will not modify the AVM state.
-    \item \texttt{spawn}: spawns a new method invocation. Spawning a method invocation is the invocation of a method
-    with changing the context of method execution and creating a new call stack. Only external methods can
-    be spawned. The created call stack is added at the end of the call stack queue and
-    the \texttt{canModify} field of the pushed \texttt{CallInfo} struct will always
-    be set to \texttt{true}. This instruction does not modify the \texttt{pc} register and the execution of the
-    caller will continue after this instruction. As a result, \texttt{spawn} can not return
-    any value to the caller and the return value of the called method (if any) will be added
-    to the transaction output. If the invoked method completes abruptly, it will cause all the call stack queue to
-    complete abruptly.
+    instruction, high performance native methods of the hosting machine, such as GPU accelerated operations,
+    could become available to AVM smart contracts. This instruction will not modify the AVM state.
+    \item \texttt{invoke\_later}: invokes the \texttt{dispatcher} method of another smart contract by creating a new
+    call stack. The created call stack is added at the end of the call stack queue, and
+    the context of method execution will change after the execution of that call stack starts. This instruction does
+    not modify the \texttt{pc} register and the execution of the
+    invoker will continue after this instruction. As a result, \texttt{invoke\_later} can not return
+    any values to the caller and the return value of the called method (if any) will be discarded. If the invoked
+    method completes abruptly, it will cause \textbf{all the call stack queue to
+    complete abruptly.}
 \end{itemize}
 
-\note{The AVM does not natively support polymorphism and virtual methods. A compiler could easily
-generates appropriate code for implementing these features.}
+\note{The \texttt{invoke\_later} instruction can be used to call a smart contract while its reentracy lock is active.
+Because the invocation uses a separate call stack, it will not cause the lock to throw an exception.}
 
-Each time a method is invoked the \texttt{Save()} function of the AVM heap is called, then a new local frame
-and operand stack is created. The Argennon Virtual Machine uses local frames to pass parameters on
+Each time a method is invoked a new local frame
+and operand stack is created. If the method was invoked by an \texttt{i\_invoke} instruction,
+the \texttt{Save()} function of the AVM heap is called before the execution of the method starts.
+
+The Argennon Virtual Machine uses local frames to pass parameters on
 method invocation. On method invocation, any parameters are passed in consecutive local variables stored in the
 method's local frame starting from address 0. The invoker of a method writes the parameters in the local frame
 of the invoked method using \texttt{arg} instructions.
 
-\note{For AVM smart contracts \emph{reentrancy} can only happen in read-only mode and is totally safe.
-At the same time, call-back patterns can be easily implemented by using \texttt{spawn} instruction.}
+\note{The AVM does not natively support polymorphism and virtual methods. A compiler could easily
+generates appropriate code for implementing these features.}
 
 \subsection{Exceptions}\label{subsec:exceptions}
 
 An exception is thrown programmatically using the \texttt{athrow} instruction. Exceptions can also be thrown by
-various Argennon Virtual Machine instructions if they detect an abnormal condition. Some exceptions are not
-catchable and will always abort the method invocation.
+various Argennon Virtual Machine instructions if they detect an abnormal condition.
 
-\note{By using the \texttt{athrow} instruction properly, a programmer can make any method act like an atomic
-operation.}
+\note{Any AVM instruction may throw an exception. This happens when the execution cost of a transaction has exceeded
+the declared execution cost of the transaction.}
 
 \subsection{Method Invocation Completion}\label{subsec:method-invocation-completion}
 
 A method invocation completes normally if that invocation does not cause an exception to be thrown, either
 directly from the AVM or as a result of executing an explicit throw statement. If the invocation of the current
-method completes normally and the invocation was made by an \texttt{invoke} instruction, then a value may be
+method completes normally and the invocation was not made by an \texttt{invoke\_later} instruction, then a value may be
 returned to the invoking method. This occurs when the invoked method executes one of the return instructions, the
 choice of which must be appropriate for the type of the value being returned (if any). Execution then continues
 normally in the invoking method's local frame with the returned
-value (if any) pushed onto the operand stack. If the method was invoked by a \texttt{spawn} instruction,
+value (if any) pushed onto the operand stack. If the method was invoked by an \texttt{invoke\_later} instruction,
 the execution of the next call stack (if any) begins and the returned value
-is appended at the end of the transaction output. When a method invocation completes normally,
+is discarded. When a method invocation that was made by
+an \texttt{i\_invoke} instruction completes normally,
 the \texttt{Heap.Discard()} function is called as a part of the return instruction.
 
-A method invocation completes abruptly if an exception is thrown and is not caught by the current method. A
+A method invocation completes abruptly when an exception is thrown by one its instructions.
+The \texttt{invoke\_internal} and \texttt{invoke\_dispatcher} instructions
+always throw an exception when their invoked method completes abruptly. A
 method invocation that completes abruptly never returns a value.
 
-When a method completes, whether normally or abruptly, the call stack is used to restore the state of the invoker,
+When a method completes normally, the call stack is used to restore the state of the invoker,
 including its local frame and operand stack, with the \texttt{pc} register appropriately restored and incremented
 to skip past the method invocation instruction. If the current call stack is empty the next call stack in the call
 stack queue will be used for continuing the execution, and when there are no call stacks left in the queue the
 current execution session ends.
 
-A thrown exception causes methods in the call stack to complete \emph{abruptly} one by one, as long as the
-\texttt{pc} register is not pointing to a \texttt{catch} instruction. The \texttt{catch} instruction acts like a
-branch instruction that branches only if an exception is caught. When an exception is thrown
-Algorithm~\ref{alg:Abrupt} is used to restore the state of the AVM heap.
+When a method completes abruptly, the call stack is used to restore the \texttt{pc} register of the invoker. If the pc
+register points to an \texttt{invoke} instruction, the current method completes abruptly as well. Otherwise, if
+the \texttt{pc} register is pointing to an \texttt{i\_invoke} instruction, the \texttt{Heap.Restore()} function is
+called to restore the state of the AVM heap. Then, the
+local frame and operand stack of the invoker is restored, and execution continues after branching to the error handling
+code specified by the instruction operand.
 
-\begin{algorithm}
-    \DontPrintSemicolon
-    \SetKwData{Heap}{Heap}\SetKwData{Stack}{CallStack}
-    \SetKwFunction{Discard}{Discard}\SetKwFunction{Pop}{pop}\SetKwFunction{Restore}{Restore}
-    \SetKwProg{Fn}{Function}{}{}
+When an invocation which was made by an \texttt{invoke\_later} instruction completes abruptly, the
+heap snapshot that was saved before the start of the
+execution of the first call stack is restored. This means
+that all changes made by the execution session to the AVM heap will be completely reverted.
 
-    \While{\Stack is not empty}
-    {
-        \Stack.\Pop{}\;
-        \eIf{\Stack is not empty \textbf{and} $\Stack[head].pc \rightarrow catch$}
-        {
-            \Heap.\Restore{}\;
-        }{
-            \Heap.\Discard{}\;
-        }
-    }
-    \Heap.\Restore{}\;
-    \caption{Abrupt method completion}\label{alg:Abrupt}
-\end{algorithm}
+\subsection{Reentrancy Protection}\label{subsec:reentrancy}
 
-A closer investigation of Algorithm~\ref{alg:Abrupt} shows that when an invocation which was made by
-a \texttt{spawn} instruction completes abruptly, the heap snapshot that was saved before the start of the
-execution of the first call stack of the execution session is restored. Since the root
-smart contract calls \texttt{Heap.Save()} function before spawning the requested method, this means
-that all changes made to the AVM heap during the execution session will be restored, but the changes made by
-the root smart contract including the transferring of the transaction fee will not be restored. See
-Section~\ref{sec:execution-sessions} for more details.
+The Argennon Virtual Machine provides low level reentrancy protection by defining a dedicated
+instruction: \texttt{enter}. When a smart contract executes the \texttt{enter} instruction, it
+can not execute that instruction again as long
+as the method executing that instruction completes (abruptly or normally). If a smart contract tries to execute
+the \texttt{enter} instruction, while the method executing that instruction for the first time has not yet completed,
+an exception will be thrown.
 
+Smart contracts can completely prevent reentrancy by executing \texttt{enter} instruction as the first instruction
+of their \texttt{dispatcher} method.
 
 \subsection{Heap Allocation and Deallocation}\label{subsec:heap-allocation-instructions}
 
@@ -377,33 +380,6 @@ enables AVM to detect invalid identifiers, while smart contracts can easily asso
 At the same time, A smart contract is able to create maps with costume keys by appending local identifiers
 to the zero \texttt{accountID}. Zero \texttt{accountID} does not correspond to a valid account in the Argennon
 blockchain.
-
-
-\section{Execution Sessions}\label{sec:execution-sessions}
-
-The execution of smart contracts code by the Argennon Virtual Machine is performed in execution sessions. Every
-execution session consists of a single method invocation from the \emph{root} smart contract and a list
-of resource allocation requests. These allocation requests always include a request for allocating some amount
-of execution cost and a request for accessing some memory locations for reading or writing. If after starting,
-an execution session tries to violate its allocated resources, an \textbf{uncatchable} exception will
-be thrown by the AVM\@.
-
-\note{The AVM does not have a \texttt{calldata} memory area. The arguments of the root smart contract method will
-be copied from the transaction to the local frame of the invoked method, exactly like a normal method invocation.}
-
-The root smart contract with the \texttt{applicationID} of zero, is a special smart contract in the Argennon
-Virtual Machine. Its code is mutable and is a part of the Argennon protocol. The root smart contract is always
-run in the privileged mode, and every Argennon transaction starts with a call to a method of the root smart contract.
-This method always transfers some amount of fee from an account to the \texttt{feeSink} accounts and then it
-performs the requested operation.
-
-If the requested operation is a method invocation, the root smart contract will call the \texttt{Heap.Save()}
-function, and then it will invoke the requested method using \texttt{spawn} instruction. This implies that the
-invoked method will always have a separate call stack, and if it completes abruptly the changes made by the root
-smart contract to the AVM state will not be reverted.
-
-\note{Argennon transactions do not have a sender, and the payer of the transaction fee could be any
-account who has provided the required digital signature for the fee payment.}
 
 
 \section{Authorizing Operations}\label{sec:authorizing-operations}
