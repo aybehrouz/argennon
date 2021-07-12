@@ -75,36 +75,28 @@ ARG smart contract and no public keys are needed. An application can own an arbi
     if the cryptographic algorithms used become insecure for some reason, for example because
     of the introduction of quantum computers, they could be easily upgraded.}
 
+
 \section{Transactions}\label{sec:transactions}
 
 Every Argennon transaction consists of two \texttt{i\_invoke\_dispatcher} instructions, the first instruction always
-transfers the proposed fee of the transaction in ARG from a sender account to the fee sink accounts, and
-the second performs the requested operation.
+transfers the proposed fee of the transaction in ARGs from a sender account to the fee sink accounts, and
+the second performs the requested operation. If the first instruction fails, the transaction will not be added to
+the Argennon blockchain.
 
 Users interact with AVM smart contracts using
-the second \texttt{i\_invoke\_dispatcher} instruction of a transaction,
+the second \texttt{i\_invoke\_dispatcher} instruction of a transaction.
 Transferring all assets, including ARG, is done by that instruction.
 
-\subsection{Authorization}\label{subsec:txn-auth}
+The \texttt{i\_invoke\_dispatcher} instruction invokes the \texttt{dispatcher} method of a smart contract. Every AVM
+smart contract has a \texttt{dispatcher} method, and the Argennon protocol requires
+the \texttt{dispatcher} method to accept an HTTP request as its argument and
+return an HTTP response.
 
-Argennon transactions do not have a sender. The authorization of the requested operation is always done by checking the
-digital signatures that are provided as a part of the argument list to the root smart contract method.
+As a result, every Argennon transaction contains two HTTP requests. In addition to these HTTP requests, the
+transaction is required to contain a resource declaration object, specifying the maximum amount of resources
+it needs for execution.
 
-While every block of the Argennon blockchain stores the commitment of the transaction list, Argennon does not enforce
-storage of the transaction history. To be able to detect replay attacks, we require
-every signature that a user creates to have a nonce. This nonce consists of the issuance round of the signature
-and a sequence number: \texttt{(issuance,\ sequence)}. When a user creates more than one signature in a round, he
-must sequence his signatures starting from 0 (i.e.~the sequence number restarts from 0 in every round). We define
-a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound - issuance > maxLifeTime} or
-if a signature of the same user with a bigger or equal nonce is already used
-(i.e.~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
-nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
-
-To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. This information
-is stored in the ARG smart contract and when the difference between \texttt{issuance} component of the nonce and
-the current round becomes bigger than the maximum allowed lifetime of a signature, it can be safely
-deleted.\footnote{in some conventional
-blockchains, the nonce data can never be deleted, even if the account has zero balance and is no longer used.}
+\note{Argennon smart contracts use HTTP as the application protocol and they are advised to have a RESTful API design.}
 
 \subsection{Resource Declaration}\label{subsec:resource-declaration}
 
@@ -157,6 +149,27 @@ resources it needs:
 
 If a transaction tries to violate any of these predefined limitations, it will be considered failed, and the network
 can receive the proposed fee of that transaction.
+
+\subsection{Authorization}\label{subsec:txn-auth}
+
+Argennon transactions do not have a sender. The authorization of the requested operation is always done by checking the
+digital signatures that are provided as a part of the HTTP request to the \texttt{dispatcher} method.
+
+While every block of the Argennon blockchain stores the commitment of the transaction list, Argennon does not enforce
+storage of the transaction history. To be able to detect replay attacks, we require
+every signature that a user creates to have a nonce. This nonce consists of the issuance round of the signature
+and a sequence number: \texttt{(issuance,\ sequence)}. When a user creates more than one signature in a round, he
+must sequence his signatures starting from 0 (i.e.~the sequence number restarts from 0 in every round). We define
+a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound - issuance > maxLifeTime} or
+if a signature of the same user with a bigger or equal nonce is already used
+(i.e.~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
+nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
+
+To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. This information
+is stored in the ARG smart contract and when the difference between \texttt{issuance} component of the nonce and
+the current round becomes bigger than the maximum allowed lifetime of a signature, it can be safely
+deleted.\footnote{in some conventional
+blockchains, the nonce data can never be deleted, even if the account has zero balance and is no longer used.}
 
 \subsection{Transaction Fee}\label{subsec:fee}
 
