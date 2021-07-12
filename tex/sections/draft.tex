@@ -241,3 +241,18 @@ smart contract calls \texttt{Heap.Save()} function before spawning the requested
 that all changes made to the AVM heap during the execution session will be restored, but the changes made by
 the root smart contract including the transferring of the transaction fee will not be restored. See
 Section~\ref{sec:execution-sessions} for more details.
+
+
+%\begin{lstlisting}[frame=TB, float, title=An argennon transaction,label={lst:txn-example}]
+\begin{verbatim}
+
+---
+fee: |
+    POST https://adventure-works.com/orders HTTP/1.1
+call: |
+cap:
+    exec: 12.5
+    age: dsfs
+
+\end{verbatim}
+%\end{lstlisting}

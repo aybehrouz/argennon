@@ -1,5 +1,15 @@
 %! Author = aybehrouz
 
+\lstset{
+    language=Java,
+    morekeywords={main, initialize, constructor, external, virtual, map, account, signature, overrides, is, string},
+    basicstyle=\small\sffamily,
+    columns=fullflexible,
+%   keywordstyle=\bfseries,
+    breaklines=true,
+    showstringspaces=false,
+    mathescape
+}
 
 \section{Introduction}\label{sec:introduction2}
 
@@ -52,17 +62,35 @@ if a method can be invoked externally by other smart contracts.
 
 
 \begin{lstlisting}[frame=TB, float, title=Argon contracts are static classes,label={lst:code1}]
-// A contract is a static class and all its methods are automatically static.
-contract MirrorToken {
+// .
+public class MirrorToken {
     private SimpleToken token;
     private SimpleToken reflection;
 
     // `initialize` is a special static method that is called by the AVM after the code of a contract
-    // is stored in the AVM code area. It can not be called after that.
-    initialize(double supply1, double supply2) {
+    // is stored in the AVM code area.
+    public static void initialize(double supply1, double supply2) {
         // `new` does not create a new smart contract. It just makes an ordinary object.
         token = new SimpleToken(supply1);
         reflection = new SimpleToken(supply2);
+    }
+    // `main` is the only method of the application (i.e. smart contract) that can be called by other
+    // applications. Every application should have exactly one main method defined in a class.
+    // Alternativly the keyword `dispatcher` could be used instead of `main`.
+    public static RestResponse main(RestRequest arg) {
+        if (arg.pathMatches("\balances\{user}")) {
+            account sender = arg.getParameter<account>("user");
+            if (arg.operationIsPUT()) {
+                verify(arg.toMessage(), sender, arg.getParameter<signature>("sig"));
+                token.transfer(sender, recipient, amount);
+                reflection.transfer(recipient, sender, Math.sqrt(amount));
+            } else if (arg.operationIsGET()) {
+            } else {
+            }
+        }
+        arg.operationIsGET();
+        arg.operationIsPUT();
+        arg.getParameter<address>("user")
     }
 
     external void transfer(account sender, account recipient,
@@ -79,11 +107,6 @@ contract MirrorToken {
     external double balanceOfReflection(account user) { return reflection.balanceOf(user); }
 }
 
-public static class Math {
-    public double sqrt(double x) {
-        return // calculate square root of x
-    }
-}
 
 package class SimpleToken {
     private map(account -> double) balances;
