@@ -2,7 +2,7 @@
 
 \lstset{
     language=Java,
-    morekeywords={main, initialize, constructor, external, virtual, map, account, signature, overrides, is, string},
+    morekeywords={main, initialize, constructor, external, virtual, Map, Account, signature, overrides, is, string},
     basicstyle=\small\sffamily,
     columns=fullflexible,
 %   keywordstyle=\bfseries,
@@ -18,27 +18,18 @@ contracts. The Argon programming language is inspired by Solidity and is similar
 of them omitted and a few ideas from other languages included. Argon is designed to be fully compatible with
 the Argennon Virtual Machine and be able to use all advanced features of the Argennon blockchain.
 
-Argon Programs are organized as sets of packages. Each package has its own set of names for types, which helps
-to prevent name conflicts. Every package can contain an arbitrary number of classes and a single contract. Every
-Argon package corresponds to at max one AVM smart contract.
+Argon applications (i.e.\ smart contracts) are organized as sets of packages. Each package has its own set of names
+for types, which helps to prevent name conflicts. Every package can contain an arbitrary number of classes.
+Every Argon application is required
+to have exactly one \texttt{main} method and one \texttt{initialize} method. The \texttt{main} method is the
+only method of an Argon application which can be called by other smart contracts.
+
+The \texttt{main} method is required to have a single parameter named \texttt{request}. The type of this parameter
+should be \texttt{RestRequest} or \texttt{HttpRequest}. The return value of the \texttt{main} function needs to be a
+\texttt{RestResponse} or \texttt{HttpResponse}.
 
 
 \section{Features Overview}\label{sec:features-overview}
-
-\subsection{Static Classes}\label{subsec:static-classes}
-
-In Argon a static class is an uninstantiable class which all its members and methods are static. Every static
-class can define a special method \texttt{initialize} which can only be called in the \texttt{initialize}
-method of the single contract of the package the static class is defined in.
-
-A Static class is like a normal class which can only have one instance. So like normal classes, static classes can
-be a super class or a subclass of other static classes and can implement interfaces.
-
-\subsection{Contracts}\label{subsec:contract}
-
-Every package of an Argon program can have one or zero contracts. A contact is a special static class which is
-allowed to define methods with \texttt{external} visibility. When an Argon package is deployed as an AVM smart
-contract, these external methods will define the contract's public interface.
 
 \subsection{Access Level Modifiers}\label{subsec:access-level-modifiers}
 
@@ -46,26 +37,23 @@ Access level modifiers determine whether other classes can use a particular fiel
 if a method can be invoked externally by other smart contracts.
 
 \begin{center}
-    \begin{tabular}{llllll}
+    \begin{tabular}{lllll}
         \hline
-        & Class & Package & Subclass & Program & World \\
+        & Class & Package & Subclass & Program \\
         \hline
-        private   & yes   & no      & no       & no      & no    \\
-        protected & yes   & no      & yes      & no      & no    \\
-        package   & yes   & yes     & yes      & no      & no    \\
-        public    & yes   & yes     & yes      & yes     & no    \\
-        external  & no    & no      & no       & yes     & yes   \\
+        private   & yes   & no      & no       & no  \\
+        protected & yes   & no      & yes      & no  \\
+        package   & yes   & yes     & yes      & no  \\
+        public    & yes   & yes     & yes      & yes \\
         \hline
     \end{tabular}\label{tab:table}
 \end{center}
 
 
-
-\begin{lstlisting}[frame=TB, float, title=Argon contracts are static classes,label={lst:code1}]
-// .
+\begin{lstlisting}[frame=TB, float, title=A simple Argon application,label={lst:code1}]
 public class MirrorToken {
-    private SimpleToken token;
-    private SimpleToken reflection;
+    private static SimpleToken token;
+    private static SimpleToken reflection;
 
     // `initialize` is a special static method that is called by the AVM after the code of a contract
     // is stored in the AVM code area.
@@ -74,50 +62,40 @@ public class MirrorToken {
         token = new SimpleToken(supply1);
         reflection = new SimpleToken(supply2);
     }
-    // `main` is the only method of the application (i.e. smart contract) that can be called by other
-    // applications. Every application should have exactly one main method defined in a class.
-    // Alternativly the keyword `dispatcher` could be used instead of `main`.
-    public static RestResponse main(RestRequest arg) {
-        if (arg.pathMatches("\balances\{user}")) {
-            account sender = arg.getParameter<account>("user");
-            if (arg.operationIsPUT()) {
-                verify(arg.toMessage(), sender, arg.getParameter<signature>("sig"));
+    // `main` is the only method of the application (i.e. smart contract) that can be called
+    // by other applications. Every application should have exactly one main method defined
+    // in some class. Alternatively, the keyword `dispatcher` could be used instead of `main`.
+    public static RestResponse main(RestRequest request) {
+        RestResponse response = new RestResponse();
+        if (request.pathMatches("/balances/{user}")) {
+            Account sender = request.getParameter<Account>("user");
+            if (request.operationIsPUT()) {
+                sender.authorize(request.toMessage(), request.getParameter<byte[]>("sig"));
+                Account recipient = request.getParameter<Account>("to");
+                double amount = request.getParameter<double>("amount");
                 token.transfer(sender, recipient, amount);
                 reflection.transfer(recipient, sender, Math.sqrt(amount));
-            } else if (arg.operationIsGET()) {
+                return response.setStatus(Http.Status.OK);
+            } else if (request.operationIsGET()) {
+                response.append<double>("balance", token.balanceOf(sender));
+                response.append<double>("reflection", reflection.balanceOf(user));
+                return response.setStatus(Http.Status.OK);
             } else {
+                return response.setStatus(Http.Status.MethodNotAllowed);
             }
         }
-        arg.operationIsGET();
-        arg.operationIsPUT();
-        arg.getParameter<address>("user")
     }
-
-    external void transfer(account sender, account recipient,
-        double amount, signature sig) {
-        // Checks if the signature is issued by the sender and verifies the calling of this function
-        // with the current parameters.
-        sig.verifyCallBy(sender);
-        token.transfer(sender, recipient, amount);
-        reflection.transfer(recipient, sender, Math.sqrt(amount));
-    }
-
-    external double balanceOf(account user) { return token.balanceOf(user); }
-
-    external double balanceOfReflection(account user) { return reflection.balanceOf(user); }
 }
 
-
 package class SimpleToken {
-    private map(account -> double) balances;
+    private Map(Account -> double) balances;
 
-    // The visibility of a member without an access modifier will be the same as its defining
-    // class so `SimpleToken` constructor has package visibility.
+    // The visibility of a member without an access modifier will be the package level.
     constructor(double initialSupply) {
         // initializes the object
     }
 
-    void transfer(account sender, account recipient, double amount) {
+    void transfer(Account sender, Account recipient, double amount) {
         if (balances[sender] < amount) throw("Not enough balance.");
         // implements the required logic...
     }
