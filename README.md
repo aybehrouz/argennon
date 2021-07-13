@@ -1,13 +1,17 @@
 ### Properties Overview:
 
 - By design, the Argennon blockchain is decoupled from cryptography. This makes Argennon a completely quantum safe
-  cryptocurrency. If the cryptographic algorithms used become insecure, they could be easily upgraded.
+  cryptocurrency. If at any time, the cryptographic algorithms used become insecure, they could be easily upgraded.
 
-- The Argennon Virtual Machine protects smart contracts from reentrancy by using multiple call stacks, while callback
-  patterns could still be implemented to some extent.
+- The Argennon Virtual Machine protects smart contracts from reentrancy by low level locks, while by using multiple call
+  stacks, callback patterns could still be implemented to some extent.
+
+- An Argennon smart contract can safely call external smart contracts. There is no way that a smart contract can affect
+  its caller. Even the execution resources are separated and the called smart contract can not abort the execution of
+  its caller by using too much gas.
 
 - Most of the arithmetic in the Argennon Virtual Machine is done using floating point operations instead of unsigned
-  integer operations. This way, there will be almost no need for a word size bigger than 64 bits. At the same time
+  integer operations. This way, there will be almost no need for a word size bigger than 64 bits. At the same time,
   operations will have a bounded fractional error in contrast to integer operations that have an infinite fractional
   error.
 
@@ -21,6 +25,11 @@
   interface should look. As a result, users can expect certain type of behaviour from a contract which complies with an
   Argennon standard.
 
+- Interaction with Argennon smart contract is done through conventional HTTP. This enables Argennon smart contracts to
+  have HTTP based RESTful APIs, documented by standardized descriptions like OpenAPI. This way, any client, including
+  clients being used for conventional centralized web services, will be able to use Argennon smart contracts, regardless
+  of how the API is implemented internally.
+
 - ARG, the main currency of the Argennon blockchain, is controlled by a smart contract. This eliminates the need for ARG
   wrappers and also makes the transfer logic of ARG more transparent and trustable.
 
@@ -30,12 +39,13 @@
   OO design pattern.
 
 - The Argennon Virtual Machine is a cloud based virtual machine and uses trust-less zero knowledge database servers as
-  its persistence layer. By using a smart clustering algorithm the AVM is able to keep the network usage manageable.
+  its persistence layer. At the same time, by using a smart clustering algorithm the AVM is able to keep the network
+  usage manageable.
 
 - Argennon uses a hybrid POS consensus protocol. A democratically elected committee of trusted delegates is responsible
   for minting new blocks and each block is validated by a large committee of normal validators. Every Argennon user is a
   member of at least one committee of validators. Thanks to the cloud based design of the AVM, transaction validation
-  does not require a large storage space for storing the state of the Argennon blockchain. This way being a validator
+  does not require a large storage space for storing the state of the Argennon blockchain. This way, being a validator
   does not require huge computational resources and everyone with an Argennon wallet can participate in the Argennon
   consensus protocol. This makes Argennon a truly democratic and decentralized blockchain.
 
@@ -45,7 +55,7 @@
 
 - The hybrid Argennon consensus protocol makes Argennon one of the most secure blockchains. Only one honest delegate can
   stop any attack against the integrity of the Argennon blockchain, and if all the delegates are malicious, as long as
-  more than half of the Argennon total stake is controlled by honest users the Argennon blockchain will be completely
+  more than half of the Argennon total stake is controlled by honest users, the Argennon blockchain will be completely
   safe.
 
 - The Argennon network relies on a permission-less network of ZK-EDB servers. A ZK-EDB server is a conventional data
