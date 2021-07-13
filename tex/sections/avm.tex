@@ -388,16 +388,21 @@ In blockchain applications, we usually need to authorize certain operations. For
 from a user to another user, first we need to make sure that the sender has authorized this operation. The
 Argennon virtual machine has no built-in mechanism for authorizing operations, but it provides a rich set of
 cryptographic instructions for validating signatures and cryptographic entities. By using these instructions and
-passing cryptographic signatures as parameters to methods, a programmer can implement the required logic
-for authorizing any operation.
+passing cryptographic signatures as parameters to methods, a programmer, having user's public keys, can implement
+the required logic for authorizing any operation.
+
+\note{Authorization by explicit signatures eliminates the need for approval methods or call back patterns.}
+
+In addition to cryptographic signatures, the Argennon Virtual Machine provides instructions that enable
+smart contracts to issue \emph{virtual signatures}. A smart contract can virtually sign a message for a target
+smart contract by \texttt{v\_sign} instruction. When a smart contract
+virtually signs a message for a target, that message is stored in the internal memory of the AVM, associated with
+its signer and the target. The application that is the target of the signature can verify the message
+by \texttt{v\_verify} instruction. After verifying the signature, it will be removed from the AVM's internal memory
+to make sure a signature will not be used multiple times. The virtual signatures stored in the AVM's internal memory
+last for one execution session.
 
 \note{The Argennon virtual machine has no instructions for issuing cryptographic signatures.}
-
-In addition to signatures, a method can verify its invoker by using \texttt{get\_parent} instruction. This
-instruction gets the \texttt{applicationID} of the smart contract that is one level deeper than the current
-smart contract in the call stack or if there is none, the smart contract that created the current call stack.
-In other words, it returns the \texttt{applicationID} of the smart contract that has invoked or spawned
-the current smart contract.
 
 
 \section{The AVM Standard Library}\label{sec:the-avm-standard-library}
