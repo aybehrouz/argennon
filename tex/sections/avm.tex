@@ -4,17 +4,17 @@
 \section{Introduction}\label{sec:introduction}
 
 The Argennon\footnote{the classical pronunciation should be used:\textipa{/Ar"gen.non/}} Virtual Machine (AVM) is an
-abstract computing machine for executing Argennon's smart contracts. The
+abstract computing machine for executing Argennon smart contracts. The
 Argennon Virtual Machine knows nothing of the Argennon blockchain, transactions or any concept of gas usage, only of
-Argennon's identifier tries and the concept of execution sessions.
+Argennon identifier tries and the concept of execution sessions.
 
 Execution sessions are separate sessions of executing smart contract's code by the Argennon Virtual Machine.
-Every execution session starts with a single method invocation, but does not necessarily end when
-that method invocation completes. During an execution session additional method invocations could be scheduled,
-which will be executed after the initial method completion.
+Every execution session starts with a single method invocation, but does not necessarily end with
+that method invocation. During an execution session additional method invocations could be scheduled,
+which will be executed after the initial method completes.
 
 An execution session may complete normally or abruptly. When an execution session completes abruptly, it will
-not have any effects on the AVM state.
+not have any effects on the AVM's state.
 
 \section{Data Types}\label{sec:data-types}
 
@@ -50,15 +50,16 @@ All these identifiers are \emph{prefix codes}, and hence can be represented by
 prefix code built by using one or more of these prefix trees:
 \begin{itemize}
     \item \texttt{applicationID} is a prefix code built by \emph{applications} prefix tree.
-    \item \texttt{accountID} is a prefix code built by \emph{accounts} prefix tree.
+    \item \texttt{accountID} is a prefix code built by \emph{accounts} prefix tree. An \texttt{accountID} can
+    not be \texttt{0x0} or \texttt{0x1}.
     \item \texttt{methodID} is a composite prefix code built by concatenating an \texttt{applicationID} to
     a prefix code made by \emph{local} prefix tree: (\texttt{|} is the concatenating operator)
-
-    \texttt{methodID = (applicationID|<local-prefix-code>)}
+    \subitem \texttt{methodID = (applicationID|<local-prefix-code>)} .
     \item \texttt{chunkID} is a composite prefix code built by concatenating an \texttt{applicationID} to
     an \texttt{accountID} to a prefix code made by \emph{local} prefix tree:
-
-    \texttt{chunkID = (applicationID|accountID|<local-prefix-code>)}
+    \subitem \texttt{chunkID = (applicationID|accountID)} or
+    \subitem \texttt{chunkID = (applicationID|0x0|<local-prefix-code>)} or
+    \subitem \texttt{chunkID = (applicationID|0x1|accountID|<local-prefix-code>)} .
 \end{itemize}
 
 All Argennon prefix trees have an equal branching factor \(\beta\). Therefore, we can represent an Argennon
@@ -121,7 +122,7 @@ is native, the value of the Argennon Virtual Machine's \texttt{pc} register is u
 \subsection{Call Stack Queue}\label{subsec:call-stack}
 
 Every AVM execution session has a queue of call stacks. A call stack contains all the information that is needed for
-restoring the AVM state, and continuing the execution after the method invocation completes.
+restoring the AVM's state and continuing the execution after the method invocation completes.
 This information is represented by a \texttt{CallInfo} struct:
 \begin{verbatim}
 CallInfo {
@@ -129,7 +130,7 @@ CallInfo {
     pc,
     localFrame,
     operandStack
-}.
+} .
 \end{verbatim}
 
 The \texttt{methodID} field is the unique identifier of a method's bytecode that
@@ -149,8 +150,8 @@ contains a single \texttt{CallInfo} struct. See Section~\ref{subsec:method-invoc
 
 \subsection{Run-Time Data Areas}\label{subsec:data-areas}
 
-The Argennon Virtual Machine defines various run-time data areas that are used during an execution session
-(i.e.\ transaction), Some of these data areas are persistent and are stored on the blockchain, Other data areas
+The Argennon Virtual Machine defines various run-time data areas that are used during an execution session,
+Some of these data areas are persistent and are stored on the blockchain, Other data areas
 are per execution session or per method invocation. These data areas are created when their context starts and
 destroyed when their context ends.
 
@@ -178,7 +179,7 @@ predefined \texttt{methodID}: \texttt{(ApplicationID|0)}.
 
 \note{The Argennon Virtual Machine does not have internal or external methods. All methods are considered internal
 except the \texttt{dispatcher} method, which is the only external method of any smart contract.
-This design enables the AVM to execute smart contracts with \emph{RESTful} APIs more efficiently.}
+This design enables the AVM to execute \emph{RESTful} smart contracts more efficiently.}
 
 Instructions that modify the code area can only be run in privileged mode, which means they can only be executed
 by the \emph{root} smart contract. As a result, the access of smart contracts to the code area is essentially
@@ -214,7 +215,7 @@ assigned a unique identifier: \texttt{chunkID}. As a result, the address of ever
 the heap area can be considered as a pair: \texttt{(chunkID, offset)}.
 
 A smart contract can read any chunk stored in the heap by having its \texttt{chunkID}. However, it can only modify
-those chunks that was created by itself. In other words, every memory chunk in the AVM heap has an owner. Only
+those chunks that was created by itself. In other words, every memory chunk in the AVM's heap has an owner. Only
 the owner can modify a chunk while anyone can read that chunk. The owner of a chunk can be easily determined
 by the \texttt{applicationID} part of the chunk identifier.
 
@@ -253,9 +254,9 @@ The Argennon Virtual Machine has four types of method invocation instruction:
     words, the invoked method can only modify the state of the current smart contract.
     A smart contract can invoke any method by \texttt{invoke\_internal} instruction, even if that method is an
     internal method of another smart contract. Since the invoked method will always be executed in the context of
-    the invoking smart contract, a smart contract will not be able to modify another smart contract state by
+    the invoking smart contract, a smart contract will not be able to modify another smart contract's state by
     this instruction. This instruction facilitates code reuse and the usage of libraries.
-    If the invoked method completes abruptly, that will cause the invoker method to complete abruptly too.
+    If the invoked method completes abruptly, the invoker method completes abruptly too.
     \item \texttt{invoke\_dispatcher}: invokes the \texttt{dispatcher} method of a smart contract and changes the
     context of method execution to that
     smart contract. If the invoked method completes abruptly, that will cause the invoker method to complete
@@ -264,11 +265,11 @@ The Argennon Virtual Machine has four types of method invocation instruction:
     are similar to their \texttt{invoke} counterparts, with the difference that when
     the invoked method completes abruptly, the invoker method can continue execution. When a method invoked by
     an \texttt{i\_invoke} instruction completes abruptly, all changes made
-    by the invoked method to the AVM state will be reverted and the instruction will act like
+    by the invoked method to the AVM's state will be reverted and the instruction will act like
     a jump to the specified error handling code.
     \item \texttt{invoke\_native}: invokes a method that is not hosted by the Argennon Virtual Machine. By this
     instruction, high performance native methods of the hosting machine, such as GPU accelerated operations,
-    could become available to AVM smart contracts. This instruction will not modify the AVM state.
+    could become available to AVM smart contracts. This instruction will not modify the AVM's state.
     \item \texttt{invoke\_later}: invokes the \texttt{dispatcher} method of another smart contract by creating a new
     call stack. The created call stack is added at the end of the call stack queue, and
     the context of method execution will change after the execution of that call stack starts. This instruction does
@@ -284,7 +285,7 @@ Because the invocation uses a separate call stack, it will not cause the lock to
 
 Each time a method is invoked a new local frame
 and operand stack is created. If the method was invoked by an \texttt{i\_invoke} instruction,
-the \texttt{Save()} function of the AVM heap is called before the execution of the method starts.
+the \texttt{Save()} function of the AVM's heap is called before the execution of the method starts.
 
 The Argennon Virtual Machine uses local frames to pass parameters on
 method invocation. On method invocation, any parameters are passed in consecutive local variables stored in the
@@ -292,7 +293,7 @@ method's local frame starting from address 0. The invoker of a method writes the
 of the invoked method using \texttt{arg} instructions.
 
 \note{The AVM does not natively support polymorphism and virtual methods. A compiler could easily
-generates appropriate code for implementing these features.}
+generate appropriate code for implementing these features.}
 
 \subsection{Exceptions}\label{subsec:exceptions}
 
@@ -300,7 +301,7 @@ An exception is thrown programmatically using the \texttt{athrow} instruction. E
 various Argennon Virtual Machine instructions if they detect an abnormal condition.
 
 \note{Any AVM instruction may throw an exception. This happens when the execution cost of a transaction has exceeded
-the declared execution cost of the transaction.}
+the declared maximum execution cost.}
 
 \subsection{Method Invocation Completion}\label{subsec:method-invocation-completion}
 
@@ -330,25 +331,25 @@ current execution session ends.
 When a method completes abruptly, the call stack is used to restore the \texttt{pc} register of the invoker. If the pc
 register points to an \texttt{invoke} instruction, the current method completes abruptly as well. Otherwise, if
 the \texttt{pc} register is pointing to an \texttt{i\_invoke} instruction, the \texttt{Heap.Restore()} function is
-called to restore the state of the AVM heap. Then, the
+called to restore the state of the AVM's heap. Then, the
 local frame and operand stack of the invoker is restored, and execution continues after branching to the error handling
-code specified by the instruction operand.
+code specified by the instruction's operand.
 
 When an invocation which was made by an \texttt{invoke\_later} instruction completes abruptly, the
 heap snapshot that was saved before the start of the
 execution of the first call stack is restored. This means
-that all changes made by the execution session to the AVM heap will be completely reverted.
+that all changes made by the execution session to the AVM's heap will be completely reverted.
 
 \subsection{Reentrancy Protection}\label{subsec:reentrancy}
 
 The Argennon Virtual Machine provides low level reentrancy protection by defining a dedicated
 instruction: \texttt{enter}. When a smart contract executes the \texttt{enter} instruction, it
 can not execute that instruction again as long
-as the method executing that instruction completes (abruptly or normally). If a smart contract tries to execute
-the \texttt{enter} instruction, while the method executing that instruction for the first time has not yet completed,
+as the method executing the instruction completes (abruptly or normally). If a smart contract tries to execute
+the \texttt{enter} instruction while the method executing that instruction for the first time has not yet completed,
 an exception will be thrown.
 
-Smart contracts can completely prevent reentrancy by executing \texttt{enter} instruction as the first instruction
+Smart contracts can completely prevent reentrancy by executing the \texttt{enter} instruction as the first instruction
 of their \texttt{dispatcher} method.
 
 \subsection{Heap Allocation and Deallocation}\label{subsec:heap-allocation-instructions}
@@ -356,25 +357,26 @@ of their \texttt{dispatcher} method.
 Heap allocation and deallocation in the Argennon Virtual Machine is done by the following instructions:
 
 \begin{itemize}
-    \item \texttt{alloc}: creates a new memory chunk of the specified size in the heap. the identifier
-    of the new chunk will be the concatenation of the \texttt{applicationID} of the creator of the chunk and
+    \item \texttt{alloc}: creates a new memory chunk of the specified size in the heap. The
+    new chunk's identifier will be the concatenation of the \texttt{applicationID} of the creator of the chunk and
     the \texttt{id} operand of the instruction. The \texttt{id} operand must be the concatenation of
     an \texttt{accountID} and a prefix code
     generated by the \emph{local} prefix tree: \texttt{id = accountID|localID}. If the identifier is not valid or
-    if it already exists in the heap a catchable exception will be thrown.
+    if it already exists in the heap, a catchable exception will be thrown.
 
     \item \texttt{delete}: deletes the chunk that its identifier is the concatenation of the current smart
     contract \texttt{applicationID} and the specified \texttt{id} operand. If the identifier is not valid or
-    if the chunk was not found a catchable exception will be thrown.
+    if the chunk was not found, a catchable exception will be thrown.
 \end{itemize}
 
 When a smart contract allocates a new memory chunk, the identifier of the new chunk is not generated by
-the AVM, instead the smart contract can choose an identifier itself. This is a very important feature of
-the AVM heap, which allows smart contracts to use the AVM heap as a dictionary (map) data structure.
-Since the \texttt{chunkID} is a prefix code, any smart contract has its own identifier space and a smart contract
+the AVM. Instead, the smart contract can choose an identifier itself. This is a very important feature of
+the AVM's heap, which allows smart contracts to use the AVM's heap as a dictionary (map) data structure.
+Since the \texttt{chunkID} is a prefix code, any smart contract has its own identifier space, and a smart contract
 can easily generate unique identifiers for its chunks.
 
-The AVM requires the chosen identifier to be a prefix code made by concatenating a code compatible with
+The AVM requires the chosen identifier to be a prefix code compatible with
+the \emph{accounts} prefix tree, or a code made by concatenating a code compatible with
 the \emph{accounts} prefix tree to a code compatible with the \emph{local} prefix tree. This requirement
 enables AVM to detect invalid identifiers, while smart contracts can easily associate data with account identifiers.
 At the same time, A smart contract is able to create maps with costume keys by appending local identifiers
@@ -386,9 +388,9 @@ blockchain.
 
 In blockchain applications, we usually need to authorize certain operations. For example, for sending an asset
 from a user to another user, first we need to make sure that the sender has authorized this operation. The
-Argennon virtual machine has no built-in mechanism for authorizing operations, but it provides a rich set of
+Argennon Virtual Machine has no built-in mechanism for authorizing operations, but it provides a rich set of
 cryptographic instructions for validating signatures and cryptographic entities. By using these instructions and
-passing cryptographic signatures as parameters to methods, a programmer, having user's public keys, can implement
+passing cryptographic signatures as parameters to methods, a programmer, having users' public keys, can implement
 the required logic for authorizing any operation.
 
 \note{Authorization by explicit signatures eliminates the need for approval methods or call back patterns.}
@@ -413,8 +415,8 @@ invoke methods of the AVM standard library. Methods of the AVM standard library 
 with the \texttt{applicationID} zero in the AVM method area. This implies that the AVM standard library is actually
 a part of the root smart contract.
 
-In Argennon, the root smart contract is an updatable smart contract, which can be updated by the Argennon consensus
-protocol. This means that bugs or security vulnerabilities in the AVM standard library could be quickly patched and
+In Argennon, the root smart contract is an updatable smart contract, which can be updated by the Argennon governance
+system. This means that bugs or security vulnerabilities in the AVM standard library could be quickly patched and
 smart contracts could benefit from bugfixes and improvements of the AVM standard library even if they are
 non-updatable. Many important and useful functionalities,
 such as fungible and non-fungible assets, access control mechanisms,
