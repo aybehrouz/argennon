@@ -17,8 +17,8 @@ the page:
     P = (O_1,O_2,\dots,O_n),\quad i < j \; \Leftrightarrow \; \textrm{$O_i$ was added before $O_j$}\ .
 \]
 
-A page of the AVM storage should contain objects that have very similar access pattern. We expect that when a page
-is needed for validating a block, almost all of its objects are needed for either reading or writing. We also prefer
+A page of the AVM storage should contain objects that have very similar access pattern. Ideally, when a page is needed
+for validating a block, almost all of its objects should be needed for either reading or writing. We prefer
 that the objects are needed for the same access type. In other words, the objects of a page are chosen in a way that
 for validating a block, we usually need to either read all of them or modify\footnote{and probably read.} all of them.
 
