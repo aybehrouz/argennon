@@ -93,8 +93,9 @@ unvalidated part, which contains blocks that have a certificate from the committ
 yet received a certificate from the validators.
 
 As we mentioned before, the block with height $n$ needs a certificate from the committee of
-validators with index $n$ modulo $m$. To decide about signing a block certificate, a validator
-checks the conditional validity\footnote{See Section~\ref{subsec:block-validation}} of the block, and
+validators with index $n$ modulo $m$. To decide about signing the certificate of a block which already has
+a certificate from the delegates, a validator checks the conditional
+validity\footnote{See Section~\ref{subsec:block-validation}} of the block, and
 if the block is valid he issues
 an "accept" signature. If the block is invalid, he initiates the recovery protocol. The validator will broadcast the
 certificate \textbf{only after} he sees the certificate of the validators of the previous block.
