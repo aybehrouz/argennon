@@ -2,18 +2,21 @@
 
 - By design, the Argennon blockchain is decoupled from cryptography. This makes Argennon a completely quantum safe
   cryptocurrency. If at any time, the cryptographic algorithms used become insecure, they could be easily upgraded.
+  
+- In Argennon, operations are authorized by **explicit** signatures. This eliminates the need for approval schemes or
+  call back patterns and encourages developers to better utilize the capabilities of digital signatures.
 
 - The Argennon Virtual Machine protects smart contracts from reentrancy by low level locks, while by using multiple call
   stacks, callback patterns could still be implemented to some extent.
 
 - An Argennon smart contract can safely call external smart contracts. There is no way that a smart contract can affect
   its caller. Even the execution resources are separated and the called smart contract can not abort the execution of
-  its caller by using too much gas.
+  its caller by excessive gas usage.
 
 - Most of the arithmetic in the Argennon Virtual Machine is done using floating point operations instead of unsigned
   integer operations. This way, there will be almost no need for a word size bigger than 64 bits. At the same time,
-  operations will have a bounded fractional error in contrast to integer operations that have an infinite fractional
-  error.
+  operations will have a bounded fractional error in contrast to integer operations that could have an arbitrary
+  fractional error.
 
 - The Argennon Virtual Machine has a built-in standard library. This standard library provides a secure and convenient
   way for implementing many frequently used functionalities. In addition, this library is updatable through the Argennon
@@ -39,8 +42,8 @@
   OO design pattern.
 
 - The Argennon Virtual Machine is a cloud based virtual machine and uses trust-less zero knowledge database servers as
-  its persistence layer. At the same time, by using a smart clustering algorithm the AVM is able to keep the network
-  usage manageable.
+  its persistence layer. At the same time, by using an AI powered clustering algorithm the AVM is able to keep the
+  network usage manageable.
 
 - Argennon uses a hybrid POS consensus protocol. A democratically elected committee of trusted delegates is responsible
   for minting new blocks and each block is validated by a large committee of normal validators. Every Argennon user is a
@@ -55,10 +58,10 @@
 
 - The hybrid Argennon consensus protocol makes Argennon one of the most secure blockchains. Only one honest delegate can
   stop any attack against the integrity of the Argennon blockchain, and if all the delegates are malicious, as long as
-  more than half of the Argennon total stake is controlled by honest users, the Argennon blockchain will be completely
-  safe.
+  more than half of the Argennon total stake is controlled by honest users, the Argennon blockchain will preserve its
+  consistency.
 
-- The Argennon network relies on a permission-less network of ZK-EDB servers. A ZK-EDB server is a conventional data
+- The Argennon network relies on a **permission-less** network of ZK-EDB servers. A ZK-EDB server is a conventional data
   server which uses its computational and storage resources to help the Argennon network process transactions. A large
   portion of incentive rewards in the Argennon blockchain is devoted to ZK-EDB servers. This will incentivize the
   development of conventional networking, storage and computational hardware, which can benefit all areas of information
