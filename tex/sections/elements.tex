@@ -14,7 +14,7 @@ be considered as the address of an application and has the following standard sy
 \end{verbatim}
 where \texttt{<dec-num>} is a normal decimal number between $0$ and $255$.
 
-For example \texttt{21.255.37}, \texttt{0} and \texttt{1.0.0.0.0}, are valid application addresses.
+For example \texttt{21.255.37}, \texttt{0}, \texttt{11.6} and \texttt{2.0.0.0.0}, are valid application addresses.
 
 Argennon has two special smart contracts: the \emph{root smart contract}, also called the \emph{root application}, and
 the \emph{ARG smart contract}, which is also called the \emph{Argennon smart contract} or the \emph{ARG application}.
@@ -27,9 +27,9 @@ performs three main operations:
 
 \begin{itemize}
     \item Installation of AVM smart contracts and determining the update policy of a smart
-    contract: if the contract is updatable or not, which accounts can update or uninstall the contract, and so
-    on.
-    \item Removing AVM smart contracts.
+    contract: if the contract is updatable or not, which accounts or smart contracts can update or uninstall
+    the contract, and so on.
+    \item Removing an AVM smart contract (if allowed).
     \item Updating an AVM smart contract (if allowed).
 \end{itemize}
 
@@ -93,7 +93,7 @@ the \texttt{dispatcher} method to accept an HTTP request as its argument and
 return an HTTP response.
 
 As a result, every Argennon transaction contains two HTTP requests. Besides these HTTP requests, the
-transaction is required to contain a resource declaration object, specifying the maximum amount of resources
+transaction is also required to contain a resource declaration object, specifying the maximum amount of resources
 it needs for execution.
 
 \note{Argennon smart contracts use HTTP as the application protocol and they are advised to have a RESTful API design.}
@@ -101,12 +101,12 @@ it needs for execution.
 \subsection{Resource Declaration}\label{subsec:resource-declaration}
 
 Every Argennon transaction is required to specify a cap for all the resources it needs. This
-includes memory, network and processor related resources. When a transaction reaches one of its
+includes memory, network and processor related resources. If during emulation, a transaction reaches one of its
 pre-declared resource caps, executing any AVM instruction which uses that resource, will result in an AVM exception.
 
 As we know, every Argennon transaction consists of two \texttt{i\_invoke\_dipatcher} instructions. The first
 instruction is always considered as a \emph{free} instruction and resources spent during its execution
-session will not be counted. Thus, only the second instruction could fail due to exceeding resource limits.
+session will not be counted. Therefore, only the second instruction could fail due to exceeding resource limits.
 
 The Argennon protocol defines an execution cost for
 every AVM instruction, reflecting the amount of resources its emulation needs. Every
@@ -114,13 +114,13 @@ transaction is required to specify two maximum execution costs: \texttt{maxInter
 and \texttt{maxExternalCost}. The \emph{external} execution cost of a transaction is the \textbf{overall} cost of its
 \texttt{invoke\_dispatcher} and \texttt{invoke\_later} instructions,\footnote{By overall cost, we mean the execution
 cost needed for reaching the next instruction.}. The remaining execution cost will be considered as
-the \emph{internal} cost. If a transaction reaches one of its maximum costs, executing any instruction which has
-that type of cost, will throw an AVM exception.
+the \emph{internal} cost. If a transaction reaches one of its maximum execution costs, executing any instruction
+which has that type of cost, will throw an AVM exception.
 
-\note{When a transaction reaches its \texttt{maxExternalCost}, it can still keep executing
+\note{When a transaction reaches its \texttt{maxExternalCost}, it can still execute
 its own code, while it can not call other smart contracts.
 This way the execution cost of a smart contract is completely decoupled from the
-smart contract it calls, and a malicious contract can not make its invoker fail
+smart contract it calls, and a malicious contract can not make its invoker certainly fail
 by using infinite loops.}
 
 Also, Argennon transactions are required to specify what heap or code area addresses they will access. This will
@@ -155,7 +155,7 @@ can receive the proposed fee of that transaction.
 fee: |
     PUT /balances/0x73.0xa2?to=fee&amount=0.26&sig=5b73CbmwQNRC7fWUY15 HTTP/1.1
 call: |
-    POST bttp://app.argennon.net/54.189.21/proposals HTTP/1.1
+    POST bttp://dapp.argennon.net/54.189.21/proposals HTTP/1.1
     Content-Type: application/json; charset=utf-8
     Content-Length: 77
 
