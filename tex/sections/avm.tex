@@ -11,7 +11,7 @@ Argennon identifier tries and the concept of execution sessions.
 Execution sessions are separate sessions of executing smart contract's code by the Argennon Virtual Machine.
 Every execution session starts with a single method invocation, but does not necessarily end with
 that method invocation. During an execution session additional method invocations could be scheduled,
-which will be executed after the initial method completes.
+which will be executed after the initial method invocation completes.
 
 An execution session may complete normally or abruptly. When an execution session completes abruptly, it will
 not have any effects on the AVM's state.
@@ -35,7 +35,7 @@ An identifier value in the Argennon Virtual Machine is a variable length array o
 that work with identifiers are able to determine the length of their identifier operands, while some
 other instructions, for performance reasons, require the length to be specified.
 
-The Argennon virtual machine does not have a fixed word size. Any instruction of the AVM has
+The Argennon Virtual Machine does not have a fixed word size. Any instruction of the AVM has
 its specific word size, and the addressable memory areas are byte addressable.
 
 
@@ -47,7 +47,7 @@ In the Argennon Virtual Machine four distinct identifier types exist: \texttt{ap
 All these identifiers are \emph{prefix codes}, and hence can be represented by
 \emph{prefix trees}\footnote{Also called tries.}. The Argennon has three primitive prefix trees:
 \emph{applications, accounts} and \emph{local}. Any identifier in Argennon is a
-prefix code built by using one or more of these prefix trees:
+prefix code built by one or more of these prefix trees:
 \begin{itemize}
     \item \texttt{applicationID} is a prefix code built by \emph{applications} prefix tree.
     \item \texttt{accountID} is a prefix code built by \emph{accounts} prefix tree. An \texttt{accountID} can
@@ -73,18 +73,17 @@ could be \(2^8\).
 
 One important property of prefix identifiers is that while they have variable and unlimited length, they are
 uniquely extractable from any sequence. Assume that we have a string of digits in base $\beta$, we
-know that $k$ first digits belong to an Argennon's identifier, but we don't know the value of $k$.
+know that $k$ first digits belong to an Argennon identifier, but we don't know the value of $k$.
 Algorithm~\ref{alg:prefix_id} can be used to extract the prefixed identifier uniquely. Also, we can apply this algorithm
 multiple times to extract a composite identifier, for example \texttt{chunkID}, from a sequence.
 
 %##\includegraphics[width=17cm]{../img/Alg1s.png}
-\begin{algorithm}
+\begin{algorithm}[t]
     \DontPrintSemicolon
-    \SetKwData{Ready}{$R_e$}\SetKwData{V}{$v_f$}\SetKwData{Graph}{$G_e$}\SetKwData{Vertices}{$V$}\SetKwData
-    {Txns}{$T$}
     \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
     \Input{A sequence of $n$ digits in base $\beta$: $d_{1}d_{2}\dots d_{n}$ \newline
-    A prefix tree: $<A^{(1)},A^{(2)},A^{(3)},\dots>$}
+    A prefix tree: $<0,A^{(1)},A^{(2)},A^{(3)},\dots>$}
+    \BlankLine
     \Output{Valid identifier prefix of the sequence.}
     \BlankLine
     \For{$i = 1$ \KwTo $n$}
@@ -98,10 +97,35 @@ multiple times to extract a composite identifier, for example \texttt{chunkID}, 
     \caption{Finding a prefixed identifier}\label{alg:prefix_id}
 \end{algorithm}
 
+When we have a prefixed identifier, and we want to know if a sequence of digits is marked by that identifier,
+we use Algorithm~\ref{alg:match_id} to match the prefixed identifier with the start of the sequence. The matching
+can be done with only three comparisons and an invalid prefixed identifier can also be detected.
+
 In Argennon the shorter prefix codes are assigned to more active accounts and smart contracts which tend to own more
 data objects in the system. The prefix trees are designed by analyzing empirical data to make sure the number
 of leaves in each level is chosen appropriately.
 
+\begin{algorithm}[h]
+    \DontPrintSemicolon
+    \SetKwData{Id}{$id$}
+    \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+    \Input{A prefixed identifier in base $\beta$ with $n$ digits: $\Id=a_{1}a_{2}\dots a_{n}$ \newline
+    A sequence of digits in base $\beta$: $d_{1}d_{2}d_{3}\dots $ \newline
+    A prefix tree: $<0,A^{(1)},A^{(2)},A^{(3)},\dots>$
+    }
+    \BlankLine
+    \Output{$TURE$ if and only if the identifier is valid and the sequence starts with the identifier.}
+    \BlankLine
+    \If{$(0.a_{1}\dots a_{n})_\beta = (0.d_{1}\dots d_{n})_\beta$}
+    {
+        \If{$A^{(n-1)} \leq (0.a_{1}a_{2}\dots a_{n})_\beta < A^{(n)}$}
+        {
+            \KwRet{TRUE}\;
+        }
+    }
+    \KwRet{FALSE}\;
+    \caption{Matching a prefixed identifier}\label{alg:match_id}
+\end{algorithm}
 
 \section{Arithmetics}\label{sec:arithmetics}
 
