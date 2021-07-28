@@ -35,8 +35,8 @@ An identifier value in the Argennon Virtual Machine is a variable length array o
 that work with identifiers are able to determine the length of their identifier operands, while some
 other instructions, for performance reasons, require the length to be specified.
 
-The Argennon Virtual Machine does not have a fixed word size. Any instruction of the AVM has
-its specific word size, and the addressable memory areas are byte addressable.
+The Argennon Virtual Machine does not have a fixed word size and uses \textbf{little-endian} byte order. Any
+instruction of the AVM has its specific word size, and the addressable memory areas are byte addressable.
 
 
 \section{Identifiers}\label{sec:identifiers}
@@ -73,7 +73,7 @@ could be \(2^8\).
 
 One important property of prefix identifiers is that while they have variable and unlimited length, they are
 uniquely extractable from any sequence. Assume that we have a string of digits in base $\beta$, we
-know that $k$ first digits belong to an Argennon identifier, but we don't know the value of $k$.
+know that the sequence starts with an Argennon identifier, but we do not know the length of that identifier.
 Algorithm~\ref{alg:prefix_id} can be used to extract the prefixed identifier uniquely. Also, we can apply this algorithm
 multiple times to extract a composite identifier, for example \texttt{chunkID}, from a sequence.
 
@@ -82,7 +82,7 @@ multiple times to extract a composite identifier, for example \texttt{chunkID}, 
     \DontPrintSemicolon
     \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
     \Input{A sequence of $n$ digits in base $\beta$: $d_{1}d_{2}\dots d_{n}$ \newline
-    A prefix tree: $<0,A^{(1)},A^{(2)},A^{(3)},\dots>$}
+    A prefix tree: $<A^{(1)},A^{(2)},A^{(3)},\dots>$}
     \BlankLine
     \Output{Valid identifier prefix of the sequence.}
     \BlankLine
@@ -99,7 +99,8 @@ multiple times to extract a composite identifier, for example \texttt{chunkID}, 
 
 When we have a prefixed identifier, and we want to know if a sequence of digits is marked by that identifier,
 we use Algorithm~\ref{alg:match_id} to match the prefixed identifier with the start of the sequence. The matching
-can be done with only three comparisons and an invalid prefixed identifier can also be detected.
+can be done with only three comparisons, and an invalid prefixed identifier can be detected and will not match
+any sequence.
 
 In Argennon the shorter prefix codes are assigned to more active accounts and smart contracts which tend to own more
 data objects in the system. The prefix trees are designed by analyzing empirical data to make sure the number
@@ -157,7 +158,7 @@ CallInfo {
 } .
 \end{verbatim}
 
-The \texttt{methodID} field is the unique identifier of a method's bytecode that
+The \texttt{methodID} field is the unique identifier of a method's bytecode, which
 is a composite prefix code built by concatenating an \texttt{applicationID} to
 a local identifier.
 
@@ -187,7 +188,7 @@ The Argennon Virtual Machine has five run-time data areas:
     \item Operand Stack
     \item Heap
 \end{itemize}
-All data areas except operand stack, have their own address space. Operand stack is a
+All data areas except the operand stack, have their own address space. The operand stack is a
 last-in-first-out (LIFO) stack and is not addressable. Every AVM instruction operates on its specific
 data areas.
 
