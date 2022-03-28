@@ -218,41 +218,67 @@ Completing an execution session needs computational resources. The amount of res
 needs to be monitored, otherwise a spammer would be able to easily exhaust the resources of the execution
 environment. Resource usage can be measured per session or per application call.
 
-The AscEE has two type of execution sessions: optimistic and monitored. Resource usage of an optimistic session
-is always measured per session and default pre-defined resource caps are used. An optimistic session must always
-complete normally. On the other hand in a monitored session some resources are measured per application and some
-caps are determined dynamically by the request. A monitored session is allowed to either complete normally or fail.
+The AscEE has two type of execution sessions: \emph{optimistic} and \emph{monitored}. Resource usage of an optimistic
+session is always measured per session and default pre-defined resource caps are used. On the other hand in a monitored
+session some resources are measured per application and some
+caps are determined dynamically by the request. An optimistic session must always
+complete normally but a monitored session is allowed to either complete normally or abruptly.
 
 Obviously resource monitoring is easier for optimistic sessions, and they can be executed more efficiently. However, if
-an optimistic session violates its resource caps, determining the point of failure requires precise measurement of
-used resources. Note that for implementing optional decoupling principle we need to determine the exact application
-which fails in the call chain. For example assume that an optimistic session containing an application call violates a
-1ms execution time cap. If the call happens exactly after 1ms a small fluctuation in measuring the execution time can
-change the point of failure between the called and the main application. On the other hand this is not an issue for
-monitored session because resource measurements and caps are defined per application.
+an optimistic session violates its resource caps, determining the point of failure requires precise resource
+measurement. Note that for implementing optional decoupling principle, we need to determine the exact application
+which has failed in the call chain. For example assume that an optimistic session containing an application call
+violates a 2 milliseconds execution time cap. If in the caller application the call happens exactly after 2
+milliseconds of execution, a small fluctuation in the execution time measurement can
+change the point of failure between the called and the main application. This will introduce nondeterministic
+behaviour which makes block validation impossible. On the other hand, for a monitored session this is not an issue
+because resource measurements and caps are defined per application, and we make sure that resource caps are not too
+small for any application call.
 
-The following resources are defined and monitored for AscEE execution sessions:
+Different computational resources are measured and monitored during an AscEE session:
+\begin{itemize}
+    \item \textbf{execution time}:
+    the amount of cpu time that is required for executing a session or an application. The execution time of a session
+    is measured in \emph{AscEE clocks}. One AscEE clock is defined as 1/1000 of the amount
+    of cpu time needed for executing a predefined standard application which is used for benchmarking a host's
+    performance.
 
-execution time:
-The amount of cpu time that is required for executing a session or an application. The execution time of a session
-is measured in \emph{AscEE clocks}. One AscEE clock is defined as 1/1000 of the amount
-of cpu time needed for executing a predefined standard application which is used for benchmarking a host's performance.
+    Optimistic sessions have a predefined \texttt{maxClocks} value which is determined by the Argennon protocol. This
+    value defines a bound on the total cpu time of the session and no per application measurement is done.
 
-local memory: any memory usage of an application that is not part of the heap chunks and is not part of another resource
-will be considered as local memory usage. This resource is measured in bytes.
+    Monitored sessions perform per application cpu-time measurement, and every application call during a monitored
+    session has a separate \texttt{maxClocks} value. This value determines the maximum amount of time that the cpu
+    can be used for executing that particular application call. It should be noted that the timer is paused when an
+    application makes a call to another application, until the control returns to the caller. An application call
+    needs at least 100 clocks and if the value of its \texttt{maxClock} is lower than this value the call will be
+    considered a failed call.
 
-heap access list: every session can only access heap locations that are declared in its access list. In addition,
-resizing
-heap chunks can only be done in the range of the pre-declared lower bound and upper bound. those predeclared
-locations of heap chunks that are
+    Each application call has some amount of \texttt{externalClocks}. When an application makes a request to another
+    application it has to \emph{forward} a portion of its external clocks to the called application. This amount
+    will determine the value of maxClocks for the called application.
 
-applications list: a session can only make requests to applications that are declared in its application list.
+    The amount of external clocks for every application
+    call is defined to be \(2/3\) of its \texttt{maxClocks}. As a result the total number of clocks of a monitored
+    session is always less than \(3 \times \texttt{maxClocks}\) of the root application. The value of
+    \texttt{maxClocks} for
+    the root application call is determined by the transaction.
 
-call depth: the number of nested application calls.
+    \item \textbf{local memory}:
+    any memory usage of an application that is not part of the heap chunks and is not part of another resource
+    will be considered as local memory usage. This resource is measured in bytes.
+    \item \textbf{heap access list}:
+    every session can only access heap locations that are declared in its access list. In addition,
+    resizing heap chunks can only be done in the range of the pre-declared lower bound and upper bound.
+    \item \textbf{applications list}:
+    a session may only make requests to applications that are declared in its application list.
+    \item \textbf{call depth}:
+    the number of nested application calls can not be more than a threshold. This threshold is determined by the
+    Argennon protocol.
+    \item active differed calls:
+    \item virtual signatures:
+    \item number of locks
 
-number of deferred calls
-number of session locks
-number of virtual signatures
+\end{itemize}
 
 
 \section{Arithmetics}\label{sec:arithmetics}
