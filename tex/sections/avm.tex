@@ -5,7 +5,7 @@
 
 The Argennon\footnote{The classical pronunciation should be used:\textipa{/Ar"gen.non/}} Smart Contract Execution
 Environment (AscEE) is an abstract execution environment for executing Argennon smarts contracts (a.k.a\ applications).
-An Argennon application essentially is a http server whose state is kept in the Argennon blockchain and
+An Argennon application essentially is an HTTP server whose state is kept in the Argennon blockchain and
 its logic is described using an Argennon Standard Representation (ASR).
 
 An Argennon Standard Representation (ASR) is a programming language for describing argennon applications, optimized
@@ -13,12 +13,12 @@ for the architecture and requirements of the Argennon platform.
 Argennon supports two standard representations: one is a high level text based language which needs
 costly compilation before being executed on a hardware machine. The other is a low level binary representation which
 usually can be executed, with minimal pre-processing, by a JIT compiler or an emulator. The high level
-language is intended for preserving high level information of applications logic to facilitate
+language is intended for preserving the high level information of applications logic to facilitate
 platform specific compiler optimization at host nodes. On the other hand, the low level language is designed for
 efficient execution of applications that are not frequently used.
 
 The state of an Argennon application is stored in byte addressable finite arrays of memory called
-\emph{heap chunks}. An application can have several heap chunks with different sizes, and can remove or
+\emph{heap chunks}. An application may have several heap chunks with different sizes, and can remove or
 resize its heap chunks or allocate new chunks. Every chunk belongs to exactly one application and can only be modified
 by its owner. In addition to heap chunks, every application also has an amount of non-persistent local memory for
 storing temporary data.
@@ -26,20 +26,20 @@ storing temporary data.
 
 \section{Execution Sessions}\label{sec:sessions}
 
-The Argennon Smart Contract Execution Environment can be seen as a machine for executing http requests, producing
-their http response and updating related heap chunks. The AscEE executes requests sequentially \footnote{Actually
+The Argennon Smart Contract Execution Environment can be seen as a machine for executing HTTP requests, producing
+their HTTP response and updating related heap chunks. The AscEE executes requests sequentially \footnote{Actually
 requests are executed in parallel but by performing data dependency analysis the result is guaranteed to be identical
 with sequential execution of requests.} and each request has a separate \emph{execution session}. Execution sessions
-are separate sessions of executing smart contract's code in order to fulfill \emph{external} http requests. An
+are separate sessions of executing smart contract's code in order to fulfill \emph{external} HTTP requests. An
 external request is a request that is not made by another Argennon application.
 
 The state and data of an execution session will be
 destroyed at the end of the session and only the state of heap chunks is preserved. If a session fails and does not
 complete normally, it will not have any effect on any heap chunks.
 
-During an execution session an application can make \emph{internal} http requests to other applications. Those
+During an execution session an application can make \emph{internal} HTTP requests to other applications. Those
 requests will not start a new execution session and will be executed within the current session. In AscEE making a
-http request to an application is similar to a function invocation. For that reason, we also refer to internal requests
+HTTP request to an application is similar to a function invocation. For that reason, we also refer to internal requests
 as application calls.
 
 The AscEE is designed based on \emph{optional decoupling principle}. When an application makes a request to another
@@ -227,7 +227,7 @@ chunk the value of \texttt{chunkSize} is always zero.
 
 Attachment of a request is a list of request identifiers of the current block that are "attached" to the request.
 That means, for validating that request a validator first needs to "inject" the digest of attached requests into the
-http request.
+HTTP request.
 
 The main usage of this feature is for fee payment. A request that wants to pay the fees for a number of requests
 declares those requests as its attachments. For paying fees the payer signs the digest of requests for which he
@@ -283,7 +283,7 @@ environment. Resource usage can be measured per session or per application call.
 The AscEE has two type of execution sessions: \emph{optimistic} and \emph{monitored}. Resource usage of an optimistic
 session is always measured per session and default pre-defined resource caps are used. On the other hand in a monitored
 session, some resources are measured per application call and some
-caps are determined dynamically by the external http request (i.e.\ transaction). An optimistic session must always
+caps are determined dynamically by the external HTTP request (i.e.\ transaction). An optimistic session must always
 complete normally, a monitored session is allowed to either complete normally or abruptly.
 
 Obviously resource monitoring is easier and more efficient for optimistic sessions. However, if
@@ -328,7 +328,7 @@ Different computational resources are measured and monitored during an AscEE ses
     \item \textbf{local memory}:
     any memory usage of an application that is not part of a heap chunk and is not part of another resource
     will be considered as local memory usage. Local memory is not persistent and when an application finishes serving a
-    request and returns the http response (i.e.\ the application call completes) its local memory is deleted.
+    request and returns the HTTP response (i.e.\ the application call completes) its local memory is deleted.
     This resource is measured in bytes.
 
     Optimistic sessions measure local memory usage per session and enforce a protocol-defined cap on the total amount of
