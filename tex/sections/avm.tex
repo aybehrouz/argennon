@@ -23,6 +23,16 @@ resize its heap chunks or allocate new chunks. Every chunk belongs to exactly on
 by its owner. In addition to heap chunks, every application also has an amount of non-persistent local memory for
 storing temporary data.
 
+The AscEE executes the requests contained in each block of the Argennon
+blockchain in a three-step procedure. The first step is the \emph{preprocessing step}. In this step, the required
+data structures for executing requests are constructed. This step is
+designed in a way that can be done fully in parallel for each request without any risks of data races. The second
+step is the \emph{Data Dependency Analysis (DDA) step}.
+In this step by analyzing data dependency between requests, the AscEE determines requests that can be run in parallel
+and requests that need to be run sequentially. This information is represented using an \emph{execution dag} data
+structure. In the final step, request are executed using this data structure and helper data structures built in the
+first step.
+
 
 \section{Execution Sessions}\label{sec:sessions}
 
@@ -374,5 +384,5 @@ behaviour for a smart contract, not only a set of method signatures. This enable
 of behaviour from a contract which complies with an Argennon standard.
 
 
-\section{Parallel Request Execution}\label{sec:concurrency}
+\section{Data Dependency Analysis}\label{sec:concurrency}
 \input{sections/concurrency}
