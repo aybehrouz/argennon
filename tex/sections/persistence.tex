@@ -3,7 +3,7 @@
 The Argennon Smart Contract Execution Environment has two persistent memory areas: \emph{code area}, and \emph{heap}.
 Code area stores the Argennon Standard Representation of
 applications\footnote{also it stores applications' constants.}, and heap stores heap chunks.
-Both of these data elements, ASRs and chunks, can be considered as continuous arrays of bytes.
+Both of these data elements, ASRs and heap chunks, can be considered as continuous arrays of bytes.
 Throughout this chapter, we shall call these data elements \emph{objects}.
 
 
@@ -32,7 +32,7 @@ has three dynamic cryptographic accumulators: \emph{staking} database, which sto
 the Argennon consensus protocol. \emph{code} database, which stores the AscEE code area, and \emph{heap} database,
 which stores the AscEE heap. The commitment of these three accumulators are included in every block of the Argennon
 blockchain. These accumulators, in the Argennon network, are hosted on special database nodes called Publicly
-Verifiable Data Base (PV-DB) servers.
+Verifiable Database (PV-DB) servers.
 We consider the following properties for a PV-DB:
 \begin{itemize}
     \item The PV-DB contains a mapping from a set of keys to a set of values.
