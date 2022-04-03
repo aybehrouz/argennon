@@ -15,12 +15,13 @@ representation:
 <application-id> ::= <decimal-prefix-code>
 <decimal-prefix-code> ::= <dec-num>"."<decimal-prefix-code> | <dec-num>
 \end{verbatim}
-where \texttt{<dec-num>} is a normal decimal number between $0$ and $255$.
-
-For example \texttt{21.255.37}, \texttt{0}, \texttt{11.6} and \texttt{2.0.0.0.0}, are valid application addresses.
+where \texttt{<dec-num>} is a normal decimal number between $0$ and $255$. For example \texttt{21.255.37},
+\texttt{0}, \texttt{11.6} and \texttt{2.0.0.0.0}, are valid application addresses.
 
 Argennon has two special smart contracts: the \emph{root smart contract}, also called the \emph{root application}, and
 the \emph{ARG smart contract}, which is also called the \emph{Argennon smart contract} or the \emph{ARG application}.
+
+Argennon application use HTTP as the application protocol and they are advised to have a RESTful API design.
 
 \subsection{The Root Application}\label{subsec:the-root-app}
 
@@ -79,40 +80,16 @@ ARG smart contract and no public keys are needed. An application can own an arbi
 
 
 \section{Transactions}\label{sec:transactions}
-\emph{subsection is outdated and needs updating!}
 
-Every Argennon transaction consists of two \texttt{i\_invoke\_dispatcher} instructions, the first instruction always
-transfers the proposed fee of the transaction in ARGs from a sender account to the fee sink accounts, and
-the second performs the requested operation. If the first instruction fails, the transaction will not be added to
-the Argennon blockchain.
-
-Users interact with AVM smart contracts using
-the second \texttt{i\_invoke\_dispatcher} instruction of a transaction.
-Transferring all assets, including ARG, is done by that instruction.
-
-The \texttt{i\_invoke\_dispatcher} instruction invokes the \texttt{dispatcher} method of a smart contract. Every AVM
-smart contract has a \texttt{dispatcher} method, and the Argennon protocol requires
-the \texttt{dispatcher} method to accept an HTTP request as its argument and
-return an HTTP response.
-
-As a result, every Argennon transaction contains two HTTP requests. Besides these HTTP requests, the
-transaction is also required to contain a resource declaration object, specifying the maximum amount of resources
-it needs for execution.
-
-\note{Argennon smart contracts use HTTP as the application protocol and they are advised to have a RESTful API design.}
+An Argennon transaction consist of an HTTP request made by a user, to an Argennon application and a resource
+declaration object. Transactions can only be
+issued by users and applications can not create transactions. An Argennon transaction is also called
+an \emph{external request}.
 
 \subsection{Resource Declaration}\label{subsec:resource-declaration}
-\emph{subsection is outdated and needs updating!}
 
-Every Argennon transaction is required to specify a cap for all the resources it needs. This
-includes memory, network and processor related resources. If during emulation, a transaction reaches one of its
-pre-declared resource caps, executing any AVM instruction which uses that resource, will result in an AVM exception.
-
-As we know, every Argennon transaction consists of two \texttt{i\_invoke\_dipatcher} instructions. The first
-instruction is always considered as a \emph{free} instruction and resources spent during its execution
-session will not be counted. Therefore, only the second instruction could fail due to exceeding resource limits.
-
-The Argennon protocol defines an execution cost for
+Every Argennon transaction needs to specify a maximum for
+The Argennon protocol requires every  an execution cost for
 every AVM instruction, reflecting the amount of resources its emulation needs. Every
 transaction is required to specify two maximum execution costs: \texttt{maxInternalCost}
 and \texttt{maxExternalCost}. The \emph{external} execution cost of a transaction is the \textbf{overall} cost of its

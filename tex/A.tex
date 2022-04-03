@@ -19,7 +19,6 @@
 \usepackage{amsmath}
 
 
-
 %\binoppenalty=99999
 %\relpenalty=99999
 \newcommand{\note}[1] {
@@ -29,13 +28,39 @@
     \end{tcolorbox}
 }
 
+\lstset{
+    language=Java,
+    morekeywords={main, initialize, constructor, external, virtual, Map, Account, signature, overrides, is, string},
+    basicstyle=\small\sffamily,
+    columns=fullflexible,
+%   keywordstyle=\bfseries,
+    breaklines=true,
+    showstringspaces=false,
+    mathescape
+}
+
 \title{Argennon: A Scalable Smart Contract Platform}
 \author{aybehrouz}
 \date{January 2021}
 
 
 \begin{document}
-    %\maketitle
+    \maketitle
+    \begin{abstract}
+        Argennon is a cloud based blockchain and smart
+        contract platform which tries to solve shortcomings of existing platforms. The Argennon blockchain uses a hybrid
+        proof of stake (POS) consensus protocol, which is based on participation of every Argennon user.
+
+        Thanks to the
+        cloud based design of the Argennon blockchain, transaction validation does not require costly computational
+        resources, and normal personal computers with limited hardware capabilities can actively participate in the
+        Argennon consensus protocol. This property makes Argennon a truly decentralized and democratic blockchain and
+        one of the most secure existing platforms.
+
+        By using cryptographic accumulators, the integrity of data on the Argennon cloud is guaranteed, and there
+        is no need for trusting cloud servers. At the same time, by using a smart clustering algorithm the network usage
+        and the overhead of the commitment scheme is kept manageable.
+    \end{abstract}
     \tableofcontents
 
 
@@ -43,16 +68,13 @@
     \input{sections/avm}
 
 
-    \chapter{The Argon Language}\label{ch:argon-lang}
-    \input{sections/argon}
-
-
-
     \chapter{Persistence Layer}\label{ch:persistance}
     \input{sections/persistence}
 
 
     \chapter{Networking Layer}\label{ch:networking}
+
+
     \section{Normal Mode}\label{sec:normal-mode}
     Unlike conventional blockchains, Argennon does not use a P2P network architecture. Instead, it uses a
     client-server topology, based on a permission-less list of ZK-EDB servers. ZK-EDB servers are a
@@ -65,7 +87,6 @@
 
 
     \chapter{The Argennon Blockchain}\label{ch:argennon-blockchain}
-    \input{sections/elements}
 
 
     \section{Blocks}\label{sec:blocks}
@@ -75,17 +96,23 @@
     \section{Consensus}\label{sec:consensus}
     \input{sections/consensus}
 
+    \input{sections/elements}
+
 
     \section{Incentive mechanism}\label{sec:incentive-mechanism}
     \input{sections/incentive}
 
 
-
-
     \chapter{Governance}\label{ch:governance}
+
+
     \section{ADAGs}\label{sec:adags}
     The Argennon Decentralized Autonomous Governance system (ADAGs)
     \note{not yet written...}
+
+
+    \chapter{The Argon Language}\label{ch:argon-lang}
+    \input{sections/argon}
 \end{document}
 
 
