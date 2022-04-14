@@ -4,8 +4,8 @@
 \section{Introduction}\label{sec:introduction}
 
 The Argennon\footnote{The classical pronunciation should be used:\textipa{/Ar"gen.non/}} Smart Contract Execution
-Environment (AscEE) is an abstract execution environment for executing Argennon smarts contracts (a.k.a\ applications).
-An Argennon application essentially is an HTTP server whose state is kept in the Argennon blockchain and
+Environment (AscEE) is an abstract execution environment for executing Argennon smarts contracts (a.k.a\ Argennon
+applications). An Argennon application essentially is an HTTP server whose state is kept in the Argennon blockchain and
 its logic is described using an Argennon Standard Representation (ASR).
 
 An Argennon Standard Representation (ASR) is a programming language for describing argennon applications, optimized
@@ -14,7 +14,7 @@ Argennon supports two standard representations: one is a high level text based l
 costly compilation before being executed on a hardware machine. The other is a low level binary representation which
 usually can be executed, with minimal pre-processing, by a JIT compiler or an emulator. The high level
 language is intended for preserving the high level information of applications logic to facilitate
-platform specific compiler optimization at host nodes. On the other hand, the low level language is designed for
+platform specific compiler optimization at host nodes. The low level language, is designed for
 efficient direct execution of applications that are not frequently used.
 
 The state of an Argennon application is stored in byte addressable finite arrays of memory called
@@ -25,12 +25,13 @@ storing temporary data.
 
 The AscEE executes the requests contained in each block of the Argennon
 blockchain in a three-step procedure. The first step is the \emph{preprocessing step}. In this step, the required
-data structures for executing requests are constructed. This step is
+data for executing requests are retrieved from the Argennon cloud and the helper data structures are constructed.
+This step is
 designed in a way that can be done fully in parallel for each request without any risks of data races. The second
 step is the \emph{Data Dependency Analysis (DDA) step}.
 In this step by analyzing data dependency between requests, the AscEE determines requests that can be run in parallel
-and requests that need to be run sequentially. This information is represented using an \emph{execution dag} and in
-the final step, requests are executed using this data structure.
+and requests that need to be run sequentially. This information is represented using an \emph{execution dag} data
+structure and in the final step, requests are executed using that data structure.
 
 
 \section{Execution Sessions}\label{sec:sessions}
