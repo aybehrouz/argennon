@@ -303,22 +303,23 @@ execution environment.
 
 Resource usage can be measured per session or per application call. Obviously per session measurement is
 easier and more efficient. However, when we measure resources per session if
-a session violates its resource caps, determining the point of failure requires precise and error-free resource
+a session violates its resource caps, determining the point of failure may require precise and error-free resource
 measurement. Note that for implementing optional decoupling principle, we need to determine the exact application call
 which has failed in a call chain. For example, assume that a session containing an application call
-violates a 2 milliseconds execution time cap. If the call happens exactly after 2 milliseconds
-in the caller's code, a small fluctuation in the execution time measurement can
-change the point of failure between the called and the main application. This can introduce nondeterministic
+violates a 2 milliseconds execution time cap. If in the caller's code, the call happens exactly after 2 milliseconds,
+a small fluctuation in the execution time measurement can
+change the point of failure between the called and the caller application. This can introduce nondeterministic
 behaviour which could make block validation impossible. That's why the AscEE sometimes uses per application call
 resource management. If we define the resource caps per application call and perform our measurements for each
-application call separately, by ensuring that caps are larger than the measurement error, errors in the
-measurements would not change the point of failure in the call chain anymore.
+application call separately, by using caps that are larger than the measurement error, errors in the
+measurements would not change the point of failure in the call chain.
 
 The AscEE has two type of execution sessions: \emph{optimistic} and \emph{monitored}. Resource usage of an optimistic
 session is always measured per session and default pre-defined resource caps are used. On the other hand, for a
 monitored session, resources that can not be measured precisely are measured per application call and their caps are
 determined per application call by the external HTTP request (i.e.\ transaction). An optimistic session must
-always complete normally, a monitored session is allowed to either complete normally or abruptly.
+always complete normally, a monitored session is allowed to either complete normally or abruptly. In Argennon, the
+type of execution session for each transaction is decided by the block proposer.
 
 Different computational resources are measured and monitored during an AscEE session:
 \begin{itemize}
@@ -378,8 +379,15 @@ Different computational resources are measured and monitored during an AscEE ses
     \item \textbf{number of entrance locks}:
 \end{itemize}
 
-The Argennon protocol allows an AscEE's implementation to have at max \%50 error in measuring execution time and at
-max \%25 error in measuring local memory usage. Other resources must be measured precisely.
+In Argennon, execution time and local memory are considered \emph{nondeterministic} resources. A nondeterministic
+resource is a resource that can not be measured precisely and its measurement always contains a random error.
+
+When a transaction fails due to violation of a limit for a nondeterministic resource, the proposer is
+required to exactly specify the application call in the session that violates that limit. When validators are
+executing a monitored session, for each application call, they enforce considerably larger limits for
+nondeterministic resources, only when the proposer has declared that an application call violates a limit the
+validators will enforce the actual value of the limit. This simple mechanism ensures that, with a very high
+probability, validators agree with the proposer.
 
 
 \section{The ArgC Language}\label{sec:the-argc-language}
