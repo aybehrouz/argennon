@@ -81,51 +81,23 @@ ARG smart contract and no public keys are needed. An application can own an arbi
 
 \section{Transactions}\label{sec:transactions}
 
-An Argennon transaction consist of an HTTP request made by a user, to an Argennon application and a resource
-declaration object. Transactions can only be
+An Argennon transaction consist of an HTTP request made by a user to an Argennon application, a resource
+declaration object and a list of signed messages. Transactions can only be
 issued by users and applications can not create transactions. An Argennon transaction is also called
 an \emph{external request}.
 
 \subsection{Resource Declaration}\label{subsec:resource-declaration}
 
-Every Argennon transaction needs to specify a maximum for
-The Argennon protocol requires every  an execution cost for
-every AVM instruction, reflecting the amount of resources its emulation needs. Every
-transaction is required to specify two maximum execution costs: \texttt{maxInternalCost}
-and \texttt{maxExternalCost}. The \emph{external} execution cost of a transaction is the \textbf{overall} cost of its
-\texttt{invoke\_dispatcher} and \texttt{invoke\_later} instructions,\footnote{By overall cost, we mean the execution
-cost needed for reaching the next instruction.}. The remaining execution cost will be considered as
-the \emph{internal} cost. If a transaction reaches one of its maximum execution costs, executing any instruction
-which has that type of cost, will throw an AVM exception.
-
-\note{When a transaction reaches its \texttt{maxExternalCost}, it can still execute
-its own code, while it can not call other smart contracts.
-This way the execution cost of a smart contract is completely decoupled from the
-smart contract it calls, and a malicious contract can not make its invoker certainly fail
-by using infinite loops.}
-
-Also, Argennon transactions are required to specify what heap or code area addresses they will access. This will
-enable validators to parallelize transaction validation as we will see in Section~\ref{sec:concurrency}. An instruction
-that tries to access a memory location that is not in the access list of the transaction, will throw an exception.
-Users could use off-chain \emph{execution oracles} to predict the list of memory locations their transactions need.
-
-An execution oracle is a full AVM emulator that keeps a full local copy of the AVM storage and can emulate AVM
-execution without accessing a ZK-EDB server. Execution oracles can be used for reporting useful information about
-Argennon transactions such as accessed AVM heap or code area locations, exact amount of execution cost,
-and so on.
-
 Every Argennon transaction is required to provide the following information as an upper bound for the
 resources it needs:
 
 \begin{itemize}
-    \item Maximum internal execution cost
-    \item Maximum external execution cost
-    \item A list of heap/code-area locations for reading
-    \item A list of heap locations for writing
-    \item A list of heap chunks it will deallocate (if any)
-    \item A list of methods it will delete (if any)
-    \item Number and size of heap chunks it will allocate (if any)
-    \item Number and size of method bytecodes it will allocate (if any)
+    \item Maximum AscEE clocks
+    \item The list of applications the request will call
+    \item The list of access blocks the request needs
+    \item \texttt{maxSize} for chunks it wants to expand
+    \item \texttt{minSize} for chunks it wants to shrink
+    \item A list of applications it will update (if any)
 \end{itemize}
 
 If a transaction tries to violate any of these predefined limitations, it will be considered failed, and the network
@@ -134,58 +106,23 @@ can receive the proposed fee of that transaction.
 \begin{lstlisting}[language=python, frame=TB, float, title=An Argennon transaction in YAML format,
     label={lst:txn-example}]
 ---
-fee: |
-    PUT /balances/0x73.0xa2?to=fee&amount=0.26&sig=5b73CbmwQNRC7fWUY15 HTTP/1.1
-call: |
-    POST bttp://dapp.argennon.net/54.189.21/proposals HTTP/1.1
+request: |
+    PATCH /balances/0x95ab HTTP/1.1
     Content-Type: application/json; charset=utf-8
-    Content-Length: 77
+    Content-Length: 46
 
-    {
-        "name": "Grant",
-        "recipient": "0x24.0x8f.0x29.0xa1",
-        "amount": 25000,
-        "sig"= "2a36Gtrw249wQCD70nWY49d"
-    }
+    {"to":0xaabc,"amount":1399,"sig":0}
+
+messages:
+   - issuer: 0x95ab000000000000
+     msg: {"to":0xaabc000000000000,"amount":1399,"forApp":0x100000000000000,"nonce":11}
+     sig: LNUC49Lhyz702uszzNcfaU3BhPIbdaSgzqDUKzbJzLPTlFS2J9GzHl-cDKb
+
 caps:
-    internal: 2500000 # maximum number of AVM execution clocks
-    external: 1000000
+    maxClocks: 150 # maximum number of AVM execution clocks
+    apps: [1,124.16]
     read: [(2654,3),(15642,0),(15642,1),(15642,3)]
     write: [(15642,0),(20154,0),(20154,1)]
 \end{lstlisting}
 
-\subsection{Authorization}\label{subsec:txn-auth}
-
-Argennon transactions do not have a sender. The authorization of the requested operation is always done by checking the
-digital signatures that are provided as a part of the HTTP request to the \texttt{dispatcher} method.
-
-While every block of the Argennon blockchain stores the commitment of the transaction list, Argennon does not enforce
-storage of the transaction history. To be able to detect replay attacks, we require
-every signature that a user creates to have a nonce. This nonce consists of the issuance round of the signature
-and a sequence number: \texttt{(issuance,\ sequence)}. When a user creates more than one signature in a round, he
-must sequence his signatures starting from 0 (i.e.~the sequence number restarts from 0 in every round). We define
-a maximum lifetime for signatures, so a signature is invalid if \texttt{currentRound - issuance > maxLifeTime} or
-if a signature of the same user with a bigger or equal nonce is already used
-(i.e.~is recorded in the blockchain). A nonce is bigger than another nonce if it has an older issuance. If two
-nonces have an equal issuance, the nonce with the bigger sequence number will be considered bigger.
-
-To be able to detect invalid signatures, we keep the maximum nonce of used digital signatures per user. This information
-is stored in the ARG smart contract and when the difference between \texttt{issuance} component of the nonce and
-the current round becomes bigger than the maximum allowed lifetime of a signature, it can be safely
-deleted.\footnote{in some conventional
-blockchains, the nonce data can never be deleted, even if the account has zero balance and is no longer used.}
-
-\subsection{Transaction Fee}\label{subsec:fee}
-
-Every Argennon transaction is required to pay two types of fees: execution fee, which is paid for executing the
-transaction, and storage fee, which is paid for the amount of storage the transaction allocates.
-
-A transaction pays
-its fees by providing digital signatures of one or more accounts, authorizing the transfer of the amount of fee in
-ARGs from one or more accounts to the fee sink accounts. This fee is transferred by the first
-\texttt{i\_invoke\_dispatcher} instruction of the transaction.
-
-\note{An Argennon transaction always pays all of its proposed fee, no matter how much of its predefined resources
-were not used during the final emulation. This will incentivize users to report the resource usage of their
-transactions more accurately.}
 

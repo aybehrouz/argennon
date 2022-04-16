@@ -343,7 +343,8 @@ Different computational resources are measured and monitored during an AscEE ses
 
     Each application call has some amount of \texttt{externalClocks}. When an application makes a request to another
     application it has to \emph{forward} a portion of its \textbf{external} clocks to the called application. This
-    amount will determine the value of \texttt{maxClocks} for the called application.
+    amount will determine the value of \texttt{maxClocks} for the called application, and is subtracted from the value
+    of \texttt{externalClocks} of the caller.
 
     The amount of external clocks of an application
     call is defined to be \(2/3\) of its \texttt{maxClocks}. As a result, the total number of clocks of a monitored

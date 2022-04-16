@@ -1,5 +1,25 @@
 %! Author = aybehrouz
 
+\subsection{Fees}\label{subsec:fees}
+
+The Argennon protocol does not explicitly define any fees for normal transactions. Only for high priority
+transactions a fixed fee is determined by the governance system (See Section ...). Because the protection of the
+Argennon network against spams and DOS attacks is mostly done by the delegates, they are also responsible for
+collecting transaction fees. A good fee collection policy could considerably increase the chance of delegates for
+being reelected in the
+next round, therefore they are incentivized to use creative and effective methods\footnote{For example, they may
+allow a limited number of free transactions per month for every account.}.
+
+By the concept of request attachments, the Argennon protocol provides a method
+for trust-less fee payment. A user can simply define the transaction that he wants to pay fees for, as the attachment
+of the fee payment transaction. That way the fee payment transaction will be performed only if the attached
+transaction is also included in the same block. However, it should be noted that trust-less fee payment is not
+enforced by the protocol.
+
+While transaction fee is not enforced by the Argennon protocol another type of fee is mandatory: the
+\emph{storage fee}. The Argennon protocol requires that a storage fee is paid for every block of the Argennon
+blockchain. This fee must be paid by the delegates, and its amount depends on the storage overhead that the new block
+is imposing on the Argennon state. The exact amount of this fee is determined by the ADAGs.
 
 \subsection{Certificate Rewards}\label{subsec:rewards}
 
@@ -27,34 +47,34 @@ Only behaviours will be punished that can not happen due to a mistake or an atta
     penalized because there are circumstances that a honest user could mistakenly do that.}
 \end{itemize}
 
-\subsection{Incentives for ZK-EDB Servers}\label{subsec:zk-edb-servers}
+\subsection{Incentives for PV-DB Servers}\label{subsec:PV-DB-servers}
 
-The incentive mechanism for ZK-EDB servers should have the following properties:
+The incentive mechanism for PV-DB servers should have the following properties:
 
 \begin{itemize}
     \item It incentivizes storing all storage pages and not only those pages that are used more frequently.
-    \item It incentivizes ZK-EDB servers to actively provide the required storage pages for validators.
-    \item Making more accounts will not provide any advantage for a ZK-EDB server.
+    \item It incentivizes PV-DB servers to actively provide the required storage pages for validators.
+    \item Making more accounts will not provide any advantage for a PV-DB server.
 \end{itemize}
 
-For our incentive mechanism, we require that every time a validator receives a storage page from a ZK-EDB, after
-validating the data, he give a receipt to the ZK-EDB server. In this receipt the validator signs the
+For our incentive mechanism, we require that every time a validator receives a storage page from a PV-DB, after
+validating the data, he give a receipt to the PV-DB server. In this receipt the validator signs the
 following information:
 
 \begin{itemize}
-    \item \texttt{ownerAddr}: the account address of the ZK-EDB server.
+    \item \texttt{ownerAddr}: the account address of the PV-DB server.
     \item \texttt{receivedPageID}: the ID of the received page.
     \item \texttt{round}: the current block number.
 \end{itemize}
 
-\note{In a round, an honest validator never gives a receipt for an identical page to two different ZK-EDB servers.}
+\note{In a round, an honest validator never gives a receipt for an identical page to two different PV-DB servers.}
 
-To incentivize ZK-EDB servers, a lottery will be held every round,\footnote{A round is the time interval between
+To incentivize PV-DB servers, a lottery will be held every round,\footnote{A round is the time interval between
 two consecutive blocks.} and a predefined amount of ARGs from
 \texttt{dbFeeSink} account will be distributed between winners as a prize. This prize will be divided equally
 between all \emph{winning tickets} of the lottery.
 
-\note{One ZK-EDB server could own multiple winning tickets in a round.}
+\note{One PV-DB server could own multiple winning tickets in a round.}
 
 To run this lottery, every round, based on the current block seed, a collection of \emph{valid} receipts will be
 selected randomly as the \emph{winning receipts} of the round. A receipt is \emph{valid} in round $r$ if:
@@ -63,7 +83,7 @@ selected randomly as the \emph{winning receipts} of the round. A receipt is \emp
     \item The signer was a member of the validators' committee of the block $r - 1$ and signed the block certificate.
     \item The page in the receipt was needed for validating the \textbf{previous} block.
     \item The receipt round number is $r - 1$.
-    \item The signer did not sign a receipt for the same storage page for two different ZK-EDB servers in
+    \item The signer did not sign a receipt for the same storage page for two different PV-DB servers in
     the previous round.
 \end{itemize}
 For selecting the winning receipts we could use a random generator:
@@ -81,10 +101,10 @@ IF random(seed|validatorPK|receivedPageID) < winProbability THEN
 \end{itemize}
 
 Also, based on the current block seed, a random storage page is
-selected as the challenge of the round. A ZK-EDB server that owns a winning receipt needs to broadcast a \emph{winning
+selected as the challenge of the round. A PV-DB server that owns a winning receipt needs to broadcast a \emph{winning
 ticket} to claim his prize. The winning ticket consists of a winning receipt and a \emph{solution} to the round
 challenge. Solving a round challenge requires the content of the storage page which was selected as the round
-challenge. This will encourage ZK-EDB servers to store all storage pages.
+challenge. This will encourage PV-DB servers to store all storage pages.
 
 A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge
 page combined with the server account address:
