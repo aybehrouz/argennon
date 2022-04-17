@@ -5,32 +5,34 @@
 The Argennon protocol does not explicitly define any fees for normal transactions. Only for high priority
 transactions a fixed fee is determined by the governance system (See Section ...). Because the protection of the
 Argennon network against spams and DOS attacks is mostly done by the delegates, they are also responsible for
-collecting transaction fees. A good fee collection policy could considerably increase the chance of delegates for
-being reelected in the
-next round, therefore they are incentivized to use creative and effective methods\footnote{For example, they may
+determining and collecting transaction fees. A good fee collection policy could considerably increase the chance of
+delegates for being reelected in the next round, therefore they are incentivized to use creative and effective
+methods\footnote{For example, they may
 allow a limited number of free transactions per month for every account.}.
 
 By the concept of request attachments, the Argennon protocol provides a method
-for trust-less fee payment. A user can simply define the transaction that he wants to pay fees for, as the attachment
+for trust-less fee payment. When a user does not want to use off-chain fee payment methods, he can simply define his
+transaction as the attachment
 of the fee payment transaction. That way the fee payment transaction will be performed only if the attached
-transaction is also included in the same block. However, it should be noted that trust-less fee payment is not
-enforced by the protocol.
+transaction is also included in the same block.
 
-While transaction fee is not enforced by the Argennon protocol another type of fee is mandatory: the
-\emph{storage fee}. The Argennon protocol requires that a storage fee is paid for every block of the Argennon
-blockchain. This fee must be paid by the delegates, and its amount depends on the storage overhead that the new block
-is imposing on the Argennon state. The exact amount of this fee is determined by the ADAGs.
+While transaction fee is not enforced by the Argennon protocol, there are other types of fee that are mandatory: the
+\emph{database fee} and the \emph{block fee}. Both of these fees are required to be paid for every block of the Argennon
+blockchain and are paid by the delegates. The block fee is a constant fee that is paid for each new block of the
+blockchain and its amount is
+determined by the ADAGs. The database fee depends on the data access and storage overhead that a new block
+is imposing on the Argennon storage cloud. The amount of this fee is determined by the ADAGs, and is collected inside
+a special account: the \texttt{dbFeeSink}.
 
 \subsection{Certificate Rewards}\label{subsec:rewards}
 
-When the certificate of a committee of validators is included in a block, the signers of that certificate and the
-delegates will be rewarded. Every validator will be rewarded equally. The delegates will be rewarded
-proportional to the total stake of the signers of the certificate and their reward increases if the
-certificate has more signers.
+The validators who sign the certificate of a block will receive the block fee paid for that block. Every validator
+will be rewarded
+proportional to his stake (i.e voting power). As we mentioned before the block fee is a constant fee which the
+delegates pay for each block.
 
 Rewards will not be distributed instantly, instead they will be distributed at the end of the staking period.
-This will facilitate efficient implementations which avoid frequent updates in the AVM storage.
-Rewards of every staking period depends on the amount of fees that are collected during that period.
+This will facilitate efficient implementations which avoid frequent updates in the Argennon storage.
 
 \subsection{Penalties}\label{subsec:penalties}
 
