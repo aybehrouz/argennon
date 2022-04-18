@@ -6,14 +6,15 @@ The Argennon protocol does not explicitly define any fees for normal transaction
 transactions a fixed fee is determined by the governance system (See Section ...). Because the protection of the
 Argennon network against spams and DOS attacks is mostly done by the delegates, they are also responsible for
 determining and collecting transaction fees. A good fee collection policy could considerably increase the chance of
-delegates for being reelected in the next round, therefore they are incentivized to use creative and effective
+delegates for being reelected in the next terms, therefore they are incentivized to use creative and effective
 methods\footnote{For example, they may
 allow a limited number of free transactions per month for every account.}.
 
-By the concept of request attachments, the Argennon protocol provides a method
-for trust-less fee payment. When a user does not want to use off-chain fee payment methods, he can simply define his
-transaction as the attachment
-of the fee payment transaction. That way the fee payment transaction will be performed only if the attached
+In Argennon fee payment can be done off-chain or on-chain. Off-chain fee payment is more efficient and flexible but
+requires some level of trust in the delegates. For trust-less fee payment, the Argennon protocol provides the
+concept of request attachments (See Section~\ref{sec:attachments}).
+When a user does not want to use off-chain fee payment methods, he can simply define his transaction as the attachment
+of the fee payment transaction. That way, the fee payment transaction will be performed only if the attached
 transaction is also included in the same block.
 
 While transaction fee is not enforced by the Argennon protocol, there are other types of fee that are mandatory: the
@@ -21,7 +22,7 @@ While transaction fee is not enforced by the Argennon protocol, there are other 
 blockchain and are paid by the delegates. The block fee is a constant fee that is paid for each new block of the
 blockchain and its amount is
 determined by the ADAGs. The database fee depends on the data access and storage overhead that a new block
-is imposing on the Argennon storage cloud. The amount of this fee is determined by the ADAGs, and is collected inside
+is imposing on the Argennon storage cloud. The amount of this fee is determined by the ADAGs, and is collected in
 a special account: the \texttt{dbFeeSink}.
 
 \subsection{Certificate Rewards}\label{subsec:rewards}
@@ -33,6 +34,11 @@ delegates pay for each block.
 
 Rewards will not be distributed instantly, instead they will be distributed at the end of the staking period.
 This will facilitate efficient implementations which avoid frequent updates in the Argennon storage.
+
+As long as ARG is allowed to be minted and its cap is not reached, the delegates will receive a reward at the
+\textbf{end} of their election term. This reward will consist of newly minted ARGs, and its amount will be
+determined by the ADAGs. In addition, for each block certificate that is added to the Argennon blockchain some amount
+of ARGs will be minted and added to the \texttt{dbFeeSink} account.
 
 \subsection{Penalties}\label{subsec:penalties}
 
