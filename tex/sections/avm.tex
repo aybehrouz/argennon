@@ -317,8 +317,19 @@ measurements would not change the point of failure in the call chain.
 The AscEE has two type of execution sessions: \emph{optimistic} and \emph{monitored}. Resource usage of an optimistic
 session is always measured per session and default pre-defined resource caps are used. On the other hand, for a
 monitored session, resources that can not be measured precisely are measured per application call and their caps are
-determined per application call by the external HTTP request (i.e.\ transaction). In Argennon, the
-type of execution session for each transaction is decided by the block proposer.
+determined per application call by the external HTTP request (i.e.\ transaction). The block proposer decides the
+type of the execution session for each transaction.
+
+In most consensus protocols, we can assume that the block proposer has enough incentive to filter out transactions
+that spam run-time resources. Here by a run-time resource, we refer to a resource that at run-time, a limited amount
+of it is available, but its surplus can not be stored for later use. Execution time and local memory are
+examples of a run-time resource but permanent storage is not a run-time resource.
+
+If a proposed block contains many transactions which need a lot of run-time resources, validators would not
+be able to validate all transactions in a timely manner. Consequently, they may decide to reject the block or if they
+spend enough resources, the confirmation of that block could take more time than usual. Longer block time is not
+favoured by block proposers, because it means less throughput of the system which usually means less overall rewards
+for them. In Argennon the management of run-time resources, is left to the block proposer.
 
 Different computational resources are measured and monitored during an AscEE session:
 \begin{itemize}
