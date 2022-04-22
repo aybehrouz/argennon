@@ -10,8 +10,8 @@ its logic is described using an Argennon Standard Representation (ASR).
 
 An Argennon Standard Representation (ASR) is a programming language for describing argennon applications, optimized
 for the architecture and requirements of the Argennon platform.
-Argennon supports two standard representations: one is a high level text based language which needs
-costly compilation before being executed on a hardware machine. The other is a low level binary representation which
+Argennon supports two standard representations. One representation is a high level text based language which needs
+costly compilation before being executed on a hardware machine. The other, is a low level binary representation which
 usually can be executed, with minimal pre-processing, by a JIT compiler or an emulator. The high level
 language is intended for preserving the high level information of applications logic to facilitate
 platform specific compiler optimization at host nodes. The low level language, on the oder hand, is designed for
@@ -27,7 +27,7 @@ The AscEE executes the requests contained in each block of the Argennon
 blockchain in a three-step procedure. The first step is the \emph{preprocessing step}. In this step, the required
 data for executing requests are retrieved from the Argennon cloud and the helper data structures are constructed.
 This step is
-designed in a way that can be done fully in parallel for each request without any risks of data races. The second
+designed in a way that can be done fully in parallel for each request without any risk of data races. The second
 step is the \emph{Data Dependency Analysis (DDA) step}.
 In this step by analyzing data dependency between requests, the AscEE determines requests that can be run in parallel
 and requests that need to be run sequentially. This information is represented using an \emph{execution dag} data
@@ -304,15 +304,16 @@ execution environment.
 Resource usage can be measured per session or per application call. Obviously per session measurement is
 easier and more efficient. However, when we measure resources per session if
 a session violates its resource caps, determining the point of failure may require precise and error-free resource
-measurement. Note that for implementing optional decoupling principle in Argennon, we need to determine the exact
-application call which has failed in a call chain. For example, assume that a session containing an application call
+measurement. For example, assume that a session containing an application call
 violates a 2 milliseconds execution time cap. If in the caller's code, the call happens exactly after 2 milliseconds,
 a small fluctuation in the execution time measurement can
-change the point of failure between the called and the caller application. This can introduce nondeterministic
+change the point of failure between the called and the caller application. Note that for implementing optional
+decoupling principle in Argennon, we need to determine the
+exact application call which has failed in a call chain, and this fluctuation introduces a nondeterministic
 behaviour which could make block validation impossible. That's why the AscEE sometimes uses per application call
-resource management. If we define the resource caps per application call and perform our measurements for each
-application call separately, by using caps that are larger than the measurement error, errors in the
-measurements would not change the point of failure in the call chain.
+resource management. If we define the resource caps per application call and
+perform our measurements for each application call separately, by using caps that are larger than the measurement
+error, errors in the measurements would not change the point of failure in the call chain.
 
 The AscEE has two type of execution sessions: \emph{optimistic} and \emph{monitored}. Resource usage of an optimistic
 session is always measured per session and default pre-defined resource caps are used. On the other hand, for a
@@ -327,9 +328,9 @@ examples of a run-time resource but permanent storage is not a run-time resource
 
 If a proposed block contains many transactions which need a lot of run-time resources, validators would not
 be able to validate all transactions in a timely manner. Consequently, they may decide to reject the block or if they
-spend enough resources, the confirmation of that block could take more time than usual. Longer block time is not
+spend enough resources, the confirmation of that block could take more than usual time. Longer block time is not
 favoured by block proposers, because it means less throughput of the system which usually means less overall rewards
-for them. In Argennon the management of run-time resources, is left to the block proposer.
+for them. In the Argennon protocol the management of run-time resources, is left to the block proposer.
 
 Different computational resources are measured and monitored during an AscEE session:
 \begin{itemize}
@@ -393,13 +394,13 @@ Different computational resources are measured and monitored during an AscEE ses
 In Argennon, execution time and local memory are considered \emph{nondeterministic} resources. A nondeterministic
 resource is a resource that can not be measured precisely and its measurement always contains a random error.
 Optimistic sessions are not allowed to fail because of violating nondeterministic resource limits. As a result, the
-block proposer must always choose a monitored session for a transaction that violates a nondeterministic resource cap
-and is included in his block.
+block proposer must always choose a monitored session for a transaction that is included in his block and violates a
+nondeterministic resource cap.
 
 When a transaction fails due to violation of a limit for a nondeterministic resource, the proposer is
 required to exactly specify the application call in the session that violates that limit. When validators are
 executing a monitored session, for each application call, they enforce considerably larger limits for
-nondeterministic resources, only when the proposer has declared that an application call violates a limit the
+nondeterministic resources, only when the proposer has declared that an application call violates a limit, the
 validators will enforce the actual value of the limit. This simple mechanism ensures that, with a very high
 probability, validators agree with the proposer.
 
