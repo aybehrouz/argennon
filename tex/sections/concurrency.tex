@@ -4,15 +4,15 @@
 \subsection{Memory Dependency Graph}\label{subsec:memory-dependency-graph}
 
 Every block of the Argennon blockchain contains a list of transactions. This list is an ordered list and the
-effect of its contained transactions must be applied to the AVM state sequentially as they appear in the ordered
+effect of its contained transactions must be applied to the AscEE state sequentially as they appear in the ordered
 list. This ordering is solely chosen by the block proposer, and users should not have any assumptions about
 the ordering of transactions in a block.
 
 The fact that block transactions constitute a sequential list, does not mean they can not be executed and applied
-to the AVM state concurrently. Many transactions are actually independent and the order of their execution does not
+to the AscEE state concurrently. Many transactions are actually independent and the order of their execution does not
 matter. These transactions can be safely validated in parallel by validators.
 
-A transaction can change the AVM state by modifying either the code area or the AVM heap. In Argennon, all
+A transaction can change the AscEE state by modifying either the code area or the AscEE heap. In Argennon, all
 transactions declare the list of memory locations they want to read or write. This will enable us to determine the
 independent sets of transactions which can be executed in parallel. To do so, we define the \emph{memory dependency
 graph} \(G_d\) as follows:
@@ -38,7 +38,7 @@ graph \(G_e = (V_e,E_e)\) which has the \emph{execution invariance} property:
 \begin{itemize}
     \item Every vertex in \(V_e\) corresponds to a transaction in \(T\) and vice versa.
     \item Executing the transactions of \(T\) in any order that \emph{respects} \(G_e\) will result in
-    the same AVM state.
+    the same AscEE state.
     \begin{itemize}
         \item An ordering of transactions of \(T\) respects \(G_e\) if for every directed edge \((u,v) \in E_e\)
         the transaction \(u\) comes before the transaction \(v\) in the ordering.
@@ -46,7 +46,7 @@ graph \(G_e = (V_e,E_e)\) which has the \emph{execution invariance} property:
 \end{itemize}
 
 Having the execution DAG of a set of transactions, using Algorithm~\ref{alg:exec_dag}, we can apply the transaction
-set to the AVM state concurrently, using multiple processor, while we can be sure that the resulted AVM state will
+set to the AscEE state concurrently, using multiple processor, while we can be sure that the resulted AscEE state will
 always be the same no matter how many processor we have used.
 
 %##\includegraphics[width=17cm]{../img/Alg1s.png}
@@ -55,7 +55,7 @@ always be the same no matter how many processor we have used.
     \SetKwData{Ready}{$R_e$}\SetKwData{V}{$v_f$}\SetKwData{Graph}{$G_e$}\SetKwData{Vertices}{$V$}\SetKwData
     {Txns}{$T$}
     \KwData{The execution dag $\Graph = (\Vertices,E)$ of transaction set \Txns}
-    \KwResult{The state of the AVM after applying \Txns with any ordering respecting \Graph}
+    \KwResult{The state after applying \Txns with any ordering respecting \Graph}
     \BlankLine
     \Ready $\gets$ the set of all vertices of \Vertices with in degree 0\;
     \While{$\Vertices \neq \varnothing$}
@@ -121,7 +121,7 @@ to find a good execution DAG for transactions.
 When two transactions are dependant and they are connected with an edge \((u,v)\) in the execution DAG,
 the transaction \(u\) needs to be run before the transaction \(v\). However, if \(v\) does not read any
 memory locations that \(u\) modifies, we can run \(u\) and \(v\) in parallel. We just need to make sure
-\(u\) does not see any changes \(v\) is making in AVM memory. This can be done by appropriate versioning
+\(u\) does not see any changes \(v\) is making in AscEE memory. This can be done by appropriate versioning
 of the memory locations which is shared between \(u\) and \(v\). We call this method \emph{memory spooling}.
 After enabling memory spooling between two transactions the edge connecting them can be safely removed from the
 execution DAG\@.
@@ -195,5 +195,5 @@ It should be noted that in a blockchain application we don't have concurrent thr
 atomic functions. For usage in a smart contract, the atomic functions of this pseudocode can be implemented like
 normal functions.
 
-Concurrent counter data structure is a part of the AVM standard library, and any smart contract can use this data
+Concurrent counter data structure is a part of the ArgC standard library, and any smart contract can use this data
 structure for storing the balance record of highly active accounts.
