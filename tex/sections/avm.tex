@@ -174,53 +174,26 @@ data structure\footnote{also called a map.}.
 Since the \texttt{chunkID} is a prefix code, any application has its own identifier space, and an application
 can easily find unique identifiers for its chunks.
 
-Every heap chunk has a size: \texttt{chunkSize} and a size upper bound: \texttt{sizeUpperBound}. The value of
-\texttt{chunkSize} can be determined uniquely at
-the start of
-every execution session, and it may be updated by the owner application during the session like a normal memory
-location. On the other hand,
-the value of \texttt{sizeUpperBound} is constant for every block of the Argennon blockchain and is proposed by the block
-proposer. This value indicates the upper bound of \texttt{chunkSize} for a specific chunk during the execution of all
-requests of a block, and it can be used by validators for memory allocation of chunks during block validation.
-
-The value of \texttt{chunkSize} at the end of the execution session will determine if a memory location at an
-offset is persistent or not: Offsets lower than the chunk size are persistent, and higher offsets are not.
-Non-persistent locations will be re-initialized with zero at the start of every execution session.
-
-The address space of a chunk starts from zero and only offsets lower than \texttt{sizeUpperBound} are valid. Trying to
-access any offset higher than this value will result in a revert for the application.
-
-\subsection{Access Blocks}\label{subsec:access-blocks}
-
-Memory locations inside a chunk can only be accessed through access blocks. An access block is an access interval
-defined on a chunk. It has an offset and a size and determines the accessible memory locations inside the chunk.
-Multiple access blocks can be defined on a single chunk, but they must be non overlapping.
-Access blocks are byte addressable and can have different access types:
-
-\begin{itemize}
-    \item \texttt{check\_only}: only allows check operations. These operations query the persistence
-    status of a memory location.
-    \item \texttt{read\_only}: only allows read and check operations.
-    \item \texttt{writable}: allows reading and writing.
-    \item \texttt{additive}: only allows additive operations. These operations are different types of mathematical
-    addition without any overflow checking. Note that the content of these access blocks cannot be read.
-\end{itemize}
-
-Chunks and access blocks have different purposes. Chunks are intended for simplifying proof checking of the data
-stored in the Argennon cloud\footnote{Note that
-the Argennon cloud uses cryptographic accumulators for preserving data integrity.} and access blocks are
-required for better parallelization of the request execution. An application should put the data needed for
-validating a block in the same chunk and the data needed in a single execution session in the same access block.
-
 \subsection{Chunk Resizing}\label{subsec:ch-resize}
 
+At the start of executing requests of a block, a validator can consider two values for every
+heap chunk, the size: \texttt{chunkSize} and a size upper bound: \texttt{sizeUpperBound}. The value of
+\texttt{chunkSize} can be determined uniquely at the start of
+every execution session, and it may be updated during the session by the owner application. On the other hand,
+the value of \texttt{sizeUpperBound} is determined and fixed for each block and is proposed by the block
+proposer. This value indicates the upper bound of \texttt{chunkSize} during the execution of
+requests of the block, and it can be used by the validator for safe memory allocation.
 
-The value of \texttt{chunkSize} can be modified during an execution session. However, the new size values can only be
+The value of \texttt{chunkSize}, can be modified during an execution session. However, the new size values can only be
 increasing or decreasing. More precisely, if a request declares that it wants to expand (shrink) a chunk, it can only
 increase (decrease) the value of \texttt{chunkSize} and any specified value during the execution
 session, needs to be greater (smaller) than the previous value of the chunk's size. Any request that wants to expand
 (shrink) a chunk needs to specify a max size (min size). The value of \texttt{chunkSize} can not be set higher
 (lower) than this value.
+
+The value of \texttt{chunkSize} at the end of an execution session will determine if a memory location at an
+offset is persistent or not: Offsets lower than the chunk size are persistent, and higher offsets are not.
+Non-persistent locations will be re-initialized with zero at the start of every execution session.
 
 Usually an application should not have any assumption about the content of memory locations that are outside the chunk.
 While these locations are zero initialized at the start of every execution session, it should be noted that multiple
@@ -235,22 +208,48 @@ preprocessing phase without actually executing requests.
 
 While an application can use \texttt{chunkSize} to determine if an offset is persistent or not, that is not
 considered a good practice. Reading \texttt{chunkSize} decreases transaction parallelization, and should be avoided.
-Instead, applications should use a built-in AscEE's function for checking the persistence status of memory addresses.
+Instead, applications should use a built-in AscEE function for checking the persistence status of memory addresses.
 
 An application can load any chunk with a valid prefix identifier even if that chunk does not exist. For a non-existent
 chunk the value of \texttt{chunkSize} is always zero.
+
+The address space of a chunk starts from zero and only offsets lower than \texttt{sizeUpperBound} are valid. Trying to
+access any offset higher than this value will always result in a revert for the application.
+
+\subsection{Access Blocks}\label{subsec:access-blocks}
+
+Memory locations inside a chunk can only be accessed through access blocks. An access block is an access interval
+defined on a chunk, which determines the accessible memory locations inside the chunk. Each access block has an offset
+and a size. Multiple access blocks can be defined on a single chunk, but they must be non overlapping.
+Access blocks are byte addressable and may have different access types:
+
+\begin{itemize}
+    \item \texttt{check\_only}: only allows check operations. These operations query the persistence
+    status of a memory location.
+    \item \texttt{read\_only}: only allows read and check operations.
+    \item \texttt{writable}: allows reading and writing.
+    \item \texttt{additive}: only allows additive operations. These operations are addition-like operations without
+    any overflow checking. These operations must be associative and commutative. Note that the content of
+    these access blocks cannot be read.
+\end{itemize}
+
+Chunks and access blocks have different purposes. Chunks are intended for simplifying proof checking of the data
+stored in the Argennon cloud\footnote{Note that
+the Argennon cloud uses cryptographic accumulators for preserving data integrity.} and access blocks are
+required for better parallelization of the request execution. An application should put the data needed for
+validating a single block in the same chunk and the data needed in a single execution session in the same access block.
 
 
 \section{Request Attachments}\label{sec:attachments}
 
 The attachment of a request is a list of request identifiers of the current block that are ``attached'' to the request.
-That means, for validating that request a validator first needs to ``inject'' the digest of attached requests into the
-HTTP request. By doing so, the called application will have access to the digest of attachments in a secure way.
+That means, for validating the request a validator first needs to ``inject'' the digest of attached requests into the
+HTTP request text. By doing so, the called application will have access to the digest of attachments in a secure way.
 
 The main usage of this feature is for fee payment. A request that wants to pay the fees for a number of requests,
 declares those requests as its attachments. For paying fees the payer signs the digest of requests for which he
 wants to pay fees. After injecting the digest of those request by validators, that signature can be validated
-correctly and securely by the called application.
+correctly and securely by the application that handles fee payment.
 
 
 \section{Authorizing Operations}\label{sec:authorizing-operations}
@@ -264,7 +263,7 @@ applications for authorizing operations. These messages act exactly like digital
 ensure that they are issued by specific accounts. The only difference is that the process of message authentication
 is performed by the AscEE internally and is not performed by the application. For accounts, the AscEE uses digital
 signatures to authenticate messages. Signatures for each request can be validated in parallel during the
-preprocessing phase of the request execution, and any type of
+preprocessing step of the block validation, and any type of
 cryptographic signature scheme can be used. For example, we could use BLS aggregate signature to authenticate all
 messages of a block of the blockchain in bulk.
 
