@@ -44,7 +44,7 @@ of ARGs will be minted and added to the \texttt{dbFeeSink} account.
 
 If an account behaves maliciously, and that behaviour could not have happened due to a mistake, by providing a proof
 in a block, the account will be disabled forever in the ARG smart contract. Disabling an account in the
-ARG smart contract will prevent that account from signing any valid signature in the future.
+ARG smart contract will prevent that account from signing any valid signatures in the future.
 
 Only behaviours will be punished that can not happen due to a mistake or an attack. These behaviours include:
 \begin{itemize}
@@ -52,7 +52,7 @@ Only behaviours will be punished that can not happen due to a mistake or an atta
     \item Signing a certificate for two different blocks at the same height if none of them
     is a fork block or a seal block.\footnote{Signing
     a fork block and a normal block at the same height usually is a malicious behaviour. However, it will not be
-    penalized because there are circumstances that a honest user could mistakenly do that.}
+    penalized because there are circumstances that an honest user could mistakenly do that.}
 \end{itemize}
 
 \subsection{Incentives for PV-DB Servers}\label{subsec:PV-DB-servers}
@@ -66,7 +66,7 @@ The incentive mechanism for PV-DB servers should have the following properties:
 \end{itemize}
 
 For our incentive mechanism, we require that every time a validator receives a storage page from a PV-DB, after
-validating the data, he give a receipt to the PV-DB server. In this receipt the validator signs the
+validating the data, he gives a receipt to the PV-DB server. In this receipt the validator signs the
 following information:
 
 \begin{itemize}
@@ -79,7 +79,7 @@ following information:
 
 To incentivize PV-DB servers, a lottery will be held every round,\footnote{A round is the time interval between
 two consecutive blocks.} and a predefined amount of ARGs from
-\texttt{dbFeeSink} account will be distributed between winners as a prize. This prize will be divided equally
+\texttt{dbFeeSink} account will be distributed between the winners as a prize. This prize will be divided equally
 between all \emph{winning tickets} of the lottery.
 
 \note{One PV-DB server could own multiple winning tickets in a round.}

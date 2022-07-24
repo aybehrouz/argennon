@@ -19,7 +19,7 @@ the page:
     P = (O_1,O_2,\dots,O_n),\quad i < j \; \Leftrightarrow \; \textrm{$O_i$ was added before $O_j$}\ \cdot
 \]
 
-A page of the AscEE storage should contain objects that have very similar access pattern. Ideally, when a page is needed
+A page of the AscEE storage should contain objects that have very similar access patterns. Ideally, when a page is needed
 for validating a block, almost all of its objects should be needed for either reading or writing. We prefer
 that the objects are needed for the same access type. In other words, the objects of a page are chosen in a way that
 for validating a block, we usually need to either read all of them or modify\footnote{and probably read.} all of them.
@@ -29,7 +29,7 @@ for validating a block, we usually need to either read all of them or modify\foo
 
 Pages of the AscEE storage are persisted using \emph{dynamic cryptographic accumulators}. Argennon
 has three dynamic cryptographic accumulators: \emph{staking} database, which stores all the data that is associated with
-the Argennon consensus protocol. \emph{code} database, which stores the AscEE code area, and \emph{heap} database,
+the Argennon consensus protocol, \emph{code} database, which stores the AscEE code area, and \emph{heap} database,
 which stores the AscEE heap. The commitment of these three accumulators are included in every block of the Argennon
 blockchain. These accumulators, in the Argennon network, are hosted on special database nodes called Publicly
 Verifiable Database (PV-DB) servers.
