@@ -1,7 +1,7 @@
 %! Author = aybehrouz
 
 The credibility of a block of the Argennon blockchain is determined by the certificates it has received
-from different sets of users, knows as committees. There are two primary type of certificate committees in
+from different sets of users, known as committees. There are two primary type of certificate committees in
 Argennon: the committee of \emph{delegates} and the committee
 of \emph{validators}. Argennon has \emph{one} committee of delegates and $m$ committees of validators.
 
@@ -36,7 +36,7 @@ The committee of delegates is responsible for creating new blocks of the Argenno
 certificate for every block of the Argennon blockchain. A certificate needs to be signed
 by \textbf{all} of the committee members in order to be considered valid.
 
-Besides the main delegates' committee, a reserve committee of delegates consists of three members is elected by users
+Besides the main delegates' committee, a reserve committee of delegates consisting of three members is elected by users
 either through the ADAGs or by \emph{emergency agreement} during the recovery protocol. In case the main committee
 fails to generate new blocks or behaves maliciously, the task of
 block generation will be assigned to the reserve committee until a new main delegates' committee is elected
@@ -121,14 +121,14 @@ those certificates belong to consecutive blocks.
 If according to the staking database of block $n$, the total online stake of the committee with index $n$ modulo $m$ is
 lower than \texttt{minOnlineStake} threshold, the block $n + m$ can never be certified by validators.
 
-To prevent blockchain from halting in such situations, the protocol performs a predefined partial
+To prevent the blockchain from halting in such situations, the protocol performs a predefined partial
 reshuffling of committee members.
 In this reshuffling which is based on the block random seed, some online members from other committees will
 be moved to the committee without enough online stake to make it active again.
 
 If the reshuffling can not solve the problem due to low total online stake, the protocol requires the next block
 of the blockchain to be a special \emph{status block}. A status block is a special block which can only contain
-status change transactions. The status block need to be certified by the delegates and by 2/3 of the total stake of
+status change transactions. The status block needs to be certified by the delegates and by 2/3 of the total stake of
 validators. The \texttt{online}/\texttt{offline} status of validators will not be considered in the validity of
 the status block certificate.\footnote{Theoretically at the status block, the total online stake of the system could
 be very low. Therefore, the status block should not be certified only by online stake.} After applying
@@ -187,7 +187,7 @@ the conditional validity of the parent instead. This enables the reserve committ
 to recover the liveliness of
 the blockchain in a situation where a malicious committee has generated multiple blocks at the same height.
 
-A validator always choose a valid fork block over a block of the main chain. However, as we mentioned before,
+A validator always chooses a valid fork block over a block of the main chain. However, as we mentioned before,
 a validator never signs a certificate for two different blocks with the same height. Consequently, if a validator
 has already signed the block $b$ of the main chain, he will not sign the fork block and vice versa.
 
@@ -303,10 +303,10 @@ amount of native system tokens, he has "staked" in the system. A user stakes his
 his account or a separate staking account for some period of time. During this time, he will not be able to transfer
 his tokens.
 
-Unfortunately, there is a subtle problem with this approach. It is not clear that in a real world economic system
+Unfortunately, there is a subtle problem with this approach. It is not clear in a real world economic system
 how much of the main currency of the system can be locked and kept out of the circulation indefinitely. It seems that
 this amount for currencies like US dollar, is quite low comparing to the total market cap of the currency.
-This means that for a real world currency this type of staking mechanisms will result in putting the
+This means that for a real world currency this type of staking mechanism will result in putting the
 fate of the system in the hands of the owners of a small fraction of the total supply.
 
 To mitigate this problem, Argennon uses a hybrid approach for estimating the stake of a user.

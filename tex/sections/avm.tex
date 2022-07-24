@@ -8,7 +8,7 @@ Environment (AscEE) is an abstract execution environment for executing Argennon 
 applications) in a safe and secure environment. An Argennon application essentially is an HTTP server whose state is
 kept in the Argennon blockchain and its logic is described using an Argennon Standard Representation (ASR).
 
-An Argennon Standard Representation (ASR) is a programming language for describing argennon applications, optimized
+An Argennon Standard Representation (ASR) is a programming language for describing Argennon applications, optimized
 for the architecture and properties of the Argennon platform.
 Argennon supports two standard representations: One is a high level text based representation which needs
 costly compilation before being executed on a hardware machine. The other is a low level binary representation which
@@ -30,7 +30,7 @@ helper data structures for next steps are constructed. This step is
 designed in a way that can be done fully in parallel for each request without any risk of data races. The second
 step is the \emph{Data Dependency Analysis (DDA) step}.
 In this step by analyzing data dependency between requests, the AscEE determines requests that can be run in parallel
-and requests that need to be run sequentially. This information is represented using an \emph{execution dag} data
+and requests that need to be run sequentially. This information is represented using an \emph{execution DAG} data
 structure and in the final step, the requests are executed using this data structure.
 
 
@@ -264,7 +264,7 @@ ensure that they are issued by specific accounts. The only difference is that th
 is performed by the AscEE internally and is not performed by the application. For accounts, the AscEE uses digital
 signatures to authenticate messages. Signatures for each request can be validated in parallel during the
 preprocessing step of the block validation, and any type of
-cryptographic signature scheme can be used. For example, we could use BLS aggregate signature to authenticate all
+cryptographic signature scheme can be used. For example, we could use BLS aggregate signatures to authenticate all
 messages of a block of the blockchain in bulk.
 
 Moreover, applications can use built-in functions of the AscEE to generate authenticated messages in run-time.
@@ -329,7 +329,7 @@ resource management sometimes. If we define the resource caps per application ca
 perform our measurements for each application call separately, by using caps that are larger than the measurement
 error, errors in the measurements would not change the point of failure in the call chain.
 
-The AscEE has two type of execution sessions: \emph{optimistic} and \emph{monitored}. Resource usage of an optimistic
+The AscEE has two types of execution sessions: \emph{optimistic} and \emph{monitored}. Resource usage of an optimistic
 session is always measured per session and \textbf{default} pre-defined resource caps are used. On the other hand, for a
 monitored session, resources that can not be measured precisely are measured per application call and their caps are
 determined per application call by the external HTTP request (i.e.\ transaction). The block proposer decides the
