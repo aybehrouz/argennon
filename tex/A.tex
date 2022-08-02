@@ -17,6 +17,7 @@
 \usepackage{amssymb}
 \usepackage{tcolorbox}
 \usepackage{amsmath}
+\usepackage{mathtools}
 
 
 %\binoppenalty=99999
@@ -50,26 +51,31 @@
         Argennon is a next generation cloud based blockchain and smart
         contract platform. The Argennon blockchain uses
         a hybrid proof of stake (HPoS) consensus protocol, which is capable of combining the benefits of
-        a centralized and a decentralized system. In Argennon, ledger storage and transaction validation are
+        a centralized and a decentralized system. In Argennon, ledger storage and transaction processing are
         outsourced to the cloud and normal personal computers or smartphones, with limited hardware
         capabilities, can validate transactions and actively
         participate in the Argennon consensus protocol. This property makes Argennon a truly decentralized and
         democratic blockchain and one of the most secure existing platforms.
 
-        In Argennon, Computational Integrity (CI) is achieved by using succinct cryptographic proofs (STARK/SNARK)
-        and data integrity is guaranteed by cryptographic accumulators. There is no need to trust cloud servers.
-        At the same time, a smart clustering algorithm keeps
-        the network usage and the overhead of commitment schemes manageable.
+        The Argennon cloud is trustless and publicly verifiable. Computational Integrity (CI) is
+        achieved by using succinct cryptographic proofs (STARK/SNARK)
+        and data integrity is guaranteed by cryptographic accumulators. At the same time, a smart
+        clustering algorithm keeps the bandwidth usage and the overhead of cryptography manageable
+        for validators.
 
         The Argennon protocol strongly incentivizes the formation of a permission-less network of Publicly Verifiable
         Cloud (PVC) servers. A PVC server in Argennon, is a conventional data server which uses its computational and
         storage resources to help the Argennon network process transactions. This encourages the development
         of conventional networking, storage and compute hardware, which can benefit all areas of information technology.
-        This contrasts with the approach of some older blockchains that incentivizes the development of a totally
+        This contrasts with the approach of some older blockchains that incentivized the development of a totally
         useless technology of hash calculation.
 
     \end{abstract}
     \tableofcontents
+
+
+    \chapter{Introduction}\label{ch:intro}
+    \input{sections/intro}
 
 
     \chapter{The Argennon Smart Contract Execution Environment}\label{ch:AVM}

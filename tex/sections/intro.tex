@@ -1,0 +1,85 @@
+The most conventional use case of a blockchain is financial application. This makes the security of the consensus
+protocol of a blockchain crucially important. Unfortunately, many currently used blockchains are vulnerable to a
+certain type
+of consensus attack, know as the bribery attack. In a bribery attack, an adversary tries to corrupt participants of a
+protocol and make them violate the protocol by offering them money.
+
+At the time of writing of this document,
+the total mining reward for a bitcoin block is around \$150,000. If we assume that mining rewards define the utility
+function of bitcoin miners accurately, one could hire all hashing power of the bitcoin network for one hour by spending
+only \$750,000. The situation is not much different for PoS blockchains, as long as the total stake\footnote{Here, by
+stake, we mean a real number measuring the total interest of a user in the system. We are not referring, in
+particular, to the locked amount of a user's money that is known as stake in some PoS protocols.}
+of validators is a relatively small value. This problem is more severe in blockchains that use randomly selected small
+sets of validators. Selecting these random sets by hidden random procedures would not help, as long as the
+validator himself knows he has been selected, before casting his vote.
+
+It appears that the only solution to this important vulnerability is to effectively participate all the stake of the
+system in the consensus protocol. This large participation secures the protocol against bribery or
+collusion because the adversary would have to spend unrealistic amount of money to bribe enough users.
+
+However, for effective participation in the consensus protocol, a validator needs to be able to detect
+illegal transactions. Detecting illegal transaction can be done by accessing the ledger
+state and executing transactions according to the protocol predefined rules. The
+ledger state, even for small blockchains, could be several
+hundreds of gigabytes, and executing transactions could easily become costly when a blockchain is acting as a
+smart contract platform. This computational and storage overhead could prevent most of
+ordinary users from any type of participation in the process of securing a blockchain.
+
+Although a fully decentralized blockchain based on the participation of every user looks appealing, it is not as perfect
+as it might seem. A blockchain consensus protocol relies on a network of computers, not humans. Ordinary users use
+simple and similar computer systems. That means, they all have similar vulnerabilities that could be used by an
+adversary to attack the consensus protocol. For example, a malware might be
+able to infect a lot of normal computers in the world, and then it might be used to hijack the majority of
+participants in the consensus protocol and compromise the security of the blockchain. Securing a computer
+system against cyberattacks needs planning ahead and access to engineering resources. Special software and hardware,
+like custom-built operating systems and isolated specialized hardware would be required. This is not something a normal
+user can do. Only powerful centralized entities that have enough financial and technical resources are able to build
+systems that are resilient against sophisticated cyberattacks. So in this regard, a centralized system is arguably
+superior to a decentralized \footnote{Note
+that decentralized and distributed are two different concepts.} system.
+
+To overcome these difficulties, Argennon uses a hybrid proof of stake consensus protocol. A small committee of
+delegates is democratically elected
+by the Argennon users and is responsible for minting new blocks of the Argennon blockchain. Each
+minted block is required to get approved by its corresponding validator assembly. Assemblies are very large, and they
+contain at least three percent of the total stake of the system. A block is approved if it gets approval votes of at
+least \(2/3\) of the total stake of its validator assembly.
+
+Each block of the Argennon blockchain contains a set of Computational Integrity (CI) statements and a commitment to
+its ledger state. This set defines how
+the ledger state of a block can be reached from the state of its previous block via a set of intermediate states.
+Each CI statement defines an ordered list of transactions (called external requests in Argennon) and determines
+the intermediate states before and after executing those transactions:
+\[
+    \tau_{(s_i,s_{i+1},\mathbb{R})} \coloneqq \text{``$s_{i+1}$ is the next state after executing external requests
+        $\mathbb{R}$ on state $s_i$''}
+\]
+Validators can\footnote{Using the Argennon cloud is optional for a validator.} receive succinct cryptographic proofs
+of these CI statements from the Argennon Publicly Verifiable Cloud. They can also receive the state of the previous
+block (the required part of it) and proofs that show the received data is consistent with the previous block commitment.
+
+Verifying a succinct proof can be exponentially faster than replaying the computation. Moreover, verifications of
+different statements are independent and can be done in parallel. Therefore, a validator can use multiple cores for
+verifying CI statements of a single block and different validator assemblies can simultaneously verify different blocks.
+In addition, proof generation of different CI statements can be done in parallel similarly. However, for parallel
+proof generation, the state transition needs to be known in advance. That's why in Argennon, delegates do not try
+to generate proofs and focus all their computational power on executing requests and generating the state transition
+as fast as possible.
+
+Independence of CI statements is useful, but is not enough for having a truly scalable blockchain. To increase
+parallelism, the Argennon protocol enforces all external requests to pre-declare their memory access locations. That
+would enable a block proposer\footnote{In Argennon, delegates are the only block proposers.} to use Data Dependency
+Analysis\footnote{See Section~\ref{sec:concurrency}} to indicate independent sets of transactions and use those sets
+for parallel processing of transactions. More importantly, these sets can be used for generating CI statements that
+are defined on the same initial state and their proof can be generated independently without the need to calculate
+the state transition in advance.
+
+The Argennon protocol strongly incentivizes the formation of a permission-less network of Publicly Verifiable
+Cloud (PVC) servers. To do so, the Argennon protocol conducts repetitive automatic lotteries between PVC servers.
+A PVC server can increase its chance of winning by (i) generating proofs for more CI statements, (ii) providing the
+state data to more validators and, (iii) storing all parts of the state instead of more frequently used parts.
+
+A PVC server in Argennon, is a conventional data server which uses its computational and
+storage resources to help the Argennon network process transactions. This encourages the development
+of conventional networking, storage and compute hardware, which can benefit all areas of information technology.
