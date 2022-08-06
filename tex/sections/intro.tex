@@ -31,8 +31,9 @@ ordinary users from any type of participation in the process of securing a block
 
 Although a fully decentralized blockchain based on the participation of every user looks appealing, it is not as perfect
 as it might seem. A blockchain consensus protocol relies on a network of computers, not humans. Ordinary users use
-simple and similar computer systems. That means, they all have similar vulnerabilities which could be used by an
-adversary to catastrophically attack the consensus protocol. For example, if a malware, probably using a common zero-day
+simple and similar computer systems. That means, they all have similar vulnerabilities and weaknesses which could be
+used by an adversary to catastrophically attack the consensus protocol. For example, if a malware, probably using a
+common zero-day
 vulnerability, has the ability to infect a large portion of normal personal computers, it could be used by an
 adversary to control the majority of participants in the consensus protocol and compromise the security of the
 blockchain.
@@ -59,14 +60,14 @@ its certificates. The Argennon protocol ensures that as long as more than half o
 controlled by honest users, the probability of discarding a final block is near zero even if all the delegates are
 malicious.
 
-Centralized block generation brings some interesting features to the Argennon platform, such as off
-chain fee payment, optimistic instant transaction confirmation and runoff protection. However, it also increases
-the possibility of transaction censorship. In Argennon, this problem is addressed by a special
-High Priority Transaction (HPT) protocol.
+Centralized block generation brings some interesting features to the Argennon platform, such as flexible and lower
+fees, off chain fee payment, optimistic instant transaction confirmation, and runoff protection.
+However, it also increases the possibility of transaction censorship. In Argennon, this problem is addressed by a
+special High Priority Transaction (HPT) protocol.
 
 Each block of the Argennon blockchain contains a set of Computational Integrity (CI) statements and a commitment to
-the corresponding ledger state of the block. The CI set defines how
-the ledger state of the block can be reached from the state of its previous block via a set of intermediate states.
+the final ledger state of the block. The CI set defines how the final ledger state of the block can be reached from
+the state of its previous block via a set of intermediate states.
 Each individual CI statement defines an ordered list of external requests\footnote{External requests in Argennon are
 similar to transactions in older blockchains.} and determines the intermediate states before and after executing those
 requests:
@@ -91,7 +92,7 @@ Argennon applications (i.e smart contracts) are stored in a high level text base
 language is intended for preserving the
 high level information of the application logic to facilitate platform specific compiler optimization at a host
 machine. This enables delegates to compile and optimize Argennon applications for their specific hardware platforms
-and execute applications efficiently.
+and execute applications efficiently, ensuring the state transition can be found as fast as possible.
 
 Independence of CI statements is useful, but is not enough for having a truly scalable blockchain. To increase
 parallelism, the Argennon protocol enforces all external requests to pre-declare their memory access locations. That
