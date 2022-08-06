@@ -51,18 +51,18 @@ delegates is democratically elected
 by the Argennon users and is responsible for minting new blocks of the blockchain. Each
 minted block is required to get approved by its corresponding validator committee. Validator committees are very
 large sets of validators including at least three percent of the total stake of the system. A block is approved if it
-gets approval votes from at least \(2/3\) of the total stake of its validator committee.
+takes approval votes from at least \(2/3\) of the total stake of its validator committee.
 
 Every block of the Argennon blockchain needs a certificate from both the committee of delegates and
-the committee of validators. A block is considered final after its \textbf{next} block receives \textbf{both} of
+the committee of validators. A block is considered final after its \textbf{next} block gets \textbf{both} of
 its certificates. The Argennon protocol ensures that as long as more than half of the total stake of validators is
 controlled by honest users, the probability of discarding a final block is near zero even if all the delegates are
 malicious.
 
-Block generation is centralized in Argennon. This brings some interesting features to the Argennon platform, such as off
-chain fee payment, optimistic instant transaction confirmation and runoff protection. However, centralized
-block generation also increases the possibility of transaction censorship. This problem is addressed by a special
-High Priority Transaction (HPT) protocol in Argennon.
+Centralized block generation brings some interesting features to the Argennon platform, such as off
+chain fee payment, optimistic instant transaction confirmation and runoff protection. However, it also increases
+the possibility of transaction censorship. In Argennon, this problem is addressed by a special
+High Priority Transaction (HPT) protocol.
 
 Each block of the Argennon blockchain contains a set of Computational Integrity (CI) statements and a commitment to
 the corresponding ledger state of the block. The CI set defines how
@@ -87,8 +87,8 @@ proof generation, the state transition needs to be known in advance. That's why 
 to generate proofs and focus all their computational power on executing external requests and
 generating the state transition as fast as possible.
 
-Argennon applications (i.e smart contracts) are stored in a high level text based language on the Argennon
-blockchain. This language is intended for preserving the
+Argennon applications (i.e smart contracts) are stored in a high level text based language on the blockchain. This
+language is intended for preserving the
 high level information of the application logic to facilitate platform specific compiler optimization at a host
 machine. This enables delegates to compile and optimize Argennon applications for their specific hardware platforms
 and execute applications efficiently.
