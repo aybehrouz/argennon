@@ -1,28 +1,28 @@
-The most conventional use of blockchains is in financial applications. This gives a crucial importance to the
+The most common use for blockchains is in financial applications. This gives a crucial importance to the
 security of the consensus protocol used in a blockchain. Unfortunately, many currently used blockchains are
-vulnerable to a
-certain type of consensus attack, known as the bribery attack. In a bribery attack, an adversary tries to corrupt
-participants of a protocol and make them violate the protocol by offering them money.
+vulnerable to a certain type of consensus attack, known as the bribery attack. In a bribery attack, an adversary
+tries to corrupt participants of a protocol by offering them money to make them violate the protocol.
 
 At the time of writing of this document,
 the total mining reward for a bitcoin block is around \$150,000. If we assume, in decision theoretic terminology,
 that the mining reward accurately defines the utility function of a bitcoin miner, one could hire all hashing power
 of the bitcoin network for one hour by
 spending only \$750,000. The situation is not much different for PoS blockchains, as long as the total
-stake\footnote{Here, by
+stake of the validator set is a relatively small value. Here by
 stake, we mean a real number measuring the total interest of a user in the system. We are not referring, in
-particular, to the locked amount of a user's money that is known as stake in some PoS protocols.}
-of the validator set is a relatively small value. This is more severe in blockchains that use
-randomly selected small sets of validators. These small sets could be easily bribed and selecting these random sets
+particular, to some locked amount of a user's money that is known as stake in some PoS protocols.
+
+This problem is more severe in blockchains that use randomly selected small sets of validators. These small sets
+usually have low total stake and could be easily bribed and corrupted. Selecting these random sets
 by hidden random procedures would not help, since the validator himself knows he has been selected, before casting
 his vote.
 
-It appears that the only solution to this important vulnerability is to effectively participate all the stake of the
-system in the consensus protocol. This large participation makes the protocol resilient against bribery or
+It appears that the only solution to this important vulnerability is to effectively participate all the stakeholders
+of the system in the consensus protocol. This large participation makes the protocol resilient against bribery or
 collusion because the adversary would need to spend unrealistic amounts of money to bribe enough users.
 
 However, for effective participation in the consensus protocol, a validator needs to be able to detect
-illegal transactions. Detecting illegal transaction can be done by accessing the ledger
+illegal transactions. Detecting illegal transactions can be done by accessing the ledger
 state and executing transactions according to the protocol rules. The
 ledger state, even for small blockchains, could be several
 hundreds of gigabytes, and executing transactions could easily become costly when a blockchain is acting as a
