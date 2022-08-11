@@ -1,7 +1,7 @@
 The most common use for blockchains is in financial applications. This gives a crucial importance to the
 security of the consensus protocol used in a blockchain. Unfortunately, many currently used blockchains are
 vulnerable to a certain type of consensus attack, known as the bribery attack. In a bribery attack, an adversary
-tries to corrupt participants of a protocol by offering them money to make them violate the protocol.
+tries to corrupt participants of a protocol by offering them money and making them violate the protocol.
 
 At the time of writing of this document,
 the total mining reward for a bitcoin block is around \$150,000. If we assume, in decision theoretic terminology,
@@ -30,9 +30,9 @@ smart contract platform. This computational and storage overhead, in practice, c
 ordinary users from any type of participation in the process of securing a blockchain.
 
 Although a fully decentralized blockchain based on the participation of every user looks appealing, it is not as perfect
-as it might seem. A blockchain consensus protocol relies on a network of computers, not humans. Ordinary users use
-simple and similar computer systems. That means, they all have similar vulnerabilities and weaknesses which could be
-used by an adversary to catastrophically attack the consensus protocol. For example, if a malware, probably using a
+as it might seem. The consensus protocol of a blockchain relies on a network of computers, not humans. Ordinary users
+use simple and similar computer systems. That means, they all have similar vulnerabilities and weaknesses which could be
+used by an adversary to catastrophically attack the consensus protocol. For instance, if a malware, probably using a
 common zero-day
 vulnerability, has the ability to infect a large portion of normal personal computers, it could be used by an
 adversary to control the majority of participants in the consensus protocol and compromise the security of the
@@ -49,10 +49,10 @@ system.
 To overcome these difficulties, Argennon\footnote{The classical pronunciation should be used:\textipa{/Ar"gen.non/}}
 uses a Hybrid Proof of Stake consensus protocol, which is
 capable of combining the benefits of a centralized and a decentralized system. A small committee of
-delegates is democratically elected by users via the Argennon Decentralized Autonomous Governance System
+delegates is democratically elected by users via the Argennon Decentralized Autonomous Governance system
 (ADAGs). This committee usually\footnote{The election term and the number of committee members can be changed by the
 ADAGs.} is elected for a one-year term, has five members, and is responsible for minting new
-blocks of the blockchain.
+blocks of the Argennon blockchain.
 Each minted block is required to get approved by its corresponding validator committee. Validator committees are very
 large sets of validators including at least three percent of the maximum possible stake of the system. A block is
 approved if it takes approval votes from at least \(2/3\) of the total stake of its validator committee.
@@ -66,14 +66,13 @@ malicious.
 Centralized block generation brings some interesting features to the Argennon platform, such as flexible and lower
 fees, off chain fee payment, optimistic instant transaction confirmation, and runoff protection.
 However, it also increases the possibility of transaction censorship. In Argennon, this problem is addressed by a
-special High Priority Transaction (HPT) protocol.
+special High Priority Request (HPR) protocol.
 
 Each block of the Argennon blockchain contains a set of Computational Integrity (CI) statements and a commitment to
 the final ledger state of the block. The CI set defines how the final ledger state of the block can be reached from
 the state of its previous block via a set of intermediate states.
 Each individual CI statement defines an ordered list of external requests\footnote{External requests in Argennon are
-similar to transactions in older blockchains.} and determines the intermediate states before and after executing those
-requests:
+similar to transactions in older blockchains.} and determines the state before and after executing those requests:
 \[
     \tau_{(s_i,s_{i+1},\mathbb{R})} \coloneqq \text{``$s_{i+1}$ is the next state after executing external requests
         $\mathbb{R}$ on state $s_i$''}
@@ -83,8 +82,9 @@ of these CI statements (STARK/SNARK) from the Argennon cloud. They can also rece
 block (the required part of it) and proofs that show the received data is consistent with the previous block commitment.
 
 Verifying a succinct proof can be exponentially faster than replaying the computation. Moreover, verifications of
-different CI statements are independent and can be done in parallel. As a result, a validator can use multiple cores for
-verifying CI statements of a \textbf{single} block and different validator committees can simultaneously and
+different CI statements are independent of each other and can be done in parallel. As a result, a validator can use
+multiple cores for verifying CI statements of a \textbf{single} block and different validator committees can
+simultaneously and
 independently verify \textbf{different} blocks.
 In addition, proof generation of different CI statements similarly can be done in parallel. However, for parallel
 proof generation, the state transition needs to be known in advance. That's why in Argennon, delegates do not try
@@ -113,3 +113,5 @@ state data to more validators and, (iii) storing all parts of the state instead 
 A PVC server in Argennon, is a conventional data server which uses its computational and
 storage resources to help the Argennon network process transactions. This encourages the development
 of conventional networking, storage and compute hardware, which can benefit all areas of information technology.
+This contrasts with the approach of some older blockchains that incentivized the development of a totally
+useless technology of hash calculation.
