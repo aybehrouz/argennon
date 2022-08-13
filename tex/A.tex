@@ -52,17 +52,21 @@
         contract platform. The Argennon blockchain uses
         a hybrid proof of stake (HPoS) consensus protocol, which is capable of combining the benefits of
         a centralized and a decentralized system. In Argennon, ledger storage and transaction processing are
-        outsourced to the Argennon cloud while normal personal computers or smartphones, with limited hardware
-        capabilities, can validate transactions and actively participate in the consensus protocol.
+        outsourced to the cloud and normal personal computers or smartphones, with limited hardware
+        capabilities, are able to validate transactions and actively
+        participate in the Argennon consensus protocol. This property makes Argennon a truly decentralized and
+        democratic blockchain and one of the most secure existing platforms.
 
-        The Argennon cloud consists of a Committee of Delegates (CoD) and Publicly Verifiable Cloud (PVC) servers. 
-        The CoD is elected per term by Proof of Stake and is responsible for processing transactions and creating blocks.
-        After validator assemblies have verified the validity of these blocks they are stored in the PVC servers.
-        PVC servers are publicly verifiable. Computational Integrity (CI) is
-        achieved by using succinct cryptographic proofs (STARK/SNARK) and data integrity is guaranteed by cryptographic accumulators. 
-        At the same time, a smart clustering algorithm keeps the bandwidth usage and the overhead of cryptography manageable
+        The Argennon cloud is trustless and publicly verifiable. Computational Integrity (CI) is
+        achieved by using succinct cryptographic proofs (STARK/SNARK)
+        and data integrity is guaranteed by cryptographic accumulators. At the same time, a smart
+        clustering algorithm keeps the bandwidth usage and the overhead of cryptography manageable
         for validators.
 
+        The Argennon protocol strongly incentivizes the formation of a permission-less network of Publicly Verifiable
+        Cloud (PVC) servers. A PVC server in Argennon, is a conventional data server which uses its computational and
+        storage resources to help the Argennon network process transactions.
+        
         These properties make it possible for Argennon to achieve very high transaction throughput while requiring no trust
         in central parties.  
     \end{abstract}
@@ -72,8 +76,8 @@
     \chapter{Introduction}\label{ch:intro}
     \input{sections/intro}
 
-
     \chapter{The Argennon Smart Contract Execution Environment}\label{ch:AVM}
+    \note{This chapter is outdated and does not include CI proofs. Currently a new version is being rewritten.}
     \input{sections/avm}
 
 
@@ -96,7 +100,7 @@
 
 
     \chapter{The Argennon Blockchain}\label{ch:argennon-blockchain}
-
+    \note{Currently a new version is being rewritten to include CI proofs.}
 
     \section{Blocks}\label{sec:blocks}
     \input{sections/blocks}
