@@ -46,7 +46,7 @@ If an account behaves maliciously, and that behaviour could not have happened du
 in a block, the account will be disabled forever in the ARG smart contract. Disabling an account in the
 ARG smart contract will prevent that account from signing any valid signatures in the future.
 
-Only behaviours will be punished that can not happen due to a mistake or an attack. These behaviours include:
+Punishable behaviours include:
 \begin{itemize}
     \item Signing a certificate for a block that is not conditionally valid.
     \item Signing a certificate for two different blocks at the same height if none of them
@@ -55,34 +55,34 @@ Only behaviours will be punished that can not happen due to a mistake or an atta
     penalized because there are circumstances that an honest user could mistakenly do that.}
 \end{itemize}
 
-\subsection{Incentives for PV-DB Servers}\label{subsec:PV-DB-servers}
+\subsection{Incentives for PVC Servers}\label{subsec:PVC-servers}
 
-The incentive mechanism for PV-DB servers should have the following properties:
+The incentive mechanism for PVC servers should have the following properties:
 
 \begin{itemize}
     \item It incentivizes storing all storage pages and not only those pages that are used more frequently.
-    \item It incentivizes PV-DB servers to actively provide the required storage pages for validators.
-    \item Making more accounts will not provide any advantage for a PV-DB server.
+    \item It incentivizes PVC servers to actively provide the required storage pages for validators.
+    \item Making more accounts will not provide any advantage for a PVC server.
 \end{itemize}
 
-For our incentive mechanism, we require that every time a validator receives a storage page from a PV-DB, after
-validating the data, he gives a receipt to the PV-DB server. In this receipt the validator signs the
+For our incentive mechanism, we require that every time a validator receives a storage page from a PVC, after
+validating the data, he gives a receipt to the PVC server. In this receipt the validator signs the
 following information:
 
 \begin{itemize}
-    \item \texttt{ownerAddr}: the account address of the PV-DB server.
+    \item \texttt{ownerAddr}: the account address of the PVC server.
     \item \texttt{receivedPageID}: the ID of the received page.
     \item \texttt{round}: the current block number.
 \end{itemize}
 
-\note{In a round, an honest validator never gives a receipt for an identical page to two different PV-DB servers.}
+\note{In a round, an honest validator never gives a receipt for an identical page to two different PVC servers.}
 
-To incentivize PV-DB servers, a lottery will be held every round,\footnote{A round is the time interval between
+To incentivize PVC servers, a lottery will be held every round,\footnote{A round is the time interval between
 two consecutive blocks.} and a predefined amount of ARGs from
 \texttt{dbFeeSink} account will be distributed between the winners as a prize. This prize will be divided equally
 between all \emph{winning tickets} of the lottery.
 
-\note{One PV-DB server could own multiple winning tickets in a round.}
+\note{One PVC server could own multiple winning tickets in a round.}
 
 To run this lottery, every round, based on the current block seed, a collection of \emph{valid} receipts will be
 selected randomly as the \emph{winning receipts} of the round. A receipt is \emph{valid} in round $r$ if:
@@ -91,7 +91,7 @@ selected randomly as the \emph{winning receipts} of the round. A receipt is \emp
     \item The signer was a member of the validators' committee of the block $r - 1$ and signed the block certificate.
     \item The page in the receipt was needed for validating the \textbf{previous} block.
     \item The receipt round number is $r - 1$.
-    \item The signer did not sign a receipt for the same storage page for two different PV-DB servers in
+    \item The signer did not sign a receipt for the same storage page for two different PVC servers in
     the previous round.
 \end{itemize}
 For selecting the winning receipts we could use a random generator:
@@ -109,10 +109,10 @@ IF random(seed|validatorPK|receivedPageID) < winProbability THEN
 \end{itemize}
 
 Also, based on the current block seed, a random storage page is
-selected as the challenge of the round. A PV-DB server that owns a winning receipt needs to broadcast a \emph{winning
+selected as the challenge of the round. A PVC server that owns a winning receipt needs to broadcast a \emph{winning
 ticket} to claim his prize. The winning ticket consists of a winning receipt and a \emph{solution} to the round
 challenge. Solving a round challenge requires the content of the storage page which was selected as the round
-challenge. This will encourage PV-DB servers to store all storage pages.
+challenge. This will encourage PVC servers to store all storage pages.
 
 A possible choice for the challenge solution could be the cryptographic hash of the content of the challenge
 page combined with the server account address:
