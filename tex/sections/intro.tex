@@ -53,9 +53,12 @@ delegates is democratically elected by users via the Argennon Decentralized Auto
 (ADAGs). This committee usually\footnote{The election term and the number of committee members can be changed by the
 ADAGs.} is elected for a one-year term, has five members, and is responsible for minting new
 blocks of the Argennon blockchain.
-Each minted block is required to get approved by its corresponding validator committee. Validator committees are very
-large sets of validators including at least three percent of the maximum possible stake of the system. A block is
-approved if it takes approval votes from at least \(2/3\) of the total stake of its validator committee.
+Each minted block is required to get approved by its corresponding validator committee.
+Validator committees are very
+large sets of validators including at least three percent of the maximum possible stake of the system.
+Every committee of validators has an index between $0$ and $m - 1$, and is resposible for validating block number $n$,
+if $n$ modulo $m$ equals the committee index. A block is approved if it takes approval votes from at least $2/3$ of
+the total stake of its validator committee.
 
 Every block of the Argennon blockchain needs a certificate from both the committee of delegates and
 the committee of validators. A block is considered final after its \textbf{next} block gets \textbf{both} of
