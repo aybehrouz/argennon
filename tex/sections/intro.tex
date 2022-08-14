@@ -109,10 +109,11 @@ transactions) and use those sets for parallel processing. More importantly, thes
 statements that are defined on the \textbf{same initial state} and their proof can be generated independently without
 the need to calculate the state transition in advance.
 
-Using succinct argument of knowledge systems makes an Argennon validator light enough to be implemented as a smart
-contract. By deploying an Argennon validator on another turing complete smart contract platform, Argennon could use
-more established blockchains as an extra layer of security, specially
-during the bootstrapping phase, when ARG is not well distributed yet.
+Using succinct argument of knowledge systems makes the main functionalities of an Argennon validator light enough to
+be implemented as a smart contract. By deploying a validator contract on another platform, Argennon
+could use more established blockchains as an extra layer of security, specially
+during the bootstrapping phase, when ARG is not well distributed yet. To reduce the execution fee, this validator
+contract could be used for validating roll-ups of state transition.
 
 The Argennon protocol strongly incentivizes the formation of a \textbf{permission-less} network of Publicly Verifiable
 Cloud (PVC) servers. To do so, the Argennon protocol conducts repetitive automatic lotteries between PVC servers.
