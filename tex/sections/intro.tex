@@ -56,7 +56,7 @@ blocks of the Argennon blockchain.
 Each minted block is required to get approved by its corresponding validator committee.
 Validator committees are very
 large sets of validators including at least three percent of the maximum possible stake of the system.
-Every committee of validators has an index between $0$ and $m - 1$, and is resposible for validating block number $n$,
+Every committee of validators has an index between $0$ and $m - 1$, and is responsible for validating block number $n$,
 if $n$ modulo $m$ equals the committee index. A block is approved if it takes approval votes from at least $2/3$ of
 the total stake of its validator committee.
 
@@ -72,7 +72,8 @@ However, it also increases the possibility of transaction censorship. In Argenno
 special High Priority Request (HPR) protocol.
 
 Each block of the Argennon blockchain contains a set of Computational Integrity (CI) statements and a commitment to
-the final ledger state of the block. The CI set defines how the final ledger state of the block can be reached from
+the final ledger state of the block (i.e.\ the ledger state after executing all transactions of the block). The CI
+set defines how the final state of the block can be reached from
 the state of its previous block via a set of intermediate states.
 Each individual CI statement defines an ordered list of external requests\footnote{External requests in Argennon are
 similar to transactions in older blockchains.} and determines the state before and after executing those requests:
@@ -107,6 +108,11 @@ Analysis\footnote{See Section~\ref{sec:concurrency}} (DDA) to indicate independe
 transactions) and use those sets for parallel processing. More importantly, these sets can be used for generating CI
 statements that are defined on the \textbf{same initial state} and their proof can be generated independently without
 the need to calculate the state transition in advance.
+
+Using succinct argument of knowledge systems makes an Argennon validator light enough to be implemented as a smart
+contract. By deploying an Argennon validator on another turing complete smart contract platform, Argennon could use
+more established blockchains as an extra layer of security, specially
+during the bootstrapping phase, when ARG is not well distributed yet.
 
 The Argennon protocol strongly incentivizes the formation of a \textbf{permission-less} network of Publicly Verifiable
 Cloud (PVC) servers. To do so, the Argennon protocol conducts repetitive automatic lotteries between PVC servers.
