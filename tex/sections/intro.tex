@@ -53,16 +53,26 @@ delegates is democratically elected by users via the Argennon Decentralized Auto
 (ADAGs). This committee usually\footnote{The election term and the number of committee members can be changed by the
 ADAGs.} is elected for a one-year term, has five members, and is responsible for minting new
 blocks of the Argennon blockchain.
-Each minted block is required to get approved by its corresponding validator committee.
+Each minted block gets certified by all members of the delegates committee and after that it required to get approved
+by its corresponding validator committee.
+
 Validator committees are very
-large sets of validators including at least three percent of the maximum possible stake of the system.
+large sets of validators including at least three percent of the maximum possible stake of the Argennon network.
 Every committee of validators has an index between $0$ and $m - 1$, and is responsible for validating block number $n$,
 if $n$ modulo $m$ equals the committee index. A block is approved if it takes approval votes from at least $2/3$ of
 the total stake of its validator committee.
 
-Every block of the Argennon blockchain needs a certificate from both the committee of delegates and
-the committee of validators. A block is considered final after its \textbf{next} block gets \textbf{both} of
-its certificates. The Argennon protocol ensures that as long as more than half of the total stake of validators is
+In case the main committee fails to generate new blocks or behaves maliciously, a special Recovery Protocol is
+initiated by validators.
+This recovery protocol can recover the functionality
+of the Argennon blockchain as long as more than $2/3$ of the total stake of the system is controlled by honest users
+and any network partition resolves after a finite amount of time. The Recovery Protocol uses two main emergency
+procedures to recover the functionality of the Argennon blockchain: \emph{emergency forking} and \emph{emergency
+agreement} protocol.
+
+In Argennon, a block is considered final after its \textbf{next} block gets certified by \textbf{both} delegates and
+validator committees.
+The Argennon protocol ensures that as long as more than half of the total stake of validators is
 controlled by honest users, the probability of discarding a final block is near zero even if all the delegates are
 malicious.
 
@@ -74,16 +84,16 @@ special High Priority Request (HPR) protocol.
 Each block of the Argennon blockchain contains a set of Computational Integrity (CI) statements and a commitment to
 the final ledger state of the block (i.e.\ the ledger state after executing all transactions of the block). The CI
 set defines how the final state of the block can be reached from
-the state of its previous block via a set of intermediate states.
-Each individual CI statement defines an ordered list of external requests\footnote{External requests in Argennon are
-similar to transactions in older blockchains.} and determines the state before and after executing those requests:
-\[
-    \tau_{(s_i,s_{i+1},\mathbb{R})} \coloneqq \text{``$s_{i+1}$ is the next state after executing external requests
-        $\mathbb{R}$ on state $s_i$''}
-\]
+the state of its previous block via a set of intermediate state transitions. Each individual CI statement defines
+an ordered list of external requests\footnote{External requests in Argennon are
+similar to transactions in older blockchains.} and determines the state before and after executing those requests.
+
+More formally, each CI statement has the form $\tau(\mathbb{S}, \mathbb{R}, \hat{\mathbb{S}})$, and states that
+$\hat{\mathbb{S}}$ is the commitment of the next state after executing an ordered list of external requests with commitment
+$\mathbb{R}$ on a state with commitment $\mathbb{S}$.
+Commitments to states are produced by a cryptographic accumulator.
 Validators can\footnote{Using the Argennon cloud is optional for a validator.} receive succinct cryptographic proofs
-of these CI statements (STARK/SNARK) from the Argennon cloud. They can also receive the state of the previous
-block (the required part of it) and proofs that show the received data is consistent with the previous block commitment.
+of these CI statements (STARK/SNARK) from the Argennon cloud and efficiently validate a block.
 
 Verifying a succinct proof can be exponentially faster than replaying the computation. Moreover, verifications of
 different CI statements are independent of each other and can be done in parallel. As a result, a validator can use
@@ -117,8 +127,8 @@ contract could be used for validating roll-ups of state transition.
 
 The Argennon protocol strongly incentivizes the formation of a \textbf{permission-less} network of Publicly Verifiable
 Cloud (PVC) servers. To do so, the Argennon protocol conducts repetitive automatic lotteries between PVC servers.
-A PVC server can increase its chance of winning by (i) generating proofs for more CI statements, (ii) providing the
-state data to more validators and, (iii) storing all parts of the state instead of more frequently used parts.
+A PVC server can increase its chance of winning by (i) generating proofs for more CI statements, (ii) storing all
+parts of the ledger state and providing \emph{proofs of storage}.
 
 A PVC server in Argennon, is a conventional data server which uses its computational and
 storage resources to help the Argennon network process transactions. This encourages the development
