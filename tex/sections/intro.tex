@@ -1,17 +1,16 @@
 The most common use for blockchains is in financial applications. This gives a crucial importance to the
 security of the consensus protocol used in a blockchain. Unfortunately, many currently used blockchains are
-vulnerable to a certain type of consensus attack, known as the bribery attack. In a bribery attack, an adversary
-tries to corrupt participants of a protocol by offering them money and making them violate the protocol.
+vulnerable to a certain type of consensus attack, known as the Bribery Attack. In a Bribery Attack, an adversary
+tries to corrupt participants of a protocol by offering them money and seducing them to violate the protocol.
 
 At the time of writing of this document,
-the total mining reward for a bitcoin block is around \$150,000. If we assume, in decision theoretic terminology,
-that the mining reward accurately defines the utility function of a bitcoin miner, one could hire all hashing power
-of the bitcoin network for one hour by
+the total mining reward for a Bitcoin block is around \$150,000. If we assume, in decision theoretic terminology,
+that the mining reward accurately defines the utility function of a Bitcoin miner, one could hire all hashing power
+of the Bitcoin network for one hour by
 spending only \$750,000. The situation is not much different for PoS blockchains, as long as the total
-stake of the validator set is a relatively small value. Here by
-stake, we mean a real number measuring the total interest of a user in the system. We are not referring, in
+stake of the validator set is a relatively small value. By
+stake, we mean a real number measuring the total interest of a user in the system, and we are not referring, in
 particular, to some locked amount of a user's money that is known as stake in some PoS protocols.
-
 This problem is more severe in blockchains that use randomly selected small sets of validators. These small sets
 usually have low total stake and could be easily bribed and corrupted. Selecting these random sets
 by hidden random procedures would not help, since the validator himself knows he has been selected, before casting
@@ -34,14 +33,14 @@ as it might seem. The consensus protocol of a blockchain relies on a network of 
 use simple and similar computer systems. That means, they all have similar vulnerabilities and weaknesses which could be
 used by an adversary to catastrophically attack the consensus protocol. For instance, if a malware, probably using a
 common zero-day
-vulnerability, has the ability to infect a large portion of normal personal computers, it could be used by an
-adversary to control the majority of participants in the consensus protocol and compromise the security of the
+vulnerability, has the ability to infect a large portion of normal personal computers, an adversary can use it to
+take control of the majority of participants in the consensus protocol and compromise the security of the
 blockchain.
 
 Securing a computer system against cyberattacks needs planning ahead and access to engineering resources.
-Special software and hardware, like custom-built operating systems and isolated specialized hardware is required.
-This is not something a normal user can afford. Only powerful centralized entities having large financial and
-technical resources, could build
+Special software and hardware, like custom-built operating systems and isolated specialized hardware are required.
+This is not something a normal user can afford. But powerful centralized entities, having large financial and
+technical resources, could actually build
 systems that are resilient against sophisticated cyberattacks. In this regard, we have to admit, a centralized system is
 arguably superior to a decentralized\footnote{Note that decentralized and distributed are two different concepts.}
 system.
@@ -67,19 +66,14 @@ initiated by validators.
 This recovery protocol can recover the functionality
 of the Argennon blockchain as long as more than $2/3$ of the total stake of the system is controlled by honest users
 and any network partition resolves after a finite amount of time. The Recovery Protocol uses two main emergency
-procedures to recover the functionality of the Argennon blockchain: \emph{emergency forking} and \emph{emergency
-agreement} protocol.
+procedures to recover the functionality of the Argennon blockchain: \emph{Emergency Forking} and \emph{Emergency
+Agreement} protocol.
 
 In Argennon, a block is considered final after its \textbf{next} block gets certified by \textbf{both} the
 delegates committee and its validator assembly.
 The Argennon protocol ensures that as long as more than half of the total stake of validators is
 controlled by honest users, the probability of discarding a final block is near zero even if all the delegates are
 malicious.
-
-Centralized block generation brings some interesting features to the Argennon platform, such as flexible and lower
-fees, off chain fee payment, optimistic instant transaction confirmation, and front running protection.
-However, it also increases the possibility of transaction censorship. In Argennon, this problem is addressed by a
-special High Priority Request (HPR) protocol.
 
 Each block of the Argennon blockchain contains a set of Computational Integrity (CI) statements and a commitment to
 the final ledger state of the block (i.e.\ the ledger state after executing all transactions of the block). The CI
@@ -98,9 +92,9 @@ or performing costly computation.
 
 Verifying a succinct proof can be exponentially faster than replaying the computation. Moreover, verifications of
 different CI statements are independent of each other and can be done in parallel. As a result, a validator can use
-multiple cores for verifying CI statements of a \textbf{single} block and different validator assemblies can
+multiple cores for verifying CI statements of a \textbf{single block} and different validator assemblies can
 simultaneously and
-independently verify \textbf{different} blocks.
+independently verify \textbf{different blocks}.
 In addition, proof generation of different CI statements similarly can be done in parallel. However, for parallel
 proof generation, the state transition needs to be known in advance. That's why in Argennon, delegates do not try
 to generate proofs and focus all their computational power on executing external requests and
@@ -120,12 +114,17 @@ transactions) and use those sets for parallel processing. More importantly, thes
 statements that are defined on the \textbf{same initial state} and their proof can be generated independently without
 the need to calculate the state transition in advance.
 
-Using succinct argument of knowledge systems makes the main functionalities of an Argennon validator light enough to
+Centralized block generation brings some interesting features to the Argennon platform, such as flexible and lower
+fees, off chain fee payment, optimistic instant transaction confirmation, and front running protection.
+However, it also increases the possibility of transaction censorship. In Argennon, this problem is addressed by a
+special High Priority Request (HPR) protocol.
+
+Using Succinct Argument of Knowledge systems makes the main functionalities of an Argennon validator light enough to
 be implemented as a smart contract. By deploying a validator contract on another platform, Argennon
 could use more established blockchains as an extra layer of security, specially
 during the bootstrapping phase, when ARG is not well distributed yet. In addition, this contract will facilitate
 trustless bridging of assets to the Argennon blockchain. To reduce the execution fee, this validator
-contract could be used for validating only roll-ups of state transition.
+contract can be used for validating only roll-ups of the state transition.
 
 The Argennon protocol strongly incentivizes the formation of a \textbf{permission-less} network of Publicly Verifiable
 Cloud (PVC) servers. To do so, the Argennon protocol conducts repetitive automatic lotteries between PVC servers.
