@@ -104,7 +104,8 @@ Argennon applications (i.e smart contracts) are stored in a high level text base
 language is intended for preserving the
 high level information of the application logic to facilitate platform specific compiler optimization at a host
 machine. This enables delegates to compile and optimize Argennon applications for their specific hardware platforms
-and execute applications efficiently, ensuring the state transition can be found as fast as possible.
+and execute applications efficiently, ensuring the state transition can be found as fast as possible. Moreover,
+validators by using a special compiler, generate arithmetization of this language and use it for verifying CI proofs.
 
 Independence of CI statements is useful, but is not enough for having a truly scalable blockchain. To increase
 parallelism, the Argennon protocol enforces all external requests to pre-declare their memory access locations. That
@@ -123,8 +124,8 @@ Using Succinct Argument of Knowledge systems makes the main functionalities of a
 be implemented as a smart contract. By deploying a validator contract on another platform, Argennon
 could use more established blockchains as an extra layer of security, specially
 during the bootstrapping phase, when ARG is not well distributed yet. In addition, this contract will facilitate
-trustless bridging of assets to the Argennon blockchain. To reduce the execution fee, this validator
-contract can be used for validating only roll-ups of the state transition.
+trustless bridging of assets from that platform to the Argennon blockchain. To reduce the execution fee, only
+roll-ups of the state transition can be validated by the contract.
 
 The Argennon protocol strongly incentivizes the formation of a \textbf{permission-less} network of Publicly Verifiable
 Cloud (PVC) servers. To do so, the Argennon protocol conducts repetitive automatic lotteries between PVC servers.
