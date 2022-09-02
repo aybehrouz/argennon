@@ -1,30 +1,29 @@
 %! Author = aybehrouz
 
+
 \section{Introduction}\label{sec:introduction}
 
-The Argennon Smart Contract Execution
-Environment (AscEE) is an abstract execution environment for executing Argennon smarts contracts (a.k.a\ Argennon
-applications) in a safe and secure environment. An Argennon application essentially is an HTTP server whose state is
-kept in the Argennon blockchain and its logic is described using an Argennon Standard Representation (ASR).
+The Argennon Smart Contract Execution Environment (AscEE) is an abstract execution environment for executing Argennon
+smarts contracts (a.k.a\ Argennon applications) in a secure and isolated environment. An Argennon application
+essentially is an HTTP server whose state is
+kept in the Argennon blockchain and its logic is described using an Argennon Standard Application Representation (ASAR).
 
-An Argennon Standard Representation (ASR) is a programming language for describing Argennon applications, optimized
-for the architecture and properties of the Argennon platform.
-Argennon supports two standard representations: One is a high level text based representation which needs
-costly compilation before being executed on a hardware machine. The other is a low level binary representation which
-usually can be executed, with minimal pre-processing, by a JIT compiler or an emulator. The high level
-language is intended for preserving the high level information of the application logic to facilitate
-platform specific compiler optimization at a host machine. The low level language, on the oder hand, is designed for
-efficient direct execution of applications that are not frequently used and do not benefit from compiler optimizations.
+An Argennon Standard Application Representation (ASAR) is a programming language for describing Argennon
+applications, optimized
+for the architecture and properties of the Argennon platform. This text based representation should be low level
+enough to enable easy compilation from any high level programming language and should be high level enough to preserve
+the high level information of the application logic and facilitate platform specific compiler optimization at a host
+machine. In this regard, the ASAR can be considered as an Intermediate Representation (IR).
 
 The state of an Argennon application is stored in byte addressable finite arrays of memory called
 \emph{heap chunks}. An application may have several heap chunks with different sizes, and can remove or
 resize its heap chunks or allocate new chunks. Every chunk belongs to exactly one application and can only be modified
-by its owner. In addition to heap chunks, every application has an amount of non-persistent local memory for
+by its owner. In addition to heap chunks, every application has a limited amount of non-persistent local memory for
 storing temporary data.
 
 The AscEE executes the requests contained in each block of the Argennon
 blockchain in a three-step procedure. The first step is the \emph{preprocessing step}. In this step, the required
-data for executing requests are retrieved from the Argennon cloud, the cryptographic proofs are verified and the
+data for executing requests are retrieved and verified and the
 helper data structures for next steps are constructed. This step is
 designed in a way that can be done fully in parallel for each request without any risk of data races. The second
 step is the \emph{Data Dependency Analysis (DDA) step}.
@@ -36,27 +35,106 @@ structure and in the final step, the requests are executed using this data struc
 \section{Execution Sessions}\label{sec:sessions}
 
 The Argennon Smart Contract Execution Environment can be seen as a machine for executing Argennon applications to
-fulfill HTTP requests, produce their HTTP responses and update related heap chunks. The execution of requests can be
-considered sequential\footnote{Actually requests are executed in parallel but by performing data dependency analysis the
-result is guaranteed to be identical with sequential execution of requests.} and each request has a separate
-\emph{execution session}. Therefore, an execution
-session is a separate session of executing smart contract's code in order to fulfill an \emph{external} HTTP request.
-External requests are requests that are not made by other Argennon applications.
+fulfill \emph{external} HTTP requests\footnote{External requests are requests that are not made by other Argennon
+applications.}, produce their HTTP responses and update related heap chunks. The execution of requests can be
+considered sequential\footnote{Actually requests may be executed in parallel but by performing data dependency analysis
+the result is guaranteed to be identical with the sequential execution of requests.} and each request has a separate
+\emph{Execution Session}. Therefore, an Execution Session is a separate session of executing application's code in
+order to fulfill an External HTTP request. We call this external request the \emph{initiator} of the Execution Session.
 
-The state of an execution session will be
+
+The state of an Execution Session will be
 destroyed at the end of the session and only the state of heap chunks is preserved. If a session fails and does not
-complete normally, it will not have any effect on any heap chunks.
+complete normally, it will not have any effects on any heap chunks.
 
-During an execution session an application can make \emph{internal} HTTP requests to other applications. Those
-requests will not start a new execution session and will be executed within the current session. In AscEE making an
+During an Execution Session an application can make \emph{internal} HTTP requests to other applications. Those
+requests will not start a new Execution Session and will be executed within the current session. In AscEE making an
 HTTP request to an application is similar to a function invocation, and for that reason, we also refer to them as
 application calls.
 
-The AscEE is designed based on \emph{optional decoupling principle}. When an application makes a request to another
-application, optionally it can choose to be decoupled from the called application. That would mean the called
-application could not affect its caller's state by reentrancy, or could not abort the session by using excessive
-resources or performing illegal operations.
 
+\section{Memory}\label{mem}
+
+Every Argennon application has two types of memory: local memory and heap. Local memory is not persistent and is
+destroyed when the application call ends. Local memory is used for storing local variables and is not directly
+addressable. Heap, on the other hand, is persistent and can be used for persisting data between application calls.
+Heap is addressable and provides low level direct access. Both local memory and heap are limited, but the
+AscEE does not specify any particular limits for them. When an application tries to use too much memory, that may
+cause the execution session to end abruptly. In that case, the Execution Session will not have any effects on the
+state of the heap.
+
+\subsection{Heap Chunks}\label{subsec:heap}
+
+The AscEE heap is split into chunks. Each heap chunk is a continuous finite array of bytes, has a unique identifier, and
+is byte addressable. An application may have several heap chunks with different sizes and can remove or
+resize its chunks or allocate new ones. Every chunk belongs to exactly one application. Only the owner application can
+modify a chunk but there is no restrictions for reading a chunk\footnote{The reason behind this type of access
+control design is the fact that smart contract
+code is usually immutable. That means if a smart contract does not implement a
+getter mechanism for some parts of its internal data, this functionality can never
+be added later, and despite the internal data is publicly available, there will be no
+way for other smart contracts to use this data on-chain.}.
+
+When an application allocates a new heap chunk, the identifier of the new chunk is not generated by
+the AscEE. Instead, the application can choose an identifier itself, provided it has a correct format. This
+is an important feature of the AscEE heap which allows applications to use the AscEE heap as a map
+data structure\footnote{also called a dictionary.}.
+Since the \texttt{chunkID} is a prefix code, any application has its own identifier space, and an application
+can easily find unique identifiers for its chunks.
+
+During an Execution Session every heap chunk has an access type which may disallow certain operations. This access
+type is declared by the initiator request of the Execution Session:
+
+\begin{itemize}
+    \item \texttt{check\_only}: only allows check operations. These operations query the persistence
+    status of a memory location.
+    \item \texttt{read\_only}: only allows read and check operations.
+    \item \texttt{writable}: allows reading and writing.
+    \item \texttt{additive}: only allows additive operations. By additive we mean an addition-like operator without
+    overflow checking which is associative and commutative. Note that the content of these access blocks cannot be read.
+\end{itemize}
+
+\subsubsection{Chunk Resizing}\label{subsubsec:ch-resize}
+
+At the start of executing requests of a block, a validator can consider two values for every
+heap chunk, the size: \texttt{chunkSize} and a size upper bound: \texttt{sizeUpperBound}. The value of
+\texttt{chunkSize} can be determined uniquely at the start of
+every Execution Session, and it may be updated during the session by the owner application. On the other hand,
+the value of \texttt{sizeUpperBound} proposed by the block proposer for each block and is calculated based on values
+declared by requests (i.e.\ transactions) declaring chunk resizing. This value needs to be an upper bound of all the
+declared values and indicates the upper bound of \texttt{chunkSize} during the execution of requests of a block.
+
+The value of \texttt{chunkSize}, can be modified during an Execution Session. However, the new size values can only be
+increasing or decreasing. More precisely, if a request declares that it wants to expand (shrink) a chunk, it can only
+increase (decrease) the value of \texttt{chunkSize} and any specified value during the execution
+session, needs to be greater (smaller) than the previous value of the chunk's size. Any request that wants to expand
+(shrink) a chunk needs to specify a max size (min size). The value of \texttt{chunkSize} can not be set higher
+(lower) than this value.
+
+The value of \texttt{chunkSize} at the end of an Execution Session will determine if a memory location at an
+offset is persistent or not: Offsets lower than the chunk size are persistent, and higher offsets are not.
+Non-persistent locations will be re-initialized with zero at the start of every Execution Session.
+
+Usually an application should not have any assumption about the content of memory locations that are outside the chunk.
+While these locations are zero initialized at the start of every Execution Session, it should be noted that multiple
+invocations of an application may occur in a single Execution Session, and if one of them modifies a location outside
+the chunk, the changes can be seen by next invocations.
+
+There is no way for an application to query \texttt{sizeUpperBound}. As a result, for an application,
+accessing offsets higher than \texttt{chunkSize} results in undefined behaviour, while the behaviour is well-defined
+in the view of validators.
+This enables validators to determine the validity of an offset at the start of the block validation in a parallelized
+preprocessing phase without actually executing requests.
+
+While an application can use \texttt{chunkSize} to determine if an offset is persistent or not, that is not
+considered a good practice. Reading \texttt{chunkSize} decreases transaction parallelization, and should be avoided.
+Instead, applications should use a built-in AscEE function for checking the persistence status of memory addresses.
+
+An application can load any chunk with a valid prefix identifier even if that chunk does not exist. For a non-existent
+chunk the value of \texttt{chunkSize} is always zero.
+
+The address space of a chunk starts from zero and only offsets lower than \texttt{sizeUpperBound} are valid. Trying to
+access any offset higher than this value will always result in a revert for the application.
 
 \section{Identifiers}\label{sec:identifiers}
 
@@ -152,93 +230,6 @@ of leaves in each level is chosen appropriately.
     \caption{Matching a prefixed identifier}\label{alg:match_id}
 \end{algorithm}
 
-
-\section{Heap Chunks}\label{heap}
-
-The persistent data of an Argennon application is stored in continuous finite
-arrays of bytes, called heap chunks. An application may have several heap chunks
-with different sizes, and can remove or
-resize its chunks or allocate new chunks. Every chunk belongs to exactly one application. Only the owner application can
-modify a chunk but there is no restrictions for reading a chunk\footnote{The reason behind this type of access
-control design is the fact that smart contract
-code is usually immutable. That means if a smart contract does not implement a
-getter mechanism for some parts of its internal data, this functionality can never
-be added later, and despite the internal data is publicly available, there will be no
-way for other smart contracts to use this data on-chain.}.
-
-When an application allocates a new heap chunk, the identifier of the new chunk is not generated by
-the AscEE. Instead, the application can choose an identifier itself, provided it has a correct format. This
-is an important feature of the AscEE heap, which allows applications to use the AscEE heap as a dictionary
-data structure\footnote{also called a map.}.
-Since the \texttt{chunkID} is a prefix code, any application has its own identifier space, and an application
-can easily find unique identifiers for its chunks.
-
-\subsection{Chunk Resizing}\label{subsec:ch-resize}
-
-At the start of executing requests of a block, a validator can consider two values for every
-heap chunk, the size: \texttt{chunkSize} and a size upper bound: \texttt{sizeUpperBound}. The value of
-\texttt{chunkSize} can be determined uniquely at the start of
-every execution session, and it may be updated during the session by the owner application. On the other hand,
-the value of \texttt{sizeUpperBound} is determined and fixed for each block and is proposed by the block
-proposer. This value indicates the upper bound of \texttt{chunkSize} during the execution of
-requests of the block, and it can be used by the validator for safe memory allocation.
-
-The value of \texttt{chunkSize}, can be modified during an execution session. However, the new size values can only be
-increasing or decreasing. More precisely, if a request declares that it wants to expand (shrink) a chunk, it can only
-increase (decrease) the value of \texttt{chunkSize} and any specified value during the execution
-session, needs to be greater (smaller) than the previous value of the chunk's size. Any request that wants to expand
-(shrink) a chunk needs to specify a max size (min size). The value of \texttt{chunkSize} can not be set higher
-(lower) than this value.
-
-The value of \texttt{chunkSize} at the end of an execution session will determine if a memory location at an
-offset is persistent or not: Offsets lower than the chunk size are persistent, and higher offsets are not.
-Non-persistent locations will be re-initialized with zero at the start of every execution session.
-
-Usually an application should not have any assumption about the content of memory locations that are outside the chunk.
-While these locations are zero initialized at the start of every execution session, it should be noted that multiple
-invocations of an application may occur in a single execution session, and if one of them modifies a location outside
-the chunk, the changes can be seen by next invocations.
-
-There is no way for an application to query \texttt{sizeUpperBound} of a chunk. As a result, for an application,
-accessing offsets higher than \texttt{chunkSize} results in undefined behaviour, while the behaviour is well-defined
-in the view of validators.
-This enables validators to determine the validity of an offset at the start of the block validation in a parallelized
-preprocessing phase without actually executing requests.
-
-While an application can use \texttt{chunkSize} to determine if an offset is persistent or not, that is not
-considered a good practice. Reading \texttt{chunkSize} decreases transaction parallelization, and should be avoided.
-Instead, applications should use a built-in AscEE function for checking the persistence status of memory addresses.
-
-An application can load any chunk with a valid prefix identifier even if that chunk does not exist. For a non-existent
-chunk the value of \texttt{chunkSize} is always zero.
-
-The address space of a chunk starts from zero and only offsets lower than \texttt{sizeUpperBound} are valid. Trying to
-access any offset higher than this value will always result in a revert for the application.
-
-\subsection{Access Blocks}\label{subsec:access-blocks}
-
-Memory locations inside a chunk can only be accessed through access blocks. An access block is an access interval
-defined on a chunk, which determines the accessible memory locations inside the chunk. Each access block has an offset
-and a size. Multiple access blocks can be defined on a single chunk, but they must be non overlapping.
-Access blocks are byte addressable and may have different access types:
-
-\begin{itemize}
-    \item \texttt{check\_only}: only allows check operations. These operations query the persistence
-    status of a memory location.
-    \item \texttt{read\_only}: only allows read and check operations.
-    \item \texttt{writable}: allows reading and writing.
-    \item \texttt{additive}: only allows additive operations. These operations are addition-like operations without
-    any overflow checking. These operations must be associative and commutative. Note that the content of
-    these access blocks cannot be read.
-\end{itemize}
-
-Chunks and access blocks have different purposes. Chunks are intended for simplifying proof checking of the data
-stored in the Argennon cloud\footnote{Note that
-the Argennon cloud uses cryptographic accumulators for preserving data integrity.} and access blocks are
-required for better parallelization of the request execution. An application should put the data needed for
-validating a single block in the same chunk and the data needed in a single execution session in the same access block.
-
-
 \section{Request Attachments}\label{sec:attachments}
 
 The attachment of a request is a list of request identifiers of the current block that are ``attached'' to the request.
@@ -251,42 +242,43 @@ wants to pay fees. After injecting the digest of those request by validators, th
 correctly and securely by the application that handles fee payment.
 
 
-\section{Authorizing Operations}\label{sec:authorizing-operations}
+\section{Authorization}\label{sec:auth}
 
 In blockchain applications, we usually need to authorize certain operations. For example, for sending an asset
-from a user to another user, first we need to make sure that the sender has authorized this operation.
+from a user to another user, we need to make sure that the sender has authorized that operation.
 
-The AscEE uses \emph{Authenticated Message Passing} for authorizing operations. In this method, every execution
-session has a set of authenticated messages, and those messages are \textbf{explicitly} passed in requests to
+The AscEE uses \emph{Authenticated Message Passing} for authorizing operations. In this method, every Execution
+Session has a set of authenticated messages, and those messages are \textbf{explicitly} passed in requests to
 applications for authorizing operations. These messages act exactly like digital signatures and applications can
-ensure that they are issued by specific accounts. The only difference is that the process of message authentication
-is performed by the AscEE internally and is not performed by the application. For accounts, the AscEE uses digital
-signatures to authenticate messages. Signatures for each request can be validated in parallel during the
-preprocessing step of the block validation, and any type of
-cryptographic signature scheme can be used. For example, we could use BLS aggregate signatures to authenticate all
-messages of a block of the blockchain in bulk.
+ensure that they are issued by their claimed issuer accounts. The only difference is that the process of
+message authentication is performed by the AscEE internally and an application does not explicitly verify cryptographic
+signatures.
 
-Moreover, applications can use built-in functions of the AscEE to generate authenticated messages in run-time.
+Each Execution Session has a list of authenticated messages. Each authenticated message has an index which will be
+used for passing the message to an application as a request parameter. The AscEE uses cryptographic signatures to
+authenticate messages for user accounts. The signatures are validated in parallel during the
+preprocessing step of the block validation, and any type of cryptographic signature scheme can be used.
+
+Also, applications can use built-in functions of the AscEE to generate authenticated messages in run-time.
 This enables an application to authorize operations for another application even if it is not calling that
 application directly.
 
 In addition to authenticated messages, the AscEE provides a set of
-cryptographic functions for validating signatures and cryptographic entities. By using these functions and
+cryptographic functions for validating signatures and calculating cryptographic entities. By using these functions and
 passing cryptographic signatures as parameters to methods, a programmer, having users' public keys, can implement
 the required logic for authorizing operations.
 
-Authorization by explicit authenticated messages and signatures eliminates the need for approval mechanisms or call back
-patterns in Argennon.
-
-\note{The AscEE has no instructions for issuing cryptographic signatures.}
+Authorizing operations by Authenticated Message Passing and explicit signatures eliminates the need for approval
+mechanisms or call back patterns in Argennon.\footnote{The AscEE has no instructions for issuing cryptographic
+signatures.}
 
 
 \section{Reentrancy Protection}\label{sec:reentrancy}
 
-The Argennon Smart Contract Execution Environment provides optional low level reentrancy protection by providing low
+The AscEE provides optional low level reentrancy protection by providing low
 level \emph{entrance locks}. When an application acquires an entrance lock it cannot acquire that lock again and trying
 to do so will result in a revert. The entrance lock of an application will be released when the application explicitly
-releases its lock or when the call that had acquired that lock completes.
+releases its lock or when the call that has acquired that lock completes.
 
 The AscEE reentrancy protection mechanism is optional. An application can allow reentrancy, it can protect only certain
 areas of its code, or can completely disallow reentrancy.
@@ -296,116 +288,6 @@ areas of its code, or can completely disallow reentrancy.
 
 \ldots
 
-
-\section{Resource Management}\label{sec:res-man}
-
-Completing an execution session requires computational resources. The amount of resources used by an execution session
-should be monitored and managed, otherwise a malicious user would be able to easily spam and exhaust resources of the
-execution environment.
-
-In most consensus protocols, we can assume that the block proposer has enough incentive to filter out transactions
-that spam run-time resources. Here by a run-time resource, we mean a resource that at run-time, a limited amount
-of it is available, but its surplus can not be stored for later use. Execution time and local memory are
-examples of such a resource but permanent storage is not.
-
-If a proposed block contains many transactions which need a lot of run-time resources, validators would not
-be able to validate all transactions in a timely manner. Consequently, they may decide to reject the block or if they
-spend enough resources, the confirmation of that block could take more than usual. Longer block time is not
-favoured by block proposers, because it means less throughput of the system which usually means less overall rewards
-for them. In the Argennon protocol the management of run-time resources, is left to the block proposer.
-
-Resource usage can be measured per session or per application call. Obviously per session measurement is
-easier and more efficient. However, when we measure resources per session if
-a session violates its resource caps, determining the point of failure may require precise and error-free resource
-measurement. For example, assume that a session containing an application call
-violates a 2 milliseconds execution time cap. If in the caller's code, the call happens exactly after 2 milliseconds,
-a small fluctuation in the execution time measurement can
-change the point of failure between the called and the caller application. Note that for implementing optional
-decoupling principle in Argennon, we need to determine the
-exact application call which has failed in a call chain, and this fluctuation introduces a nondeterministic
-behaviour which could make block validation impossible. That's why we need per application call
-resource management sometimes. If we define the resource caps per application call and
-perform our measurements for each application call separately, by using caps that are larger than the measurement
-error, errors in the measurements would not change the point of failure in the call chain.
-
-The AscEE has two types of execution sessions: \emph{optimistic} and \emph{monitored}. Resource usage of an optimistic
-session is always measured per session and \textbf{default} pre-defined resource caps are used. On the other hand, for a
-monitored session, resources that can not be measured precisely are measured per application call and their caps are
-determined per application call by the external HTTP request (i.e.\ transaction). The block proposer decides the
-type of the execution session for each transaction.
-
-
-Different computational resources are measured and monitored during an AscEE session:
-\begin{itemize}
-    \item \textbf{execution time}:
-    is the amount of cpu time that is required for executing a session or an application call. The execution time is
-    measured in \emph{AscEE clocks}. One AscEE clock is defined as 1/1000 of the amount
-    of \textbf{cpu time} needed for executing a predefined standard application which is used for benchmarking a host's
-    performance. In other words, by definition, the AscEE imaginary standard machine completes the standard benchmark
-    in 1000 clocks.
-
-    Optimistic sessions have a predefined \texttt{maxClocks} value which is determined by the Argennon protocol. This
-    value defines a bound on the \textbf{total} AscEE clocks of the session, and no per application measurement is done.
-
-    Monitored sessions perform per application call cpu-time measurement, and every application call during a monitored
-    session has a separate \texttt{maxClocks} value. This value determines the maximum amount of time that the cpu
-    can be used for executing that particular application call. It should be noted that the cpu timer of the
-    application call is paused when the application makes a call to another application, and is resumed when the
-    control returns. An application call
-    needs at least 10 clocks and if the value of its \texttt{maxClock} is lower than this value the call will be
-    considered a failed call.
-
-    Each application call has some amount of \texttt{externalClocks}. When an application makes a request to another
-    application it has to \emph{forward} a portion of its \textbf{external} clocks to the called application. This
-    amount will determine the value of \texttt{maxClocks} for the called application, and is subtracted from the value
-    of \texttt{externalClocks} of the caller.
-
-    The amount of external clocks of an application
-    call is defined to be \(2/3\) of its \texttt{maxClocks}. As a result, the total number of clocks of a monitored
-    session is always less than \(3 \times \texttt{maxClocks}\) of the root application call. The value of
-    \texttt{maxClocks} for
-    the root application call is determined by the external request (i.e.\ transaction).
-
-    \item \textbf{local memory}:
-    any memory usage of an application that is not part of a heap chunk and is not part of another measured resource
-    will be considered as local memory usage. Local memory is not persistent and when an application finishes serving a
-    request and returns the HTTP response (i.e.\ the application call completes) its local memory is deleted.
-    This resource is measured in bytes.
-
-    Optimistic sessions measure local memory usage per session and enforce a protocol-defined cap on the total amount
-    of local memory a session can use. Monitored sessions measure local memory usage per
-    application call and enforce a protocol-defined cap for each application call separately. An application call
-    which tries to use more local memory than the cap, fails.
-    \item \textbf{heap access list}:
-    every session can only access heap locations that are declared in its access list. In addition,
-    resizing heap chunks can only be done in the range of the pre-declared lower bound and upper bound.
-    \item \textbf{app access list}:
-    a session may only make requests to applications that are declared in its application access list.
-    \item \textbf{call depth}:
-    during a session the number of nested application calls can not be more than a threshold. This threshold is
-    determined by the Argennon protocol. It should be noted that a differed call is considered like a normal call and
-    increases the call depth by one level.
-    \item \textbf{differed calls}:
-    every application call can have a limited number of differed calls which is determined by the protocol.
-    To simplify the implementation, this limit is defined per application call. Since in Argennon the call depth is
-    limited, a per-application call limit will also define an implicit limit for the total number of active differed
-    calls.
-    \item \textbf{virtual signatures}:
-    \item \textbf{number of entrance locks}:
-\end{itemize}
-
-In Argennon, execution time and local memory are considered \emph{nondeterministic} resources. A nondeterministic
-resource is a resource that can not be measured precisely and its measurement always contains a random error.
-Optimistic sessions are not allowed to fail because of violating nondeterministic resource limits. As a result, the
-block proposer must always choose a monitored session for a transaction that is included in the block and violates a
-nondeterministic resource cap.
-
-When a transaction fails due to the violation of a limit for a nondeterministic resource, the proposer is
-required to exactly specify the application call which violates that limit in the execution session. When validators are
-executing a monitored session, for each application call, they enforce considerably larger limits for
-nondeterministic resources. Only in case the proposer has declared that an application call violates a limit, the
-validators will enforce the actual value of the limit. This simple mechanism ensures that, with a very high
-probability, validators agree with the proposer, although their measurements could be different.
 
 
 \section{The ArgC Language}\label{sec:the-argc-language}

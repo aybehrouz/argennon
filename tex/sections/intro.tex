@@ -107,8 +107,13 @@ On the blockchain, Argennon applications (i.e smart contracts) are stored in a h
 the Argennon Standard Application Representation (ASAR). The ASAR is intended for preserving the
 high level information of the application logic to facilitate platform specific compiler optimization at a host
 machine. This enables delegates to compile and optimize Argennon applications for their specific hardware platforms
-and execute applications efficiently, ensuring the state transition can be found as fast as possible. Moreover,
-validators by using a special compiler, generate arithmetization of this language and use it for verifying CI proofs.
+and execute applications efficiently, ensuring the state transition can be found as fast as possible.
+
+In addition to the ASAR, on the blockchain an Argennon application is stored in the Argennon Prover Machine (APM) code.
+This code is used by validators for CI proof verification. The Argennon Prover Machine is a virtual
+machine tailored for efficient verification of AscEE computations by
+argument systems. The APM has a minimal RISC architecture with a very compact instruction set. This ensures that
+its transition function has an efficient circuit complexity.
 
 Independence of CI statements is useful, but is not enough for having a truly scalable blockchain. To increase
 parallelism, the Argennon protocol enforces all external requests to pre-declare their memory access locations. That

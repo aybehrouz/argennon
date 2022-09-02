@@ -126,3 +126,113 @@ caps:
 \end{lstlisting}
 
 
+\section{Resource Management}\label{sec:res-man}
+
+Completing an Execution Session requires computational resources. The amount of resources used by an Execution Session
+should be monitored and managed, otherwise a malicious user would be able to easily spam and exhaust resources of the
+execution environment.
+
+In most consensus protocols, we can assume that the block proposer has enough incentive to filter out transactions
+that spam run-time resources. Here by a run-time resource, we mean a resource that at run-time, a limited amount
+of it is available, but its surplus can not be stored for later use. Execution time and local memory are
+examples of such a resource but permanent storage is not.
+
+If a proposed block contains many transactions which need a lot of run-time resources, validators would not
+be able to validate all transactions in a timely manner. Consequently, they may decide to reject the block or if they
+spend enough resources, the confirmation of that block could take more than usual. Longer block time is not
+favoured by block proposers, because it means less throughput of the system which usually means less overall rewards
+for them. In the Argennon protocol the management of run-time resources, is left to the block proposer.
+
+Resource usage can be measured per session or per application call. Obviously per session measurement is
+easier and more efficient. However, when we measure resources per session if
+a session violates its resource caps, determining the point of failure may require precise and error-free resource
+measurement. For example, assume that a session containing an application call
+violates a 2 milliseconds execution time cap. If in the caller's code, the call happens exactly after 2 milliseconds,
+a small fluctuation in the execution time measurement can
+change the point of failure between the called and the caller application. Note that for implementing optional
+decoupling principle in Argennon, we need to determine the
+exact application call which has failed in a call chain, and this fluctuation introduces a nondeterministic
+behaviour which could make block validation impossible. That's why we need per application call
+resource management sometimes. If we define the resource caps per application call and
+perform our measurements for each application call separately, by using caps that are larger than the measurement
+error, errors in the measurements would not change the point of failure in the call chain.
+
+The AscEE has two types of execution sessions: \emph{optimistic} and \emph{monitored}. Resource usage of an optimistic
+session is always measured per session and \textbf{default} pre-defined resource caps are used. On the other hand, for a
+monitored session, resources that can not be measured precisely are measured per application call and their caps are
+determined per application call by the external HTTP request (i.e.\ transaction). The block proposer decides the
+type of the Execution Session for each transaction.
+
+
+Different computational resources are measured and monitored during an AscEE session:
+\begin{itemize}
+    \item \textbf{execution time}:
+    is the amount of cpu time that is required for executing a session or an application call. The execution time is
+    measured in \emph{AscEE clocks}. One AscEE clock is defined as 1/1000 of the amount
+    of \textbf{cpu time} needed for executing a predefined standard application which is used for benchmarking a host's
+    performance. In other words, by definition, the AscEE imaginary standard machine completes the standard benchmark
+    in 1000 clocks.
+
+    Optimistic sessions have a predefined \texttt{maxClocks} value which is determined by the Argennon protocol. This
+    value defines a bound on the \textbf{total} AscEE clocks of the session, and no per application measurement is done.
+
+    Monitored sessions perform per application call cpu-time measurement, and every application call during a monitored
+    session has a separate \texttt{maxClocks} value. This value determines the maximum amount of time that the cpu
+    can be used for executing that particular application call. It should be noted that the cpu timer of the
+    application call is paused when the application makes a call to another application, and is resumed when the
+    control returns. An application call
+    needs at least 10 clocks and if the value of its \texttt{maxClock} is lower than this value the call will be
+    considered a failed call.
+
+    Each application call has some amount of \texttt{externalClocks}. When an application makes a request to another
+    application it has to \emph{forward} a portion of its \textbf{external} clocks to the called application. This
+    amount will determine the value of \texttt{maxClocks} for the called application, and is subtracted from the value
+    of \texttt{externalClocks} of the caller.
+
+    The amount of external clocks of an application
+    call is defined to be \(2/3\) of its \texttt{maxClocks}. As a result, the total number of clocks of a monitored
+    session is always less than \(3 \times \texttt{maxClocks}\) of the root application call. The value of
+    \texttt{maxClocks} for
+    the root application call is determined by the external request (i.e.\ transaction).
+
+    \item \textbf{local memory}:
+    any memory usage of an application that is not part of a heap chunk and is not part of another measured resource
+    will be considered as local memory usage. Local memory is not persistent and when an application finishes serving a
+    request and returns the HTTP response (i.e.\ the application call completes) its local memory is deleted.
+    This resource is measured in bytes.
+
+    Optimistic sessions measure local memory usage per session and enforce a protocol-defined cap on the total amount
+    of local memory a session can use. Monitored sessions measure local memory usage per
+    application call and enforce a protocol-defined cap for each application call separately. An application call
+    which tries to use more local memory than the cap, fails.
+    \item \textbf{heap access list}:
+    every session can only access heap locations that are declared in its access list. In addition,
+    resizing heap chunks can only be done in the range of the pre-declared lower bound and upper bound.
+    \item \textbf{app access list}:
+    a session may only make requests to applications that are declared in its application access list.
+    \item \textbf{call depth}:
+    during a session the number of nested application calls can not be more than a threshold. This threshold is
+    determined by the Argennon protocol. It should be noted that a differed call is considered like a normal call and
+    increases the call depth by one level.
+    \item \textbf{differed calls}:
+    every application call can have a limited number of differed calls which is determined by the protocol.
+    To simplify the implementation, this limit is defined per application call. Since in Argennon the call depth is
+    limited, a per-application call limit will also define an implicit limit for the total number of active differed
+    calls.
+    \item \textbf{virtual signatures}:
+    \item \textbf{number of entrance locks}:
+\end{itemize}
+
+In Argennon, execution time and local memory are considered \emph{nondeterministic} resources. A nondeterministic
+resource is a resource that can not be measured precisely and its measurement always contains a random error.
+Optimistic sessions are not allowed to fail because of violating nondeterministic resource limits. As a result, the
+block proposer must always choose a monitored session for a transaction that is included in the block and violates a
+nondeterministic resource cap.
+
+When a transaction fails due to the violation of a limit for a nondeterministic resource, the proposer is
+required to exactly specify the application call which violates that limit in the Execution Session. When validators are
+executing a monitored session, for each application call, they enforce considerably larger limits for
+nondeterministic resources. Only in case the proposer has declared that an application call violates a limit, the
+validators will enforce the actual value of the limit. This simple mechanism ensures that, with a very high
+probability, validators agree with the proposer, although their measurements could be different.
+

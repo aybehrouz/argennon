@@ -4,7 +4,6 @@
 
 
 \documentclass[11pt, a4paper]{report}
-\usepackage[a4paper]{geometry}
 
 % Packages
 \usepackage{tipa}
@@ -18,7 +17,8 @@
 \usepackage{tcolorbox}
 \usepackage{amsmath}
 \usepackage{mathtools}
-
+\usepackage[a4paper]{geometry}
+\usepackage{tikz}
 
 %\binoppenalty=99999
 %\relpenalty=99999
@@ -71,9 +71,11 @@
     \chapter{Introduction}\label{ch:intro}
     \input{sections/intro}
 
-    \chapter{The Argennon Smart Contract Execution Environment}\label{ch:AVM}
-    \note{This chapter is outdated and does not include CI proofs. Currently a new version is being rewritten.}
+    \chapter{The Argennon Smart Contract Execution Environment}\label{ch:AscEE}
     \input{sections/avm}
+
+    \chapter{The Argennon Prover Machine}\label{ch:APM}
+    \input{sections/apm}
 
 
     \chapter{Persistence Layer}\label{ch:persistance}
@@ -85,7 +87,7 @@
 
     \section{Normal Mode}\label{sec:normal-mode}
     Unlike conventional blockchains, Argennon does not use a P2P network architecture. Instead, it uses a
-    client-server topology, based on a permission-less list of ZK-EDB servers. ZK-EDB servers are a
+    client-server topology, based on a permission-less network of PVC servers. PVC servers are a
     crucial part of the Argennon ecosystem, and they form the backbone of the Argennon networking layer.
     \note{not yet written...}
 
