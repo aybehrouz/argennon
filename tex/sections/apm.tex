@@ -9,18 +9,18 @@ states indeed respects the APM specification. The APM is a stack machine and has
 The word size of the APM is 64-bit.
 
 The Argennon Prover Machine gets as its primary input a vector $(\mathbf{C}_H,\mathbf{C}_P,\mathbf{C}_R)$, where
-$\mathbf{C}_H$ is a commitment to the AscEE Heap, $\mathbf{C}_P$ is a commitment to the AscEE Program Area and
-$\mathbf{C}_R$ is a commitment to an ordered list of requests. The APM then outputs a final
-$\mathbf{accept}$ flag which indicates if the execution has ended successfully and also outputs the updated
-commitments to the AscEE Heap and Program Area: $(\mathbf{C}_{H'},\mathbf{C}_{P'},\mathbf{accept})$.
+$\mathbf{C}_H$ is a commitment to the AscEE Heap, $\mathbf{C}_P$ is a commitment to the AscEE program area and
+$\mathbf{C}_R$ is a commitment to an ordered list of requests. The APM then outputs the updated
+commitments to the AscEE heap and program area and a final $\mathbf{accept}$ flag which indicates if the execution has
+ended successfully or not: $(\mathbf{C}_{H'},\mathbf{C}_{P'},\mathbf{accept})$.
 
-Producing the required outputs from these inputs is not computationally feasible so the APM accepts an auxiliary
+Producing the required outputs from these inputs is not computationally feasible so the APM receives an auxiliary
 input vector $(H,\pi_H,P,\pi_P,R,\pi_R,h)$, where $\pi_X$ is a proof that proves $X$ can be opened w.r.t
-$\mathbf{C}_X$. The auxiliary input $h$ is a hint that helps the APM make nondeterministic choices correctly.
+$\mathbf{C}_X$ and $h$ is a hint that helps the APM make nondeterministic choices correctly.
 
 The APM consists of four main modules:
 \begin{itemize}
-    \item \textbf{Preprocessor:} This module prepares the input data for the NEU and PRU. It verifies that $H,
+    \item \textbf{Preprocessor:} This module prepares the input data for other modules. It verifies that $H,
     P,R$ are valid w.r.t the provided commitments. It also processes the input data and ensures it has the
     correct format and is valid. For example it verifies the signatures of authenticated messages or
     verifies that the proposed chunk bounds are valid.

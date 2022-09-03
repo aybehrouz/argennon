@@ -128,7 +128,7 @@ caps:
 
 \section{Resource Management}\label{sec:res-man}
 
-Completing an Execution Session requires computational resources. The amount of resources used by an Execution Session
+Completing an execution session requires computational resources. The amount of resources used by an execution session
 should be monitored and managed, otherwise a malicious user would be able to easily spam and exhaust resources of the
 execution environment.
 
@@ -161,7 +161,7 @@ The AscEE has two types of execution sessions: \emph{optimistic} and \emph{monit
 session is always measured per session and \textbf{default} pre-defined resource caps are used. On the other hand, for a
 monitored session, resources that can not be measured precisely are measured per application call and their caps are
 determined per application call by the external HTTP request (i.e.\ transaction). The block proposer decides the
-type of the Execution Session for each transaction.
+type of the execution session for each transaction.
 
 
 Different computational resources are measured and monitored during an AscEE session:
@@ -230,7 +230,7 @@ block proposer must always choose a monitored session for a transaction that is 
 nondeterministic resource cap.
 
 When a transaction fails due to the violation of a limit for a nondeterministic resource, the proposer is
-required to exactly specify the application call which violates that limit in the Execution Session. When validators are
+required to exactly specify the application call which violates that limit in the execution session. When validators are
 executing a monitored session, for each application call, they enforce considerably larger limits for
 nondeterministic resources. Only in case the proposer has declared that an application call violates a limit, the
 validators will enforce the actual value of the limit. This simple mechanism ensures that, with a very high
