@@ -1,38 +1,36 @@
 %! Author = aybehrouz
 
-The Argennon Smart Contract Execution Environment has two persistent memory areas: \emph{code area}, and \emph{heap}.
-Code area stores the Argennon Standard Representation of
+The Argennon Smart Contract Execution Environment has two persistent memory areas: \emph{program area}, and \emph{heap}.
+Program area stores the ASAR and the APM code of
 applications\footnote{also it stores applications' constants.}, and heap stores heap chunks.
-Both of these data elements, ASRs and heap chunks, can be considered as continuous arrays of bytes.
-Throughout this chapter, we shall call these data elements \emph{objects}.
+Both of these data elements can be considered as continuous arrays of bytes.
+Throughout this chapter, we shall call these data elements \emph{chunks}.
 
 
 \section{Storage Pages}\label{sec:storage-pages}
 
 In the AscEE persistence layer, similar objects are clustered together and constitute a bigger data element which we
-call
-a \emph{page}.\footnote{we avoid calling them clusters, because usually a cluster refers to a \emph{set}. AscEE object
-clusters are not sets. They are ordered lists, like a page containing an ordered list of words or sentences.}
-A page is an ordered list of an arbitrary number of objects, which their order reflects the order they were added to
-the page:
-\[
-    P = (O_1,O_2,\dots,O_n),\quad i < j \; \Leftrightarrow \; \textrm{$O_i$ was added before $O_j$}\ \cdot
-\]
+call a \emph{page}.\footnote{we avoid calling them clusters, because usually a cluster refers to a \emph{set}. AscEE
+chunk clusters are not sets. They are ordered lists, like a page containing an ordered list of words or sentences.}
+A page is an ordered list of an arbitrary number of chunks. Every page has a \emph{native} chunk that has the same
+identifier as the page. In addition to the native chunk, a page can host any number of \emph{migrant} chunks.
+A page of the AscEE storage should consists of chunks that have very similar access patterns. Ideally, when a page is
+needed for validating a block, almost all of its chunks should be needed for either reading or writing. We prefer
+that the chunks are needed for the same access type. In other words, the chunks of a page should be chosen in a way that
+for validating a block, we need to either read all of them or modify\footnote{and probably read.} all of them.
 
-A page of the AscEE storage should contain objects that have very similar access patterns. Ideally, when a page is needed
-for validating a block, almost all of its objects should be needed for either reading or writing. We prefer
-that the objects are needed for the same access type. In other words, the objects of a page are chosen in a way that
-for validating a block, we usually need to either read all of them or modify\footnote{and probably read.} all of them.
-
+When a page contains migrants, its native chunk can not be migrated. If the page does not
+have any migrants, its native chunk can be migrated and after that the page will be converted into a special
+\texttt{<moved>} page. When a non-native chunk is migrated to another page, it will be simply removed from the page.
 
 \section{Publicly Verifiable Database Servers}\label{sec:zk-edb}
 
-Pages of the AscEE storage are persisted using \emph{dynamic cryptographic accumulators}. Argennon
-has three dynamic cryptographic accumulators: \emph{staking} database, which stores all the data that is associated with
-the Argennon consensus protocol, \emph{code} database, which stores the AscEE code area, and \emph{heap} database,
-which stores the AscEE heap. The commitment of these three accumulators are included in every block of the Argennon
-blockchain. These accumulators, in the Argennon network, are hosted on special database nodes called Publicly
-Verifiable Database (PV-DB) servers.
+Pages of the AscEE storage are persisted using \emph{dynamic universal accumulators}. Argennon
+has two dynamic accumulators: \emph{program} database, which stores the AscEE program area, and \emph{heap} database,
+which stores the AscEE heap. The commitment of these accumulators are included in every block of the Argennon
+blockchain. In the Argennon cloud, nodes that store these accumulators are called Publicly Verifiable Database
+(PV-DB) servers.
+
 We consider the following properties for a PV-DB:
 \begin{itemize}
     \item The PV-DB contains a mapping from a set of keys to a set of values.
@@ -45,40 +43,19 @@ We consider the following properties for a PV-DB:
     associated with \(x\) instead of \(D\).
 \end{itemize}
 
-Pages of the AscEE storage are stored in the PV-DBs, with an index: \texttt{pageIndex} as their key.
-The \texttt{pageIndex} is required to be smaller than a certain value, determined by the
-protocol, to facilitate the usage of PV-DBs that are based on vector commitments.
-For this reason, the AscEE clustering algorithm always tries to reuse indices and keep the number of used indices
-as low as possible.
-
-The commitments of the AscEE cryptographic accumulators are affected by the way data objects are clustered. Therefore,
-the Argennon clustering algorithm has to be a part of the consensus protocol.
+The commitments of the AscEE cryptographic accumulators are affected by the way data chunks are clustered in pages.
+Therefore, the Argennon clustering algorithm has to be a part of the consensus protocol.
 
 Every block of the Argennon blockchain contains a set of \emph{clustering directives}. These directives
 can only modify pages that were used for validating the block, and can
-include directives for moving an object from one page to another or directives specifying which pages will contain
-the newly created objects. These directives are always executed by nodes at the end of block validation.
+include directives for moving a chunk from one page to another or directives specifying which pages will contain
+newly created chunks. These directives are applied at the end of block validation, after executing requests.
 
-A block proposer could obtain clustering directives from any third party source\footnote{we can say the AscEE clustering
-algorithm is essentially off-chain.}. This will not
+A block proposer is allowed to obtain clustering directives from any third party source\footnote{we can say the AscEE
+clustering algorithm is essentially off-chain.}. This will not
 affect Argennon security, since the integrity of a database can not be altered by clustering directives.
 Those directives can only affect the performance of the Argennon network, and directives of a single block can
 not affect the performance considerably.
-
-\subsection{Vector Commitments}\label{subsec:impl-zk-edbs}
-
-Informally, vector commitments allow committing to an ordered sequence of $q$ values
-(i.e.\ a vector), rather than to single messages. This is done in a way such that it is later possible
-to open the commitment with respect to specific positions (e.g., to prove that $m_i$ is the $i$-th committed
-message). More precisely, vector commitments are required to satisfy what is called position binding.
-Position binding states that an adversary should not be able to open a commitment to two different
-values at the same position. While this property, by itself, would be trivial to realize using standard
-commitment schemes, what makes vector commitments interesting is that they are concise, i.e.,
-the size of the commitment string as well as the size of each opening \textbf{is independent of the
-vector length}.
-
-\note{not yet written...}
-
 
 \section{Object Clustering Algorithm}\label{sec:clustering}
 
