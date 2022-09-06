@@ -8,7 +8,7 @@ of the smallest circuit that, given two adjacent states in the trace, verifies t
 states indeed respects the APM specification. The APM is a stack machine and has a random access key-value memory.
 The word size of the APM is 64-bit.
 
-The Argennon Prover Machine gets as its primary input a vector $(\mathbf{C}_H,\mathbf{C}_P,\mathbf{C}_R)$, where
+The Argennon Prover Machine gets as its primary input a vector $(\mathbf{C}_H,\mathbf{C}_P,\mathbf{C}_R)$ where
 $\mathbf{C}_H$ is a commitment to the AscEE Heap, $\mathbf{C}_P$ is a commitment to the AscEE program area and
 $\mathbf{C}_R$ is a commitment to an ordered list of requests. The APM then outputs the updated
 commitments to the AscEE heap and program area and a final $\mathbf{accept}$ flag which indicates if the execution has
@@ -36,12 +36,16 @@ The APM consists of four main modules:
     updating the code of existing application is performed by this module.
 \end{itemize}
 
-The configuration of the APM can be considered as a quadruple
-$(\mathbb{S},\mathbb{L},\mathbb{T}_{NEU},\mathbb{T}_{FRU})$,
-where $\mathbb{S}$ is the size of the internal stack, $\mathbb{L}$ is the amount of local memory and
-$\mathbb{T}_{NEU}, \mathbb{T}_{FRU}$ are the number of cycles that the Normal Execution Unit (NEU)
-and Failure Repeater Unit (FRU) runs for. It should be noted that the APM has one local memory which
-is used for all application calls.
+
+The configuration of the APM can be considered as a tuple
+\[
+(\mathcal{S},\mathcal{L}_{\text{NEU}},\mathcal{L}_{\text{FRU}},\mathcal{T}_{\text{NEU}},
+\mathcal{T}_{\text{FRU}})\ ,
+\]
+where $\mathcal{S}$ is the size of the internal stack, $\mathcal{L}_{\text{NEU}},\mathcal{L}_{\text{FRU}}$ are the
+amount of local memory of the normal execution and failure repeater units respectively, and
+$\mathcal{T}_{\text{NEU}},\mathcal{T}_{\text{FRU}}$ are the number of cycles that the NEU and FRU runs for. It should
+be noted that the APM does not use a different local memory for each application call.
 
 %
 %\begin{tikzpicture}
