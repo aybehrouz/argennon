@@ -25,12 +25,16 @@ The APM consists of four main modules:
     correct format and is valid. For example it verifies the signatures of authenticated messages or
     verifies that the proposed chunk bounds are valid.
     \item \textbf{Normal Execution Unit (NEU):} This module executes the requests whose execution completes
-    normally. It outputs the updated heap chunks and an $accept$ flag. More formally it evaluates $(H',accept)=P(H,
-    R_{good})$, where $H'$ is the updated heap chunks and the $accept$ flag will be set to false, If an
+    normally. It outputs the updated heap chunks and an $accept_N$ flag. More formally it evaluates $(H',accept_N)=P(H,
+    R_{good})$, where $H'$ is the updated heap chunks and the $accept_N$ flag will be set to false, If an
     application terminates abruptly.
-    \item \textbf{Failure Repeater Unit (FRU):} This module evaluates $accept=P(H',R_{bad})$, where $R_{bad}$ is
-    those requests whose execution terminates abnormally, $H'$ is the output of the NEU and the $accept$ flag is set
+    \item \textbf{Failure Repeater Unit (FRU):} This module evaluates $accept_F=P(H',R_{bad})$, where $R_{bad}$ is
+    those requests whose execution terminates abnormally, $H'$ is the output of the NEU and the $accept_F$ flag is set
     to false if a request execution completes normally.
+
+    The FRU has a higher circuit complexity than the NEU\@. Unlike the NEU, the FRU is able to restore the initial state
+    of the heap when an application fails. It also calculates the execution cost of every instruction and if the
+    application's execution cost exceeds its predefined cap, the FRU will terminate the application.
     \item \textbf{Postprocessor:} This module is responsible for calculating the updated commitments
     $(\mathbf{C}_{H'}, \mathbf{C}_{P'})$ and the final $\mathbf{accept}$ flag. Installing new applications or
     updating the code of existing application is performed by this module.

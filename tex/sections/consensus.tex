@@ -2,17 +2,17 @@
 
 The credibility of a block of the Argennon blockchain is determined by the certificates it has received
 from different sets of users, known as committees. There are two primary type of certificate committees in
-Argennon: the committee of \emph{delegates} and the committee
-of \emph{validators}. Argennon has \emph{one} committee of delegates and $m$ committees of validators.
+Argennon: the committee of \emph{delegates} and the assembly of \emph{validators}. Argennon has \emph{one} committee
+of delegates and $m$ assemblies of validators.
 
 The committee of delegates issues a certificate for every block of the Argennon blockchain, and each
-committee of validators issues a certificate every $m$ blocks. A validators' committee will
-certify a block only if it has already been certified by the committee of delegates. Every committee of validators has
+assembly of validators issues a certificate every $m$ blocks. A validators assembly will
+certify a block only if it has already been certified by the committee of delegates. Every assembly of validators has
 an index between $0$ and $m - 1$, and it issues a certificate for block number $n$, if $n$ modulo $m$ equals
-the committee index.
+the assembly index.
 
 Every block of the Argennon blockchain needs a certificate from both the committee of delegates and
-the committee of validators. A block is considered final after its \textbf{next} block receives \textbf{both} of
+the assembly of validators. A block is considered final after its \textbf{next} block receives \textbf{both} of
 its certificates. In Argennon as long as more than half of the total stake of validators is controlled by honest users,
 the probability of discarding a final block is near zero even if all the delegates are malicious.
 
@@ -76,7 +76,7 @@ it can not change it back to \texttt{online} for \texttt{statusCoolDown} number 
 \note{When a validator changes his status, the change has no effect until the block containing the status
 change transaction gets certified by his committee.}
 
-A block certificate issued by some members of a validators' committee is considered valid, if according to
+A block certificate issued by some members of a validators assembly is considered valid, if according to
 the staking database of the previous block \textbf{certified by the same committee}, we have:\footnote{If we calculate
 the stake values based on the previous block a malicious committee can select the validators of the next block.}
 \begin{itemize}
@@ -92,7 +92,7 @@ The delegates can generate blocks very fast. Therefore, the Argennon blockchain 
 unvalidated part, which contains blocks that have a certificate from the committee of delegates but have not
 yet received a certificate from the validators.
 
-As we mentioned before, the block with height $n$ needs a certificate from the committee of
+As we mentioned before, the block with height $n$ needs a certificate from the assembly of
 validators with index $n$ modulo $m$. To decide about signing the certificate of a block which already has
 a certificate from the delegates, a validator checks the conditional
 validity\footnote{See Section~\ref{subsec:block-validation}} of the block, and
@@ -112,7 +112,7 @@ fork made by malicious delegates will not receive any certificates from validato
 The value of $m$ is determined by the ADAGs. but it can never be higher than $25$. This way, it is guaranteed
 that on average, any block of the Argennon blockchain is validated by at least $0.02$ of the total ARG supply.
 
-block certificates issued by committees of validators are included in the blocks of the Argennon blockchain.
+block certificates issued by validators assemblies are included in the blocks of the Argennon blockchain.
 A block can contain multiple certificates, provided that
 those certificates belong to consecutive blocks.
 
