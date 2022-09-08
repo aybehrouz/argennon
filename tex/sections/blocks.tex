@@ -79,17 +79,19 @@ Section~\ref{subsec:validators-committee}, this property plays an important role
 \subsection{Block Certificate}\label{subsec:block-certificate}
 
 An Argennon block certificate is an aggregate signature of some predefined subset of accounts. This predefined subset
-is called the certificate assembly and their signature ensures that the certified block is conditionally
+is called the certificate assembly or committee and their signature ensures that the certified block is conditionally
 valid given the validity of some previous block.
+
+Because it is not usually possible to collect the signatures of all members of a certificate committee, an Argennon
+block certificate essentially is an Accountable-Subgroup Multi-signature (ASM).
 
 Argennon uses a parallel algorithm to produce block certificates and therefore the signature scheme needs to satisfy
 certain properties:
 \begin{itemize}
     \item \textbf{Associative aggregation:} the signature aggregation operator is associative.
     \item \textbf{Efficient cancellation:} if $S$ is the predefined set of users that we need their aggregate
-    signature, verifying an aggregate signature of $S-U$ can be done in time $O(T+|U|)$, where the aggregate
-    signature of $S$ can be verified in
-    $O(T)$.
+    signature, verifying an aggregate signature of $S-U$ can be done in time $O(T+|U|)$, if the aggregate
+    signature of $S$ can be verified in $O(T)$.
 \end{itemize}
 
 An example for a signature scheme that supports all these properties is the BLS signature scheme.
@@ -161,10 +163,7 @@ To defend against \emph{rogue public key} attacks, Argennon uses Prove Knowledge
 explained in Section~\ref{sec:accounts}, when an account is created its public keys need to be registered in
 the ARG smart contract. Therefore, the KOSK scheme can be easily implemented in Argennon.
 
-Because it is not usually possible to collect the signatures of all members of a certificate committee, an Argennon
-block certificate essentially is an Accountable-Subgroup Multi-signature (ASM). Argennon uses a simple ASM scheme
-based on BLS aggregate signatures.
-
+Argennon uses a simple ASM scheme based on BLS aggregate signatures.
 Argennon block certificates constitute an ordered sequence based on the order of blocks they certify. If we show
 the $i$-th certificate\footnote{note that the $i$-th certificate is not
 necessarily the certificate of the $i$-th block.} of committee $C$ with $\C_i$, and the set of signers

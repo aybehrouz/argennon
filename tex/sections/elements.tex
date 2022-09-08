@@ -91,7 +91,7 @@ Every Argennon transaction is required to provide the following information as a
 resources it needs:
 
 \begin{itemize}
-    \item Maximum AscEE clocks
+    \item Maximum execution cost
     \item The list of applications the request will call
     \item The list of access blocks the request needs
     \item \texttt{maxSize} for chunks it wants to expand
@@ -125,7 +125,7 @@ caps:
 \end{lstlisting}
 
 
-\section{Resource Management}\label{sec:res-man}
+\subsection{Resource Management}\label{subsec:res-man}
 
 Completing an execution session requires computational resources. The amount of resources used by an execution session
 should be monitored and managed, otherwise a malicious user would be able to easily spam and exhaust resources of the

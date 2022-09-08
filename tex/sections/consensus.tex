@@ -137,20 +137,20 @@ must go higher than \texttt{minOnlineStake} threshold.
 
 \subsection{Signature Aggregation}\label{subsec:sig-agg}
 
-In Argennon, signature aggregation is mostly performed by ZK-EDB servers. To distribute the aggregation workload
-between different servers, Every committee of validators is divided into pre-determined groups, and each ZK-EDB
+In Argennon, signature aggregation is mostly performed by PVC servers. To distribute the aggregation workload
+between different servers, every validators assembly is divided into pre-determined groups, and each PVC
 server is responsible for signature aggregation of one group. To make sure that there is enough redundancy, the
-total number of groups should be less than the number of ZK-EDB servers and each group should be assigned to
-multiple ZK-EDB servers.
+total number of groups should be less than the number of PVC servers and each group should be assigned to
+multiple PVC servers.
 
 Any member of a group knows all the servers that are responsible for signature aggregation of his group. When a member
-signs a block certificate, he sends his signature to \textbf{all} the severs that aggregate the signatures of his group.
+signs a block certificate, he sends his signature to all of the severs that aggregate the signatures of his group.
 These servers aggregate the signatures they receive and then send the aggregated signature to the delegates.
 Furthermore, the delegates aggregate these signatures to produce the final block certificate
 and then include it in the next block.
 
-The role of the delegates in the signature aggregation is limited. The important part of the work is done by ZK-EDB
-servers. As long as there are enough honest ZK-EDB servers, the network will be able to perform signature aggregation
+The role of the delegates in the signature aggregation is limited. The important part of the work is done by PVC
+servers. As long as there are enough honest PVC servers, the network will be able to perform signature aggregation
 even if the delegates are malicious.
 
 \subsection{The Recovery Protocol}\label{subsec:recovery}
