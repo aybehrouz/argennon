@@ -9,7 +9,7 @@ states indeed respects the APM specification. The APM is a stack machine and has
 The word size of the APM is 64-bit.
 
 The Argennon Prover Machine gets as its primary input a vector $(\mathbf{C}_H,\mathbf{C}_P,\mathbf{C}_R)$ where
-$\mathbf{C}_H$ is a commitment to the AscEE Heap, $\mathbf{C}_P$ is a commitment to the AscEE program area and
+$\mathbf{C}_H$ is a commitment to the AscEE heap, $\mathbf{C}_P$ is a commitment to the AscEE program area and
 $\mathbf{C}_R$ is a commitment to an ordered list of requests. The APM then outputs the updated
 commitments to the AscEE heap and program area and a final $\mathbf{accept}$ flag which indicates if the execution has
 ended successfully or not: $(\mathbf{C}_{H'},\mathbf{C}_{P'},\mathbf{accept})$.
@@ -23,13 +23,13 @@ The APM consists of four main modules:
     \item \textbf{Preprocessor:} This module prepares the input data for other modules. It verifies that $H,
     P,R$ are valid w.r.t the provided commitments. It also processes the input data and ensures it has the
     correct format and is valid. For example it verifies the signatures of authenticated messages or
-    verifies that the proposed chunk bounds are valid.
+    checks that the proposed chunk bounds are valid.
     \item \textbf{Normal Execution Unit (NEU):} This module executes the requests whose execution completes
-    normally. It outputs the updated heap chunks and an $accept_N$ flag. More formally it evaluates $(H',accept_N)=P(H,
-    R_{good})$, where $H'$ is the updated heap chunks and the $accept_N$ flag will be set to false, If an
+    normally. It outputs the updated heap chunks and an $accept_N$ flag. More formally it evaluates
+    $H',accept_N=P(H,R_{good})$, where $H'$ is the updated heap chunks and $accept_N$ flag will be set to false, If an
     application terminates abruptly.
     \item \textbf{Failure Repeater Unit (FRU):} This module evaluates $accept_F=P(H',R_{bad})$, where $R_{bad}$ is
-    those requests whose execution terminates abnormally, $H'$ is the output of the NEU and the $accept_F$ flag is set
+    those requests whose execution terminates abnormally, $H'$ is the output of the NEU and $accept_F$ flag is set
     to false if a request execution completes normally.
 
     The FRU has a higher circuit complexity than the NEU\@. Unlike the NEU, the FRU is able to restore the initial state

@@ -61,11 +61,11 @@ The Argennon protocol calculates a stake value for every account, which is an es
 system, and is measured in ARGs. Any account whose stake value is higher than
 \texttt{minValidatorsStake} threshold is considered a \emph{validator}.
 The \texttt{minValidatorsStake}
-threshold is determined by the ADAGs, but it can never be higher than $500$ ARGs.
+threshold is determined by the ADAGs, but it can never be higher than $1000$ ARGs.
 
-Every \texttt{committeeLifeTime} number of blocks, randomly $m$ committees are selected from
-validators, in a way that the total stakes of committees are almost equal, and every
-account is a member of \textbf{at least} one committee.
+Every \texttt{AssemblyLifeTime} number of blocks, randomly $m$ assemblies are selected from
+validators, in a way that the total stakes of assemblies are almost equal, and every
+account is a member of \textbf{at least} one assembly.
 
 Every validator has a status which can be either \texttt{online} or \texttt{offline}.
 This status is stored in the ARG smart contract and is a part of the staking database. A validator can change
@@ -74,22 +74,22 @@ from the ARG smart contract. When an account sets its status to \texttt{offline}
 it can not change it back to \texttt{online} for \texttt{statusCoolDown} number of blocks.
 
 \note{When a validator changes his status, the change has no effect until the block containing the status
-change transaction gets certified by his committee.}
+change transaction gets certified by his assembly.}
 
 A block certificate issued by some members of a validators assembly is considered valid, if according to
-the staking database of the previous block \textbf{certified by the same committee}, we have:\footnote{If we calculate
-the stake values based on the previous block a malicious committee can select the validators of the next block.}
+the staking database of the previous block \textbf{certified by the same assembly}, we have:\footnote{If we calculate
+the stake values based on the previous block a malicious assembly can select the validators of the next block.}
 \begin{itemize}
-    \item The total stake of \texttt{online} members of the committee is higher than \texttt{minOnlineStake} fraction
-    of the total stake of the committee. This threshold can be changed by the ADAGs, but it can never be lower
+    \item The total stake of \texttt{online} members of the assembly is higher than \texttt{minOnlineStake} fraction
+    of the total stake of the assembly. This threshold can be changed by the ADAGs, but it can never be lower
     than $2/3$.
     \item All signers of the certificate have \texttt{online} status.
     \item The sum of stake values of the certificate signers is higher than $3/4$ of the total stake
-    of the committee members that have \texttt{online} status.
+    of the assembly members that have \texttt{online} status.
 \end{itemize}
 
 The delegates can generate blocks very fast. Therefore, the Argennon blockchain always has an
-unvalidated part, which contains blocks that have a certificate from the committee of delegates but have not
+unvalidated part, which contains blocks that have a certificate from the assembly of delegates but have not
 yet received a certificate from the validators.
 
 As we mentioned before, the block with height $n$ needs a certificate from the assembly of
@@ -100,14 +100,14 @@ if the block is valid he issues
 an "accept" signature. If the block is invalid, he initiates the recovery protocol. The validator will broadcast the
 certificate \textbf{only after} he sees the certificate of the validators of the previous block.
 Some validators may also require seeing a certificate from
-some community driven committee. An honest validator never signs a certificate for two different blocks with the
+some community driven committees. An honest validator never signs a certificate for two different blocks with the
 same height.
 
-So in Argennon, the block validation by committees is performed in parallel, and validators
-do not wait for seeing the certificate of the previous block validators to start transaction validation. On the
+So in Argennon, the block validation by assemblies is performed in parallel, and validators
+do not wait for seeing the certificate of the previous block assembly to start block validation. On the
 other hand, the block certificates are published and broadcast sequentially. A validator does not publish its
-certificate if the certificate of the previous block has not been published yet. This ensures that an invalid
-fork made by malicious delegates will not receive any certificates from validators.
+certificate if the certificate of the previous block validator assembly has not been published yet. This ensures that
+an invalid fork made by malicious delegates will not receive any certificates from any validator assemblies.
 
 The value of $m$ is determined by the ADAGs. but it can never be higher than $25$. This way, it is guaranteed
 that on average, any block of the Argennon blockchain is validated by at least $0.02$ of the total ARG supply.

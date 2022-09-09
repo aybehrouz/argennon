@@ -4,14 +4,14 @@
 \section{Introduction}\label{sec:introduction}
 
 The Argennon Smart Contract Execution Environment (AscEE) is an abstract high level execution environment for executing
-Argennon smarts contracts (a.k.a\ Argennon applications) in a secure and isolated environment. An Argennon application
-essentially is an HTTP server whose state is
+Argennon smarts contracts (a.k.a\ Argennon applications) in an efficient and isolated environment. An Argennon
+application essentially is an HTTP server whose state is
 kept in the Argennon blockchain and its logic is described using an Argennon Standard Application Representation (ASAR).
 
 An Argennon Standard Application Representation is a programming language for describing Argennon
 applications, optimized
-for the architecture and properties of the Argennon platform. This text based representation should be low level
-enough to enable easy compilation from any high level programming language and should be high level enough to preserve
+for the architecture and properties of the Argennon platform. This text based representation is low level
+enough to enable easy compilation from any high level programming language and is high level enough to preserve
 the high level information of the application logic and facilitate platform specific compiler optimization at a host
 machine. In this regard, the ASAR can be considered as an Intermediate Representation (IR).
 
@@ -39,15 +39,14 @@ fulfill \emph{external} HTTP requests\footnote{External requests are requests th
 applications.}, produce their HTTP responses and update related heap chunks. The execution of requests can be
 considered sequential\footnote{Actually requests may be executed in parallel but by performing data dependency analysis
 the result is guaranteed to be identical with the sequential execution of requests.} and each request has a separate
-\emph{execution session}. Therefore, an execution session is a separate session of executing application's code in
+\emph{execution session}. In other words, an execution session is a separate session of executing application's code in
 order to fulfill an external HTTP request. We call this external request the \emph{initiator} of the execution session.
-
 
 The state of an execution session will be
 destroyed at the end of the session and only the state of heap chunks is preserved. If a session fails and does not
 complete normally, it will not have any effects on any heap chunks.
 
-During an execution session an application can make \emph{internal} HTTP requests to other applications. Those
+During an execution session an application can make \emph{internal} HTTP requests to other applications. These
 requests will not start a new execution session and will be executed within the current session. In AscEE making an
 internal HTTP request to an application is similar to a function invocation, and for that reason, we also refer to
 them as \emph{application calls}.
@@ -61,7 +60,7 @@ addressable. Heap, on the other hand, is persistent and can be used for persisti
 Heap is addressable and provides low level direct access. Both local memory and heap are limited, but the
 AscEE does not specify any particular limits for them. When an application tries to use too much memory, that may
 cause the execution session to end abruptly. In that case, the execution session will not have any effects on the
-state of the heap.
+state of heap.
 
 \subsection{Heap Chunks}\label{subsec:heap}
 
@@ -82,8 +81,8 @@ data structure\footnote{also called a dictionary.}.
 Since the \texttt{chunkID} is a prefix code, any application has its own identifier space, and an application
 can easily find unique identifiers for its chunks.
 
-During an execution session every heap chunk has an access type which may disallow certain operations. This access
-type is declared by the initiator request of the execution session:
+During an execution session every heap chunk has an access-type which may disallow certain operations. The
+access-type of a chunk is declared by the initiator request of the execution session:
 
 \begin{itemize}
     \item \texttt{check\_only}: only allows check operations. These operations query the persistence
@@ -97,35 +96,37 @@ type is declared by the initiator request of the execution session:
 \subsubsection{Chunk Resizing}\label{subsubsec:ch-resize}
 
 At the start of executing requests of a block, a validator can consider two values for every
-heap chunk, its size: \texttt{chunkSize} and a size upper bound: \texttt{sizeUpperBound}. The value of
+heap chunk, the size: \texttt{chunkSize} and a size upper bound: \texttt{sizeUpperBound}. The value of
 \texttt{chunkSize} can be determined uniquely at the start of
 every execution session, and it may be updated during the session by the owner application. On the other hand,
 the value of \texttt{sizeUpperBound} is proposed by the block proposer for each block and is calculated based on values
-declared by external requests (i.e.\ transactions) which want to perform chunk resizing. This value needs to be
+declared by external requests (i.e.\ transactions) that want to perform chunk resizing. This value needs to be
 an upper bound of all the declared resizing values and indicates the upper bound of \texttt{chunkSize} during the
 execution of a block.
+
+The address space of a chunk starts from zero and only offsets lower than \texttt{sizeUpperBound} are valid. Trying to
+access any offset higher than \texttt{sizeUpperBound} will always cause the execution session to end abruptly. There
+is no way for an application to query \texttt{sizeUpperBound}. As a result, in the view of an application,
+accessing offsets higher than \texttt{chunkSize} will result in undefined behaviour, while the behaviour is
+well-defined for validators.
+This enables validators to determine the validity of an offset at the start of the block validation in a parallelized
+preprocessing phase without actually executing requests.
 
 The value of \texttt{chunkSize}, can be modified during an execution session. However, the new values of size can
 only be increasing or decreasing. More precisely, if a request declares that it wants to expand (shrink) a chunk, it
 can only increase (decrease) the value of \texttt{chunkSize} and any specified value during the execution
-session, needs to be greater (smaller) than the previous value of the chunk's size. Any request that wants to expand
-(shrink) a chunk needs to specify a max size (min size). The value of \texttt{chunkSize} can not be set higher
+session, needs to be greater (smaller) than the previous value of the \texttt{chunkSize}. Any request that wants to
+expand (shrink) a chunk needs to specify a max size (min size). The value of \texttt{chunkSize} can not be set higher
 (lower) than this value.
 
 The value of \texttt{chunkSize} at the end of an execution session will determine if a memory location at an
 offset is persistent or not: Offsets lower than the chunk size are persistent, and higher offsets are not.
 Non-persistent locations will be re-initialized with zero at the start of every execution session.
 
-Usually an application should not have any assumption about the content of memory locations that are outside the chunk.
+Usually an application should not have any assumptions about the content of memory locations that are outside the chunk.
 While these locations are zero initialized at the start of every execution session, multiple
 invocations of an application may occur in a single execution session, and if one of them modifies a location outside
 the chunk, the changes can be seen by next invocations.
-
-There is no way for an application to query \texttt{sizeUpperBound}. As a result, for an application
-accessing offsets higher than \texttt{chunkSize} results in undefined behaviour, while the behaviour is well-defined
-in the view of validators.
-This enables validators to determine the validity of an offset at the start of the block validation in a parallelized
-preprocessing phase without actually executing requests.
 
 While an application can use \texttt{chunkSize} to determine if an offset is persistent or not, that is not
 considered a good practice. Reading \texttt{chunkSize} decreases transaction parallelization, and should be avoided.
@@ -134,8 +135,6 @@ Instead, applications should use a built-in AscEE function for checking the pers
 An application can load any chunk with a valid prefix identifier even if that chunk does not exist. For a non-existent
 chunk the value of \texttt{chunkSize} is always zero.
 
-The address space of a chunk starts from zero and only offsets lower than \texttt{sizeUpperBound} are valid. Trying to
-access any offset higher than this value will always result in a revert for the application.
 
 \section{Identifiers}\label{sec:identifiers}
 
@@ -144,10 +143,8 @@ identifier types exist: \texttt{appID}, \texttt{accountID}, and \texttt{chunkID}
 All these identifiers are \emph{prefix codes}, and hence can be represented by
 \emph{prefix trees}\footnote{Also called tries.}.
 
-Argennon has four primitive prefix trees:
-\emph{applications, accounts, local} and \emph{varUint}.
-All these trees are in base 256, with the maximum height
-of 8.
+Argennon has four primitive prefix trees: \emph{applications, accounts, local} and \emph{varUint}. All these trees
+are in base 256, with the maximum height of 8.
 
 An Argennon identifier may be simple or compound. A simple identifier is generated using a single tree, while a
 compound identifier is generated by concatenating prefix codes generated by two or more trees:
@@ -164,9 +161,8 @@ compound identifier is generated by concatenating prefix codes generated by two 
     \subitem \texttt{chunkID = (applicationID|accountID|<local-prefix-code>)} .
 \end{itemize}
 
-All Argennon prefix trees have an equal branching factor \(\beta\)\footnote{A typical choice for \(\beta\) is \(2^8\)
-    .}, and
-we can represent an Argennon
+All Argennon prefix trees have an equal branching
+factor \(\beta\)\footnote{A typical choice for \(\beta\) is \(2^8\).}, and we can represent an Argennon
 prefix tree as a sequence of fractional numbers in base \(\beta\):
 \[
     (A^{(1)},A^{(2)},A^{(3)},\dots)\ ,
@@ -233,9 +229,10 @@ of leaves in each level is chosen appropriately.
 
 \section{Request Attachments}\label{sec:attachments}
 
-The attachment of a request is a list of request identifiers of the current block that are ``attached'' to the request.
-That means, for validating the request a validator first needs to ``inject'' the digest of attached requests into the
-HTTP request text. By doing so, the called application will have access to the digest of attachments in a secure way.
+The attachment of a request is a list of request identifiers of the current block that are \emph{attached} to the
+request. That means, for validating the request a validator first needs to \emph{inject} the digest of attachments
+into the current HTTP request text. By doing so, the called application will have access to the digest of
+attachments in a secure and authenticated way.
 
 The main usage of this feature is for fee payment. A request that wants to pay the fees for a number of requests,
 declares those requests as its attachments. For paying fees the payer signs the digest of requests for which he
@@ -257,8 +254,8 @@ signatures.
 
 Each execution session has a list of authenticated messages. Each authenticated message has an index which will be
 used for passing the message to an application as a request parameter. The AscEE uses cryptographic signatures to
-authenticate messages for user accounts. The signatures are validated in parallel during the
-preprocessing step, and any type of cryptographic signature scheme can be used.
+authenticate messages for user accounts. The signatures are validated during the
+preprocessing step in parallel, and any type of cryptographic signature scheme can be used.
 
 Also, applications can use built-in functions of the AscEE to generate authenticated messages in run-time.
 This enables an application to authorize operations for another application even if it is not calling that
@@ -292,7 +289,7 @@ areas of its code, or can completely disallow reentrancy.
 
 
 \section{The ArgC Language}\label{sec:the-argc-language}
-
+\note{This section is outdated...}
 \subsection{The ArgC Standard Library}\label{sec:asl}
 
 In Argennon, some applications (smart contracts) are updatable. The ArgC Standard Library is an updatable smart
@@ -304,7 +301,7 @@ such as fungible and non-fungible assets, access control mechanisms,
 and general purpose DAOs are implemented in the ArgC Standard Library.
 
 All Argennon standards, for instance ARC standard series, which defines standards regarding transferable assets,
-are defined based on how a contract should use the AVM standard library. As a result, Argennon standards are
+are defined based on how a contract should use the ArgC standard library. As a result, Argennon standards are
 different from conventional blockchain standards. Argennon standards define some type of standard logic and
 behaviour for a smart contract, not only a set of method signatures. This enables users to expect certain type
 of behaviour from a contract which complies with an Argennon standard.

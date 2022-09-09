@@ -29,7 +29,7 @@ A block of the Argennon blockchain contains the following information:
 
 \subsection{Block Validation}\label{subsec:block-validation}
 
-To validate a block three main conditions need to be verified: (i) commitments to the program and heap
+To validate a block three main conditions need to be validated: (i) commitments to the program and heap
 database result from applying the request list and clustering directives of the block to the previous AscEE
 state, (ii) $v \mhyphen cert_{h-k}$ is valid, (iii) previous block is valid and has height $h - 1$.
 
@@ -55,26 +55,33 @@ The Argennon protocol does not enforce the usage of the APM. Validators and PVC 
 for arithmetization. This naturally would require that the ASAR of an application is used
 for generating the appropriate arithmetization.
 
-The certificate of validators, $v \mhyphen cert_{h-k}$, is an aggregate signature; validating it requires accessing the
-AscEE heap state at block $h-k-1$ to obtain public keys and stake values. Again, in addition to direct verification,
-a validator can use computation proofs, received from the Argennon cloud, to perform cheaper verification.
+The certificate of validators, $v \mhyphen cert_{h-k}$, is an aggregate signature. Validating it requires accessing the
+AscEE heap state at block $h-k-m$ to obtain public keys and stake values. Here $m$ is the total number of validator
+assemblies and $k$ is the maximum allowed length of
+the unvalidated chain. (See Section\ref{subsec:validators-committee})
+Again, in addition to direct verification, a validator can use computation proofs, received from the Argennon cloud,
+to perform cheaper verification of this certificate.
 
 For validating the previous block, instead of directly validating the content of the block, a validator only
-verifies the block certificates. Verifying $d \mhyphen cert_{h-1}$ is straightforward and verifying $v \mhyphen
-cert_{h-1}$ can be cheaply done by using computation proofs, obtained from the Argennon cloud. This type of block
-validation only validates the transition from block $h-1$ to block $h$, and the block is valid only if its previous
-block is valid too. We
-call this type of block verification \emph{conditional} block validation, since the validity of the current block is
+verifies the block certificates. Verifying $d \mhyphen cert_{h-1}$ is straightforward. Verifying $v \mhyphen
+cert_{h-1}$, which should be performed based on stakes at block $h-m-1$, can be cheaply done by using computation
+proofs, obtained from
+the
+Argennon cloud.
+
+This type of block validation only validates the transition from block $h-1$ to block $h$, and the block is valid
+only if its previous block is valid. We
+call this type of block validation \emph{conditional block validation}, since the validity of the current block is
 conditioned on the validity of the previous block.
+
+Interestingly, conditional block validation of multiple blocks can be done in parallel. Moreover, the required proofs
+can be generated independently and by different PVC servers. As we will see in
+Section~\ref{subsec:validators-committee}, this property plays an important role in the Argennon consensus protocol.
 
 In summary, a validator validates a block by verifying three computation proofs: $\pi_{\tau}$ which proves the
 transition is correct, $\pi_{h-k}$ which proves the validity of the included certificate of block $h-k$ and $\pi_{h-1}$
 which proves the previous block has a correct certificate of validators. It should be noted that these proofs are not
 a part of the block contents.
-
-Interestingly, conditional block validation of multiple blocks can be done in parallel. Moreover, the required proofs
-can be generated independently and by different PVC servers. As we will see in
-Section~\ref{subsec:validators-committee}, this property plays an important role in the Argennon consensus protocol.
 
 \subsection{Block Certificate}\label{subsec:block-certificate}
 
