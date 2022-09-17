@@ -200,7 +200,7 @@ and is not a protocol supposed to be executed occasionally. Ideally this protoco
 during the lifetime of the Argennon blockchain.
 
 The recovery protocol can recover the functionality
-of the Argennon blockchain as long as more than 2/3 of the total stake of the system is controlled by honest users
+of the Argennon blockchain as long as more than $2/3$ of the total stake of the system is controlled by honest users
 and any network partition resolves after a finite amount of time. The recovery protocol uses two main emergency
 procedures to recover the functionality of the Argennon blockchain: \emph{emergency forking} and \emph{emergency
 agreement} protocol.
@@ -211,48 +211,64 @@ The reserve committee of delegates is able to fork the Argennon blockchain, if i
 from the validators.
 This fork needs to be confirmed by validators and can not discard any blocks that has been already certified
 by validators.
-A valid fork request is an unexpired request signed by more than half of the
-total \texttt{online} stake of the validators.
+A valid fork request is an unexpired request signed by more than half of the total stake of validators.
 
-For forking at block $b$, the reserve committee of delegates
-makes a special \emph{fork block} which only contains a valid fork request, and its parent is the block $b$.
-The height of the fork block is
-$b + 1$ so it needs a valid certificate from the committee of validator with the index $b+1$ modulo $m$.
+For forking at block $h$, the reserve committee of delegates
+makes a special \emph{fork block} which only contains a valid fork request, and its parent is the block $h$.
+The height of the fork block therefore is
+$h + 1$, so it needs a valid certificate from the assembly of validators with the index $h+1$ modulo $m$.
 
-For signing a fork block, a validator ensures that the block is signed by the reserve committee and contains
-a valid fork request. The parent of the fork block does not necessarily need a validators' certificate. If the
-parent does not have a certificate, the validator checks the certificate of the block before the parent and
-the conditional validity of the parent instead. This enables the reserve committee
-to recover the liveliness of
-the blockchain in a situation where a malicious committee has generated multiple blocks at the same height.
+For signing a fork block, a validator ensures that the block is signed by the reserve committee, contains
+a valid fork request and its parent is not issued by the same reserve committee. The parent of the fork block does not
+necessarily need a validators certificate. If the parent does not have a certificate, the validator checks the
+certificate of the block before the parent and the conditional validity of the parent instead. This enables the
+reserve committee to recover the liveliness of the blockchain in a situation where a malicious committee has
+generated multiple blocks at the same height. Notice that the block before the parent always need a validators
+certificate.
 
 A validator always chooses a valid fork block over a block of the main chain. However, as we mentioned before,
-a validator never signs a certificate for two different blocks with the same height. Consequently, if a validator
-has already signed the block $b$ of the main chain, he will not sign the fork block and vice versa.
+a honest validator \textbf{never signs a certificate for two different blocks with the same height}. Consequently, if a
+validator has already signed the block $h+1$ of the main chain, he will not sign the fork block at height $h+1$ and
+vice versa.
 
-When the fork block is broadcast, it is possible that the validators of the committee with index $b+1$ modulo $m$
-get divided between the fork block and the block $b+1$ of the main chain, in a way that no block gets enough validators.
-This will cause the blockchain to halt. To prevent this, the protocol allows the reserve delegates to revoke a
-fork block. After a fork block
-is revoked, the validators who voted for it are allowed to vote for another block with the same
-height.
-
-To revoke a fork block with height $b+1$, the delegates need to seal the fork by adding a special
-\emph{seal block} after the fork block.\footnote{The parent of the seal block must be the fork block.} The seal block
-has the height $b+2$ and needs to be certified by the validators' committee with the
-index $b+2$ modulo $m$. The fork block is considered revoked only after the seal block is certified by the validators.
-
-The seal block is not a normal block and validators who signed a certificate for a seal block are allowed
-to sign a certificate for a block with the same height and vice versa. However, it should be noted that
-generating a block with the same parent as the seal block is considered a malicious behaviour of the reserve
-committee and validators will not sign such a block.
-
-As long as more than half of the total online stake of every committee of validators is controlled
-by honest users, a malicious committee of delegates can not use the emergency forking procedure to discard blocks
-that have a certificate from validators.
+The reserve committee of delegates is not allowed to generate multiple fork blocks at the same height. However, they
+can generate multiple fork blocks with different heights, as long as the parent block is generated by the previous
+committee. When the reserve committee generates a fork block at height $h+1$, but the block fails to receive a
+certificate from validators, the committee will generate a new fork block at height $h+2$.
 
 Moreover, an honest committee of delegates will always try to perform the emergency forking in such a way that
 valid blocks do not get discarded, including blocks that are not certified by the validators yet.
+
+\paragraph{Analysis}
+
+When the reserve committee gets activated, the main committee might have been malicious, so any number of blocks could
+exist at each height. However, at each height at max one block can have a validators certificate. Moreover, if at some
+height there are not any blocks with a validators certificate, then no blocks at higher heights can have a
+validators certificate, because validators do not sign the certificate of a normal block if its parent does
+not have a certificate.
+
+If $h_{\max}$ denotes the height of the highest block with a validators certificate and a fork block is generated at
+height $h$, as long as more than $2/3$ stake of all the assemblies of validators are honest, we have:
+\begin{itemize}
+    \item if $h > h_{\max} + 2$, the fork block can not receive a certificate from validators.
+    \item if $h = h_{\max} + 2$, the fork block can always receive a certificate from validators if network
+    partitions do not last forever.
+    \item if $h = h_{\max} + 1$, the fork block may receive a certificate from validators or not. It is possible that
+    the validators of the assembly with index $h+1$ modulo $m$ get divided between the fork block and a block at
+    height $h+1$ of the main chain.
+    \item if $h < h_{\max} + 1$, the fork block can not receive a certificate from validators.
+\end{itemize}
+
+Obviously, if the reserve committee generates two fork blocks at height $h_{\max} + 2$ and $h_{\max} + 1$, both blocks
+could receive a validators certificate. However, this will not be problematic, since when the fork block at height
+$h_{\max} + 2$ has a validators certificate, any block added after the fork block at height $h_{\max} + 1$ can not
+receive the certificate of validators and the fork block at this height is effectively sealed.
+
+During the emergency forking, at max one block with a validators certificate may be discarded. This happens when
+the malicious main committee of delegates has forked the main chain by producing blocks $b_1$ and $b_2$ at height
+$h$; the block $b_1$ has received a validators certificate and validators have not certified any blocks at height $h+1$.
+The reserve committee adds a fork block after block $b_2$ and that will discard $b_1$. Notice that if a block at
+height $h+1$ had been certified by validators the fork block chould not have received a certificate from validators.
 
 \subsubsection{Emergency Agreement}
 
@@ -268,7 +284,8 @@ considering the \texttt{online}/\texttt{offline} status of validators.
 
 The agreement protocol consists of two phases: the \emph{voting phase}, which selects a single proposal
 and the \emph{confirmation phase} which confirms the selected proposal. The voting phase is done in rounds.
-Each round lasts for approximately $\lambda$ units of time, and after $k$ rounds, the current agreement session ends and a
+Each round lasts for approximately $\lambda$ units of time, and after $k$ rounds, the current agreement session ends
+and a
 new session starts. All votes and messages are tagged in a way that the messages of one session can
 not be used in another session.
 
@@ -278,6 +295,7 @@ used only in the confirmation phase.
 
 A user executes the following procedure
 in round $r$ of the voting phase:
+
 \paragraph{Voting Phase:}
 \begin{itemize}
     \item if the user has not yet final-voted any value, he $r$-votes a single desired proposal.
@@ -286,6 +304,7 @@ in round $r$ of the voting phase:
     \item if $clock > r \cdot \lambda$ and $r < k$ user goes to the round $r + 1$ and if $r = k$ user starts a
     new agreement session.
 \end{itemize}
+
 \paragraph{Confirmation Phase for Proposal $p$:}
 \begin{itemize}
     \item user c-votes $p$.
