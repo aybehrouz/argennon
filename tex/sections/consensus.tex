@@ -279,7 +279,7 @@ of the agreement and a start time.
 A validator enters the agreement protocol if he
 receives a request that is signed by more than half of the total stake
 of the validators and its start time has not passed. The validator calculates
-the stake values based on the staking database of the last final block in his blockchain without
+the stake values based on the staking database of the last \textbf{final} block in his blockchain without
 considering the \texttt{online}/\texttt{offline} status of validators.
 
 The emergency agreement protocol is essentially an election procedure and involves human interaction. Users need to
@@ -331,7 +331,7 @@ shown that the emergency recovery protocol has the following important propertie
 \end{itemize}
 
 A honest user during a session only final-votes a single proposal. This ensures that as long as $2/3$ of the total
-stake of the system is controlled by honest users, two different proposal can not get $2/3$ final-votes. However, when
+stake of the system is controlled by honest users, two different proposals can not get $2/3$ final-votes. However, when
 a user sees $2/3$ final-votes for a proposal, he can not be sure that other users have also seen those votes and have
 ended the voting phase. If enough stake is still in the voting phase the agreement protocol may confirm a
 different proposal.
@@ -356,20 +356,22 @@ of validators could act like the confirmation phase.
 
 \subsubsection{Initiating the Recovery Protocol}
 
-When a validator does not receive any blocks for \texttt{blockTimeOut} amount of time, or when he sees an
-evidence which proves the delegates are malicious, he initiates the recovery protocol.
+When the validator software does not receive any blocks for \texttt{blockTimeOut} amount of time, or when it observes an
+evidence which proves the delegates are malicious, after prompting the user and after his confirmation, it will
+initiate the recovery protocol.
 
-To do so, first the validator activates the censorship resilient mode of his networking module, then he checks the
-validity of the blocks that do not have a validators' certificate and determines the
-last valid block of his blockchain.
+To do so, first the validator software activates the censorship resilient mode of the networking module, then it checks
+the validity of the blocks that do not have a validators certificate and determines the last valid block of its
+version of the blockchain.
 
-In the next step, he will sign and broadcast an \textbf{emergency fork request} message, alongside some useful metadata
-such as the last valid block of his blockchain and the evidence of delegates' misbehaviour.\footnote{this metadata is
-not a part of the fork request.}
+In the next step, it will sign and broadcast an \textbf{emergency fork request} message, alongside some useful metadata
+such as the last valid block of its blockchain and the evidence of delegates' misbehaviour.\footnote{this metadata is
+not a part of the fork request.} Before starting the recovery protocol, validators try to synchronize their blockchains
+as much as possible.
 
-If the reserve committee of delegates is already active, or if a validator sees a valid fork request signed
+If the reserve committee of delegates is already active, or if the validator software sees a valid fork request signed
 by more than half of the total online stake of the validators, but does not receive the fork
-block after a certain amount of time, he will sign and broadcast a request for
+block after a certain amount of time, after user confirmation, it will sign and broadcast a request for
 \textbf{emergency agreement} on a new reserve committee. The agreement on new delegates usually needs user
 interaction and is not a fully automatic process.
 
@@ -378,14 +380,13 @@ one delegate:
 \begin{itemize}
     \item a block that is not conditionally valid
     \item two different blocks with the same parent
-    \item a block that has an invalid format
 \end{itemize}
 
 \subsection{Estimating Stake Values}\label{subsec:user's-stake}
 
 In a proof of stake system the influence of a user in the consensus protocol should be proportional to the amount
 of stake the user has in the system. Conventionally in these systems, a user's stake is considered to be equal with the
-amount of native system tokens, he has "staked" in the system. A user stakes his tokens by locking them in
+amount of native system tokens, he has ``staked'' in the system. A user stakes his tokens by locking them in
 his account or a separate staking account for some period of time. During this time, he will not be able to transfer
 his tokens.
 
