@@ -31,9 +31,9 @@ Argennon Decentralized Autonomous Governance system (ADAGs\footnote{pronounced \
 At the start of the Argennon main-net, this committee will be elected for one-year terms and will have five members.
 Later, this could be changed by the ADAGs in a procedure described in Section~\ref{sec:adags}.
 
-The committee of delegates is responsible for creating new blocks of the Argennon blockchain, and it issues a
-certificate for every block of the Argennon blockchain. A certificate needs to be signed
-by \textbf{all} of the committee members in order to be considered valid.
+The committee of delegates is responsible for creating new blocks of the Argennon blockchain, and issues a
+certificate for every block of the Argennon blockchain. The certificate needs to be signed
+by \textbf{all} the committee members in order to be considered valid.
 
 Besides the main committee, a reserve committee of delegates consisting of three members is elected by users
 either through the ADAGs or by \emph{emergency agreement} during the recovery protocol. In case the main committee
@@ -41,20 +41,21 @@ fails to generate new blocks or behaves maliciously, the task of
 block generation will be assigned to the reserve committee until the main committee comes back online or a new
 committee is elected through the ADAGs.
 
-A block certified only by the delegates committee is credible, but is not considered completely final until it
-receives the certificate of its validator assembly. Since a block at height $h$ contains the validators certificate
-of the block at height $h-k$, the unvalidated part of the blockchain can not be longer than $k$ blocks.
+A block certified only by the committee of delegates is relatively credible, but it is not considered final
+until its next block receives the certificate of its validator assembly. Since a block at height $h$ contains the
+validators certificate of the block at height $h-k$, the unvalidated part of the Argennon blockchain can not be longer
+than $k$ blocks.
 
 The committee of delegates may use any type of agreement protocol to reach consensus on the
-next block. Usually, the delegates are large organizations, and they can communicate with each
+next block. Usually the delegates are large organizations, and they can communicate with each
 other efficiently using their reliable networking infrastructure. This mostly eliminates the complications of their
-consensus protocol and any protocol will have a good performance in practice. Usually a very simple and fast protocol
-can do the job: one of the members is randomly chosen as the proposer, and other members vote "yes" or "no" on the
-proposed block. For better performance, they should run their agreement protocol for reaching consensus about small
-batches of transactions in their mem-pools, instead of the whole next block.
+consensus protocol and any protocol could have a good performance in practice. Usually a very simple and fast protocol
+can do the job: one of the members is randomly chosen as the proposer, and other members vote ``yes'' or ``no'' on the
+proposed block. For better performance, the delegates should run their agreement protocol for reaching consensus about
+small batches of transactions in their mem-pools, instead of the whole next block.
 
 If one of the delegates loses its network connectivity, no new blocks can be generated. For this reason,
-the delegates should invest on different types of communication infrastructure, to make sure they never lose
+the delegates should invest on different types of communication infrastructure, to make sure they will never lose
 connectivity to each other and to the Argennon network.
 
 \subsection{The Assemblies of Validators}\label{subsec:validators-committee}
@@ -66,26 +67,26 @@ The \texttt{minValidatorStake}
 threshold is determined by the ADAGs, but it can never be higher than $1000$ ARGs.
 
 Every \texttt{AssemblyLifeTime} number of blocks, randomly $m$ assemblies are selected from
-validators, in a way that the total stakes of assemblies are almost equal, and every
-account is a member of \textbf{at least} one assembly.\footnote{An account can be the member of multiple assemblies.}
+validators, in a way that the total stakes of different assemblies are almost equal, and every
+account is a member of \textbf{at least} one assembly.\footnote{An account can be a member of multiple assemblies.}
 
 The value of $m$ is determined by the ADAGs, but it can never be higher than $32$. This way, it is guaranteed
-that on average, any block of the Argennon blockchain is validated by at least $3\%$ of the total ARG supply.
+that on average, any block of the Argennon blockchain is validated by at least $2\%$ of the total ARG supply.
 
 \subsubsection{Activity Status}
 
 Every validator has a status which can be either \texttt{online} or \texttt{offline}.
 This status is stored in the ARG smart contract and is part of the staking database. A validator can change
 his status to \texttt{offline} through an external request (transaction) to the ARG application. In this request he
-exactly specifies for how long he wants to be offline and after this period his status will automatically be considered
+exactly specifies for how long he wants to be offline and after this period his status will be automatically considered
 \texttt{online} again. When a validator sets his status to \texttt{offline} for some period of time, he
 will receive a small portion of the maximum possible reward that a validator can receive in that period of time by
 actively participating in the consensus protocol. This ensures that a validator has an incentive for changing his
 status to offline rather than simply becoming inactive.
 
-The staking database of a validator assembly can only be updated by the assembly itself. That means, an external
-request which changes the status of a validator can only be included in a block that is being validated by the
-assembly of that validator.
+The staking database of a validator assembly can be updated only by the assembly itself. That means, an external
+request which changes the status of a validator can be included only in a block that is validated by the assembly of
+that validator.
 
 There is no transaction type for changing the status of a validator to \texttt{online}. A malicious delegates committee
 would be able to censor this type of transactions and prevent honest validators from coming back online. For this reason
@@ -93,7 +94,8 @@ the status of a validator is considered online automatically when the specified 
 
 A block certificate issued by some members of a validators assembly is considered valid, if according to
 the staking database of the previous block \textbf{certified by the same assembly}, we have:\footnote{If we calculate
-the stake values based on the previous block, a malicious assembly can select the validators of the next block.}
+the stake values based on the previous block, a malicious assembly can select the validators of the next block by
+manipulating the staking database.}
 \begin{itemize}
     \item The total stake of \texttt{online} members of the assembly is higher than \texttt{minOnlineStake} fraction
     of the total stake of the assembly. This threshold can be changed by the ADAGs, but it can never be lower
@@ -109,9 +111,15 @@ blockchain from halting in such situations, the validator assembly with index $h
 assembly that has the most online stake at block $h$. This will decrease the number of assemblies to $m-1$, and the
 indices of assemblies will be updated appropriately.
 
-\subsubsection{Certificate Signing}
+The merging will continue recursively until the online stake of all remaining assemblies is higher than
+\texttt{minOnlineStake}. If eventually all assemblies get merged together and only one assembly remains, the condition
+for validity of block certificates changes: A certificate of validators will be considered valid if the sum of stakes
+of the certificate signers is higher than $2/3$ of the total stake of validators and \texttt{online/offline}
+status of validators becomes ineffective.
 
-The delegates can generate blocks very fast. Therefore, the Argennon blockchain always has an
+\subsubsection{Signing the Block Certificate}
+
+The delegates can generate blocks very fast. Consequently, the Argennon blockchain always has an
 unvalidated part which contains the blocks that have a certificate from the committee of delegates but have not
 yet received a certificate from the validators.
 
@@ -119,7 +127,7 @@ As we mentioned before, the block with height $h$ needs a certificate from the a
 validators with index $h$ modulo $m$. To decide about signing the certificate of a block which already has
 a certificate from the delegates, a validator checks the conditional
 validity of the block (See Section~\ref{subsec:block-validation}), and if the block is valid, he issues
-an "accept" signature. If the block is invalid, he initiates the recovery protocol. The validator will broadcast the
+an ``accept'' signature. If the block is invalid, he initiates the recovery protocol. The validator will broadcast the
 certificate \textbf{only after} he sees the certificate of the validator assembly of the previous block.
 Some validators may also require seeing a certificate from
 some community based committees. An honest validator never signs a certificate for two different blocks with the
@@ -135,11 +143,11 @@ an invalid fork made by malicious delegates will not receive any certificates fr
 
 We analyze the minimum amount of stake that is required for conducting different types of attacks against the Argennon
 blockchain. In these attack scenarios, we assume that a single validator assembly is corrupted, all the delegates
-are malicious and the adversary is able to partition the network arbitrarily.
+are malicious and the adversary is able to fully control message transmission and partition the network arbitrarily.
 
 We denote the total stake of the corrupted validator assembly with $s$ and the total stake of malicious users of the
-assembly with $m$. We use $d$ to denote the stake of the assembly's users with \texttt{offline} status and $h$ to denote
-the total stake of the assembly's users with \texttt{online} status that do not participate in the
+assembly with $m$. We use $d$ to denote the stake of users of the assembly who have \texttt{offline} status and $h$
+to denote the stake of users of the assembly who have \texttt{online} status and do not participate in the
 protocol.\footnote{$d$ stands for \emph{deactivated} and $h$ stands for \emph{hidden}.} We assume
 that a certificate is accepted if it is signed by more than $r$ fraction of the total online stake of the assembly.
 We obtain the minimum required malicious stake for three types of attacks:
@@ -154,7 +162,7 @@ We obtain the minimum required malicious stake for three types of attacks:
 
 In Argennon we have $r=\frac{3}{4}$ and $d < \frac{1}{3}s$.
 Consequently, in Argennon to confirm an invalid block, the adversary needs at least $\frac{1}{2}$ of the total stake
-of the assembly. For forking the blockchain, interestingly $m$ is
+of an assembly. For forking the blockchain, interestingly $m$ is
 minimized when $h=0$, and $\frac{1}{3}s$ is the minimum required stake. For halting the blockchain,
 an adversary requires a stake higher than $\frac{1}{6}s-h$.
 
@@ -165,10 +173,10 @@ status for users.
 To compare the minimum stake required for halting the blockchain in two protocols, we can solve the following
 inequality:
 \[
-    \frac{1}{4}(s-d)-h > \frac{1}{3}s-h\ \cdot
+    \frac{1}{4}(s-d)-h > \frac{1}{3}s-(d+h)\ \cdot
 \]
 We observe that as long as $d>\frac{1}{9}s$, the minimum required stake for halting the blockchain is higher in the
-Argennon protocol.
+Argennon protocol and the value of $h$ does not matter.
 
 \subsubsection{Signature Aggregation}\label{subsubsec:sig-agg}
 
