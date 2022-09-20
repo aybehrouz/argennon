@@ -332,15 +332,16 @@ A user executes the following procedure in each agreement session:
 \begin{itemize}
     \item if the user has final-voted any value, he $r$-votes his final-vote, otherwise he $r$-votes a single desired
     proposal.
-    \item if he sees more than 2/3 $r$-votes for a proposal $p$, he final-votes $p$.
+    \item if the user has \textbf{not} final-voted any value, if he sees more than 2/3 $r$-votes for a proposal $p$, he
+    final-votes $p$.
     \item if he sees more than 2/3 final-votes for a proposal, he goes to the confirmation phase for $p$.
-    \item if $clock > r \cdot \lambda$ and $r < k$ user goes to the round $r + 1$ and if $r = k$ user starts a
+    \item if $clock > r \cdot \lambda$ and $r < k$ the user goes to the round $r + 1$ and if $r = k$ user starts a
     new agreement session.
 \end{itemize}
 
 \paragraph{Confirmation Phase for Proposal $p$:}
 \begin{itemize}
-    \item user c-votes $p$.
+    \item the user c-votes $p$.
     \item if $clock > k \cdot \lambda$ user starts a new agreement session.
 \end{itemize}
 
@@ -362,19 +363,18 @@ shown that the emergency recovery protocol has the following important propertie
 A honest user during a session only final-votes a single proposal. This ensures that as long as $2/3$ of the total
 stake of the system is controlled by honest users, two different proposals can not get $2/3$ final-votes. However, when
 a user sees $2/3$ final-votes for a proposal, he can not be sure that other users have also seen those votes and have
-ended the voting phase. If enough stake is still in the voting phase the agreement protocol may confirm a
+ended the voting phase. If enough stake is still in the voting phase, the agreement protocol may confirm a
 different proposal.
-
 The final confirmation phase ensures that when a proposal gets more than $2/3$ c-votes, more than $1/3$ of
 \textbf{honest} stake has ended the voting phase and hence no other proposal can be confirmed by the agreement protocol.
 
 In unlikely circumstances, an adversary can prevent honest users from reaching agreement in a session. As an example
 assume that $s$ is the total stake of users and a malicious user controls $m$ stake. We have two proposals $p_1$ and
-$p_2$. In the first round all users vote for $p_1$, but only $s/3 - m$ stake sees more than $2/3$ $1$-votes. At the
-next round all the remaining stake votes for $p_2$. Again, only $s/3 - m$ stake sees more than $2/3$
+$p_2$. In the first round all users $1$-vote for $p_1$, but only $s/3 - m$ stake sees more than $2/3$ $1$-votes. At the
+next round all the remaining stake $2$-votes for $p_2$. Again, only $s/3 - m$ stake sees more than $2/3$
 $2$-votes. In round $3$, the malicious user stops voting. Since $s/3 - m$ stake final-voted for $p_1$ and another
 $s/3 - m$ stake final-voted for $p_2$, the remaining $s/3$ honest stake is not enough for reaching an agreement.
-Therefore, after $k$ rounds the session will end without an agreement and a new session will be started.
+Consequently, after $k$ rounds the session will end without an agreement and a new session will be started.
 
 In later agreement sessions, if honest users do not change their choices drastically or if messages are transmitted
 more reliably between users, an agreement can be reached eventually.
