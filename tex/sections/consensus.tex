@@ -318,39 +318,32 @@ The emergency agreement protocol is essentially an election procedure and involv
 determine who they want to vote for by interacting with the software. As long as users can not agree upon electing a
 candidate, the voting process has to continue.
 
-The agreement protocol consists of two phases: the \emph{voting phase}, which selects a single proposal
-and the \emph{confirmation phase} which confirms the selected proposal. The voting phase is done in rounds.
-Each round lasts for approximately $\lambda$ units of time, and after $k$ rounds, the current \emph{agreement session}
-ends and a new session starts. All votes and messages are tagged in a way that the messages of one session can
-not be used in another session.
-
-Users cast three types of vote: \emph{$r$-votes}, which are votes that are valid only in
-round $r$, \emph{final-votes}, which are votes that are valid in any round, and \emph{c-votes}, which are votes
-used only in the confirmation phase. Votes are weighted based on users' stakes and \texttt{online/offline} status of
-users is not considered. When we say 2/3 votes, we mean the sum of the stake of voters is 2/3 of the total stake.
+The voting process is done in rounds and each round usually lasts for approximately $\lambda$ units of time.
+$\lambda$ is selected by th ADAGs and could be several hours. All votes and messages \textbf{are tagged} in a way
+that a vote cast in a round can not be used in another round. Votes are weighted based on users' stakes and
+\texttt{online/offline} status of users is not considered. When we say 2/3 votes, we mean the sum of the stake of
+voters is 2/3 of the total stake.
 
 A user executes the following procedure in each agreement session:
 \paragraph{Voting Phase in Round $r$:}
 \begin{itemize}
-    \item if the user has final-voted any value, he $r$-votes his final-vote, otherwise he $r$-votes a single desired
+    \item if the user has locked his vote on a proposal $p$, he votes $p$, otherwise he votes a single desired
     proposal.
-    \item if the user has \textbf{not} final-voted any value, if he sees more than 2/3 $r$-votes for a proposal $p$, he
-    final-votes $p$.
-    \item if he sees more than 2/3 final-votes for a proposal, he goes to the confirmation phase for $p$.
-    \item if $clock > r \cdot \lambda$ and $r < k$ the user goes to the round $r + 1$ and if $r = k$ user starts a
-    new agreement session.
-\end{itemize}
-
-\paragraph{Confirmation Phase for Proposal $p$:}
-\begin{itemize}
-    \item the user c-votes $p$.
-    \item if $clock > k \cdot \lambda$ user starts a new agreement session.
+    \item when $clock = \lambda$, if the users has seen more than $2/3$ votes for a proposal $p$, he votes $p$-win,
+    otherwise he votes $draw$. A user votes either $p$-win or $draw$, not both.
+    \item when $clock = k \lambda$ for $k=2,3,\dots$, if the user has seen more than $2/3$ votes for a proposal
+    $p$ he votes $p$-lock.
+    \item if the users sees more than 2/3 $draw$ votes, he goes to the round $r+1$ and sets $clock=0$.
+    \item if the user sees more than 2/3 $p$-lock votes, he goes to the round $r+1$, sets $clock=0$ and locks his
+    vote on $p$.
 \end{itemize}
 
 \paragraph{Termination:}
 \begin{itemize}
-    \item as soon as the user sees more than 2/3 c-votes for $p$ he selects $p$ and ends the agreement protocol.
+    \item as soon as the user sees more than 2/3 $p$-win votes for $p$, he selects $p$ and ends
+    the agreement protocol. p-win votes can be for any round but all must belong to the same round.
 \end{itemize}
+
 
 We assume that users have clocks with the same speed, and $\lambda \gg \epsilon$, where $\epsilon$ is the maximum
 clock difference between users. We also assume that more than 2/3 of the total stake of the system is controlled
@@ -362,28 +355,24 @@ shown that the emergency recovery protocol has the following important propertie
     after a finite number of sessions.
 \end{itemize}
 
-A honest user during a session only final-votes a single proposal. This ensures that as long as $2/3$ of the total
-stake of the system is controlled by honest users, two different proposals can not get $2/3$ final-votes. However, when
-a user sees $2/3$ final-votes for a proposal, he can not be sure that other users have also seen those votes and have
-ended the voting phase. If enough stake is still in the voting phase, the agreement protocol may confirm a
-different proposal.
-The final confirmation phase ensures that when a proposal gets more than $2/3$ c-votes, more than $1/3$ of
-\textbf{honest} stake has ended the voting phase and hence no other proposal can be confirmed by the agreement protocol.
+A honest user during a round only votes a single proposal and either votes $p$-win or $draw$. This ensures that
+as long as more than $2/3$ of the total stake of the system is controlled by honest users, no two different proposals
+can get more than $2/3$ votes. In addition, only one of $p$-win or $draw$ can get more than $2/3$ votes. When a
+user sees more than $2/3$ $p$-win votes, he can be sure that more than $1/3$ of the \textbf{honest}
+stake has voted $p$-win, so $draw$ has less than $2/3$ votes. Therefore, for going to the next round we
+will need 2/3 $p$-lock votes and all honest users will lock their vote on $p$. As a result only $p$ can be confirmed by
+the agreement protocol.
 
-In unlikely circumstances, an adversary can prevent honest users from reaching agreement in a session. As an example
-assume that $s$ is the total stake of users and a malicious user controls $m$ stake. We have two proposals $p_1$ and
-$p_2$. In the first round all users $1$-vote for $p_1$, but only $s/3 - m$ stake sees more than $2/3$ $1$-votes. At the
-next round all the remaining stake $2$-votes for $p_2$. Again, only $s/3 - m$ stake sees more than $2/3$
-$2$-votes. In round $3$, the malicious user stops voting. Since $s/3 - m$ stake final-voted for $p_1$ and another
-$s/3 - m$ stake final-voted for $p_2$, the remaining $s/3$ honest stake is not enough for reaching an agreement.
-Consequently, after $k$ rounds the session will end without an agreement and a new session will be started.
-
-In later agreement sessions, if honest users do not change their choices drastically or if messages are transmitted
-more reliably between users, an agreement can be reached eventually.
-
-When the emergency agreement protocol is used for electing a new reserve committee to fork the blockchain, the
-confirmation phase could be skipped. In that case, the confirmation of the fork block by the appropriate committee
-of validators could act like the confirmation phase.
+If honest users can agree upon some proposal value, the agreement protocol will converge to that value. When a
+single hones user terminates the protocol, he can convince all other honest users to terminate their protocol by
+sending those 2/3 $p$-win votes that he has seen. When we go to the next round all honest users will lock their vote on
+the same proposal and an agreement could be reached in next rounds. We will never get stuck in a round. If at some
+round $draw$ gets less than 2/3 votes, that means at least $\epsilon$ honest stake has voted
+$p$-win.\footnote{It's possible that the $\epsilon$ stake has not voted yet. However based on the finite time
+partitioning assumption, at some point that honest stake should get connected to the network and vote.}
+Consequently, there must be more than 2/3 votes for some proposal $p$ which convinced the $\epsilon$ honest stake to
+vote $p$-win. Therefore, after waiting long enough, all the honest stake will see those votes and will eventually
+vote for $p$-lock, so $p$-lock will get more than 2/3 votes.
 
 \subsubsection{Initiating the Recovery Protocol}
 
@@ -477,12 +466,12 @@ Usually an account balance will not change in every time step, and we can use ol
 \]
 where:
 \[
-    B = B_{k+1} = B_{k+2} = \dots = B_{t}\ .
+    B = B_{k+1} = B_{k+2} = \dots = B_{t}\ \cdot
 \]
 We know that when \(|nx| \ll 1\) we can use the binomial approximation \({(1 + x)^n \approx 1 + nx}\). So, we can
 further simplify this formula:
 \[
-    M_{t} = M_{k} + (t - k) \alpha (B - M_{k})\ .
+    M_{t} = M_{k} + (t - k) \alpha (B - M_{k})\ \cdot
 \]
 
 For choosing the value of \(\alpha\) we can consider the number of time steps that the trust value of a user needs
