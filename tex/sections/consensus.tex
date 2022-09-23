@@ -319,7 +319,7 @@ determine who they want to vote for by interacting with the software. As long as
 candidate, the voting process has to continue.
 
 The voting process is done in rounds and each round usually lasts for approximately $\lambda$ units of time.
-$\lambda$ is selected by th ADAGs and could be several hours. All votes and messages \textbf{are tagged} in a way
+$\lambda$ is selected by the ADAGs and could be several hours. All votes and messages \textbf{are tagged} in a way
 that a vote cast in a round can not be used in another round. Votes are weighted based on users' stakes and
 \texttt{online/offline} status of users is not considered. When we say 2/3 votes, we mean the sum of the stake of
 voters is 2/3 of the total stake.
@@ -331,21 +331,21 @@ A user executes the following procedure in each agreement session:
     proposal.
     \item when $clock = \lambda$, if the users has seen more than $2/3$ votes for a proposal $p$, he votes $p$-win,
     otherwise he votes $draw$. A user votes either $p$-win or $draw$, not both.
-    \item when $clock = k \lambda$ for $k=2,3,\dots$, if the user has seen more than $2/3$ votes for a proposal
-    $p$ he votes $p$-lock.
-    \item if the users sees more than 2/3 $draw$ votes, he goes to the round $r+1$ and sets $clock=0$.
+    \item if the user sees more than 2/3 $draw$ votes, he goes to the round $r+1$ and sets $clock=0$.
     \item if the user sees more than 2/3 $p$-lock votes, he goes to the round $r+1$, sets $clock=0$ and locks his
     vote on $p$.
+    \item when $clock = k \lambda$ for $k=2,3,\dots$, if the user has seen more than $2/3$ votes for a proposal
+    $p$ he votes $p$-lock.
 \end{itemize}
 
 \paragraph{Termination:}
 \begin{itemize}
     \item as soon as the user sees more than 2/3 $p$-win votes for $p$, he selects $p$ and ends
-    the agreement protocol. p-win votes can be for any round but all must belong to the same round.
+    the agreement protocol. The $p$-win votes can be for any round, but all must belong to the same round.
 \end{itemize}
 
 
-We assume that users have clocks with the same speed, and $\lambda \gg \epsilon$, where $\epsilon$ is the maximum
+We assume that users have clocks with the same speed, and $\lambda \gg \delta$, where $\delta$ is the maximum
 clock difference between users. We also assume that more than 2/3 of the total stake of the system is controlled
 by honest users, and network partitions are resolved after a finite amount of time. With these assumptions it can be
 shown that the emergency recovery protocol has the following important properties:
@@ -355,24 +355,27 @@ shown that the emergency recovery protocol has the following important propertie
     after a finite number of sessions.
 \end{itemize}
 
-A honest user during a round only votes a single proposal and either votes $p$-win or $draw$. This ensures that
-as long as more than $2/3$ of the total stake of the system is controlled by honest users, no two different proposals
-can get more than $2/3$ votes. In addition, only one of $p$-win or $draw$ can get more than $2/3$ votes. When a
-user sees more than $2/3$ $p$-win votes, he can be sure that more than $1/3$ of the \textbf{honest}
-stake has voted $p$-win, so $draw$ has less than $2/3$ votes. Therefore, for going to the next round we
-will need 2/3 $p$-lock votes and all honest users will lock their vote on $p$. As a result only $p$ can be confirmed by
-the agreement protocol.
+A honest user during a round only votes a single proposal. This ensures that as long as more than $2/3$ of the total
+stake of the system is controlled by honest users, no two different proposals can get more than $2/3$ votes. Also, he
+either votes $p$-win or $draw$, so only one of $p$-win or $draw$ can get more than $2/3$ votes. Consequently, when a
+user sees more than $2/3$ $p$-win votes, he can be sure that $draw$ has less than $2/3$ votes. Therefore, for going
+to the next round we will need 2/3 $p$-lock
+votes and all honest users will lock their vote on $p$ when they start the next round. As a result only $p$ can be
+confirmed by the agreement protocol.
 
-If honest users can agree upon some proposal value, the agreement protocol will converge to that value. When a
-single hones user terminates the protocol, he can convince all other honest users to terminate their protocol by
-sending those 2/3 $p$-win votes that he has seen. When we go to the next round all honest users will lock their vote on
-the same proposal and an agreement could be reached in next rounds. We will never get stuck in a round. If at some
+When a single honest user terminates the protocol, he can convince all other honest users to terminate their protocol
+by sending those 2/3 $p$-win votes that he has seen.
+
+If honest users can agree upon some proposal value, the agreement protocol will converge to that value. When a round
+ends and we go to the next round, all honest users will lock their vote on
+the same proposal or no one will lock his vote, so an agreement could be reached in next rounds. We will never get
+stuck in a round. If at some
 round $draw$ gets less than 2/3 votes, that means at least $\epsilon$ honest stake has voted
-$p$-win.\footnote{It's possible that the $\epsilon$ stake has not voted yet. However based on the finite time
+$p$-win.\footnote{It is possible that the $\epsilon$ stake has not voted yet. However based on the finite time
 partitioning assumption, at some point that honest stake should get connected to the network and vote.}
-Consequently, there must be more than 2/3 votes for some proposal $p$ which convinced the $\epsilon$ honest stake to
+That means there must be more than 2/3 votes for some proposal $p$ which convinced the $\epsilon$ honest stake to
 vote $p$-win. Therefore, after waiting long enough, all the honest stake will see those votes and will eventually
-vote for $p$-lock, so $p$-lock will get more than 2/3 votes.
+vote for $p$-lock, and $p$-lock will get more than 2/3 votes.
 
 \subsubsection{Initiating the Recovery Protocol}
 
