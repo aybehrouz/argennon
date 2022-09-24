@@ -329,7 +329,7 @@ A user executes the following procedure in each agreement session:
 \begin{itemize}
     \item if the user has locked his vote on a proposal $p$, he votes $p$, otherwise he votes a single desired
     proposal.
-    \item when $clock = \lambda$, if the users has seen more than $2/3$ votes for a proposal $p$, he votes $p$-win,
+    \item when $clock = \lambda$, if the user has seen more than $2/3$ votes for a proposal $p$, he votes $p$-win,
     otherwise he votes $draw$. A user votes either $p$-win or $draw$, not both.
     \item if the user sees more than 2/3 $draw$ votes, he goes to the round $r+1$ and sets $clock=0$.
     \item if the user sees more than 2/3 $p$-lock votes, he goes to the round $r+1$, sets $clock=0$ and locks his
@@ -352,7 +352,7 @@ shown that the emergency recovery protocol has the following important propertie
 \begin{itemize}
     \item no two users will end the agreement protocol with two different proposals as the result of the agreement.
     \item if honest users can agree upon some proposal value, the agreement protocol will converge to that value
-    after a finite number of sessions.
+    after a finite number of rounds.
 \end{itemize}
 
 A honest user during a round only votes a single proposal. This ensures that as long as more than $2/3$ of the total

@@ -1,6 +1,6 @@
 The most common use for blockchains is in financial applications. This gives a crucial importance to the
 security of the consensus protocol used in a blockchain. Unfortunately, many currently used blockchains are
-vulnerable to a certain type of consensus attack, known as the Bribery Attack. In a Bribery Attack, an adversary
+vulnerable to a certain type of consensus attack, known as the \emph{bribery attack}. In a bribery attack, an adversary
 tries to corrupt participants of a protocol by offering them money and seducing them to violate the protocol.
 
 At the time of writing of this document,
@@ -61,11 +61,11 @@ Every validator assembly has an index between $0$ and $m - 1$, and is responsibl
 if $n$ modulo $m$ equals the index of the assembly. A block is approved if it takes approval votes from at
 least $2/3$ of the total stake of its validator assembly.
 
-In case the main committee fails to generate new blocks or behaves maliciously, a special Recovery Protocol is
+In case the main committee fails to generate new blocks or behaves maliciously, a special \emph{recovery protocol} is
 initiated by validators.
 This recovery protocol can recover the functionality
 of the Argennon blockchain as long as more than $2/3$ of the total stake of the system is controlled by honest users
-and any network partition resolves after a finite amount of time. The Recovery Protocol uses two main emergency
+and any network partition resolves after a finite amount of time. The recovery protocol uses two main emergency
 procedures to recover the functionality of the Argennon blockchain: \emph{Emergency Forking} and \emph{Emergency
 Agreement} protocol.
 
