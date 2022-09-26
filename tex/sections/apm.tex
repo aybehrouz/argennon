@@ -14,7 +14,7 @@ $\mathbf{C}_R$ is a commitment to an ordered list of requests. The APM then outp
 commitments to the AscEE heap and program area and a final $\mathbf{accept}$ flag which indicates if the execution has
 ended successfully or not: $(\mathbf{C}_{H'},\mathbf{C}_{P'},\mathbf{accept})$.
 
-Producing the required outputs from these inputs is not computationally feasible so the APM receives an auxiliary
+Producing the required outputs from these inputs is not computationally feasible, so the APM receives an auxiliary
 input vector $(H,\pi_H,P,\pi_P,R,\pi_R,h)$, where $\pi_X$ is a proof that proves $X$ can be opened w.r.t
 $\mathbf{C}_X$ and $h$ is a hint that helps the APM make nondeterministic choices correctly.
 
@@ -41,7 +41,7 @@ The APM consists of four main modules:
 \end{itemize}
 
 
-The configuration of the APM can be considered as a tuple
+The configuration of the APM can be considered as a tuple:
 \[
 (\mathcal{S},\mathcal{L}_{\text{NEU}},\mathcal{L}_{\text{FRU}},\mathcal{T}_{\text{NEU}},
 \mathcal{T}_{\text{FRU}})\ ,
