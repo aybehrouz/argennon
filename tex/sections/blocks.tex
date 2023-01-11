@@ -2,7 +2,7 @@
 
 The Argennon blockchain is a sequence of blocks. Every block represents an ordered list of external requests, intended
 to be executed by the Argennon Smart Contract Execution Environment (AscEE). The first block of the blockchain, the
-\emph{genesis} block, is a spacial block that fully describes the initial state of the AscEE. Every block of the
+\emph{genesis} block, is a spacial block that fully describes the initial state of the AscEE and every block of the
 Argennon blockchain thus corresponds to a unique AscEE state which can be calculated deterministically from the genesis
 block.
 
@@ -20,69 +20,10 @@ A block of the Argennon blockchain contains the following information:
         clustering directives: $dir$                        \\ [1.2ex]
         certificate of the validator assembly for \\
         the block with height $h - k$: $v \mhyphen cert_{h-k}$         \\ [1.2ex]
-        certificate of the delegates for\\
-        the previous block: $d \mhyphen cert_{h-1}$        \\ [1.2ex]
         previous block hash                           \\ [1.2ex]
         \hline
     \end{tabular}
 \end{center}
-
-\subsection{Block Validation}\label{subsec:block-validation}
-
-To validate a block three main conditions need to be validated: (i) commitments to the program and heap
-database are resulted from applying the request list and clustering directives of the block to the previous AscEE
-state, (ii) $v \mhyphen cert_{h-k}$ is valid, (iii) previous block is valid and has height $h - 1$.
-
-We can denote condition (i) by a Computational Integrity (CI) statement:
-\begin{equation}
-    \label{eq:ci}
-    \mathbf{C}_{P_h},\mathbf{C}_{H_h} \coloneqq \tau(\mathbf{C}_{P_{h-1}},\mathbf{C}_{H_{h-1}},\mathbf{C}_{R_{h}},
-    dir_h)\ ,
-\end{equation}
-where $\tau$ is a transition function that encodes the AscEE computation logic and the necessary preprocessing and
-postprocessing steps\footnote{including opening and updating the state commitments}.
-
-Verifying statement~\ref{eq:ci} can be done by either replaying the AscEE computation and performing the required
-preprocessing and postprocessing steps, or alternatively by
-verifying a computational integrity proof\footnote{More accurately we should call it an argument instead of a proof.
-However, using the word argument can confuse a reader who is not familiar with the subject, so we avoid it here.}.
-To use computational integrity proofs the verifier and prover need to
-share an arithmetized representation of $\tau$ and use it for both proof generation and verification.
-
-The Argennon Prover Machine provides a convenient and universal way for arithmetization of any Argennon
-application. Moreover, since a compiled version of every Argennon application to the APM code is stored in the AscEE
-program area, validators do not need to locally store the APM code of applications.
-
-The Argennon protocol does not enforce the usage of the APM. Validators and PVC servers can use any argument system
-with any arithmetization, and if required, the ASAR of an application can be used
-for generating the appropriate arithmetization instead of the APM\@.
-
-The certificate of validators, $v \mhyphen cert_{h-k}$, is an aggregate signature. Validating it requires accessing the
-AscEE heap state at block $h-k-m$ to obtain public keys and stake values. Here $m$ is the total number of validator
-assemblies and $k$ is the maximum allowed length of
-the unvalidated chain. (See Section\ref{subsec:validators-committee})
-Again, in addition to direct verification, a validator can use computational integrity proofs, received from the
-Argennon cloud, to perform cheaper verification of this certificate.
-
-For validating the previous block, instead of directly validating the content of the block, a validator only
-verifies the block certificates. Verifying $d \mhyphen cert_{h-1}$ is straightforward. Verifying $v \mhyphen
-cert_{h-1}$, which should be performed based on stakes at block $h-m-1$, can be cheaply done by using computational
-proofs, obtained from the Argennon cloud.
-
-This type of block validation only validates the transition from block $h-1$ to block $h$, and the block is valid
-only if its previous block is valid. We
-call this type of block validation \emph{conditional block validation}, since the validity of the current block is
-conditioned on the validity of the previous block.
-
-Interestingly, conditional block validation of multiple blocks can be done in parallel. Moreover, the required proofs
-can be generated independently and by different PVC servers. As we will see in
-Section~\ref{subsec:validators-committee}, this property plays an important role in the Argennon consensus protocol.
-
-In summary, a validator validates a block by verifying three computational integrity proofs: $\pi_{\tau}$ which proves
-the transition is correct, $\pi_{h-k}$ which proves the validity of the included certificate of block $h-k$ and
-$\pi_{h-1}$ which proves the previous block has a correct certificate of validators. It should be noted that these
-proofs are not a part of the block contents and therefore the exact argument system used for generating them is not
-specified by the Argennon protocol.
 
 \subsection{Block Certificate}\label{subsec:block-certificate}
 
@@ -143,8 +84,8 @@ The BLS signature scheme is defined as follows:
     output $\PK \deq (h)$ and $\SK \deq (\alpha)$.
     \item $\textbf{Sign}(\SK, m)$: output $\sigma \gets \Hm(m)^\alpha \in \G_0$.
     The signature $\sigma$ is a \emph{single} group element.
-    \item $\textbf{Verify}(\PK,m,\sigma)$: if $e(g_1, \sigma) = e\big(\PK,\ \Hm(m)\big)$  then output "accept",
-    otherwise output "reject".
+    \item $\textbf{Verify}(\PK,m,\sigma)$: if $e(g_1, \sigma) = e\big(\PK,\ \Hm(m)\big)$  then output ``accept'',
+    otherwise output ``reject''.
 \end{itemize}
 
 Given triples $(\PK_i,\ m_i,\ \sigma_i)$ for $i=1,\ldots,n$,
@@ -152,18 +93,18 @@ anyone can aggregate the signatures $\sigma_1,\ldots,\sigma_n \in \G_0$
 into a short convincing aggregate signature $\sigma$ by computing
 \begin{equation}
     \label{eq:agg}
-    \sigma \gets \sigma_1 \cdots \sigma_n \in \G_0\ .
+    \sigma \gets \sigma_1 \cdots \sigma_n \in \G_0\ \cdot
 \end{equation}
 Verifying an aggregate signature $\sigma \in \G_0$ is done by checking that
 \begin{equation}
     \label{eq:aggdiff}
-    e(g_1, \sigma) = e\big(\PK_1,\ \Hm(m_1)\big) \cdots e\big(\PK_n,\ \Hm(m_n)\big)\ .
+    e(g_1, \sigma) = e\big(\PK_1,\ \Hm(m_1)\big) \cdots e\big(\PK_n,\ \Hm(m_n)\big)\ \cdot
 \end{equation}
 When all the messages are the same ($m = m_1 = \ldots = m_n$), the verification relation~\eqref{eq:aggdiff} reduces to
 a simpler test that requires only two pairings:
 \begin{equation}
     \label{eq:aggsame}
-    e(g_1, \sigma) = e\Big(\PK_1 \cdots \PK_n,\ \Hm(m)\Big)\ .
+    e(g_1, \sigma) = e\Big(\PK_1 \cdots \PK_n,\ \Hm(m)\Big)\ \cdot
 \end{equation}
 We call $\APK=\PK_1 \cdots \PK_n$ the aggregate public key.
 
@@ -197,3 +138,62 @@ When an Argennon account is created, both its $\PK$ and $\PK^{-1}$ is registered
 inverse of any aggregate public key can be easily computed.\footnote{since the group operator of a cyclic
 group is commutative, we have $(ab)^{-1}=a^{-1}b^{-1}$.}
 
+\subsection{Block Validation}\label{subsec:block-validation}
+
+To validate a block three main conditions need to be validated: (i) commitments to the program and heap
+database are resulted from applying the request list and clustering directives of the block to the previous AscEE
+state, (ii) previous block is valid and has height $h - 1$, (iii) $v \mhyphen cert_{h-k}$ is valid.
+
+We can denote condition (i) by a Computational Integrity (CI) statement:
+\begin{equation}
+    \label{eq:ci}
+    \mathbf{C}_{P_h},\mathbf{C}_{H_h} \coloneqq \tau(\mathbf{C}_{P_{h-1}},\mathbf{C}_{H_{h-1}},\mathbf{C}_{R_{h}},
+    dir_h)\ ,
+\end{equation}
+where $\tau$ is a transition function that encodes the AscEE computation logic and the necessary preprocessing and
+postprocessing steps\footnote{including opening and updating the state commitments}.
+
+Verifying statement~\ref{eq:ci} can be done by either replaying the AscEE computation and performing the required
+preprocessing and postprocessing steps, or alternatively by
+verifying a computational integrity proof\footnote{More accurately we should call it an argument instead of a proof.
+However, using the word argument can confuse a reader who is not familiar with the subject, so we avoid it here.}.
+To use computational integrity proofs the verifier and prover need to
+share an arithmetized representation of $\tau$ and use it for both proof generation and verification.
+
+The Argennon Prover Machine provides a convenient and universal way for arithmetization of any Argennon
+application. Moreover, since a compiled version of every Argennon application to the APM code is stored in the AscEE
+program area, validators that use the APM do not need to locally store the APM code of applications.
+
+The Argennon protocol does not enforce the usage of the APM. Validators and PVC servers can use any argument system
+with any arithmetization, and if required, the ASAR of an application can be used
+for generating the appropriate arithmetization instead of the APM arithmetization.
+
+For validating the previous block, instead of directly validating the contents of the block, a validator only
+verifies the block certificates. Each block of the Argennon blockchain has two certificates: the certificate of
+validators, $v \mhyphen cert$, and the certificate of the delegates, $d \mhyphen cert$. Verifying $d \mhyphen
+cert_{h-1}$ is straightforward but verifying $v \mhyphen cert_{h-1}$ is more challenging. $v \mhyphen cert_{h-1}$ is an
+aggregate signature and validating it requires accessing the AscEE heap state at block $h-1-m$, where $m$ is the
+total number of validator assemblies, to obtain public keys and stake values. Again, in addition to direct
+verification, a validator can use computational integrity proofs, received from the Argennon cloud, to perform
+cheaper verification of this certificate.
+
+The block at height $h$ includes a certificate of validators for block $h-k$ which is used to record the participation
+of validators and facilitate reward calculation. This certificate needs to be validated based on stake and public key
+database at block $h-k-m$, and can be cheaply done by using computational proofs, obtained from the Argennon cloud.
+Here $k$ is the maximum allowed length of the unvalidated part of the Argennon blockchain. (See
+Section~\ref{subsec:validators-committee})
+
+This type of block validation only validates the transition from block $h-1$ to block $h$, and the block is valid
+only if its previous block is valid. We
+call this type of block validation \emph{conditional block validation}, since the validity of the current block is
+conditioned on the validity of the previous block.
+
+Interestingly, conditional block validation of multiple blocks can be done in parallel. Moreover, the required proofs
+can be generated independently and by different PVC servers. As we will see in
+Section~\ref{subsec:validators-committee}, this property plays an important role in the Argennon consensus protocol.
+
+In summary, a validator validates a block by verifying three computational integrity proofs: $\pi_{\tau}$ which proves
+the transition is correct, $\pi_{h-1}$ which proves the previous block has a correct certificate of validators and
+$\pi_{h-k}$ which proves the validity of the included certificate of validators of block $h-k$. It should be noted that
+these proofs are not part of the block contents and therefore the exact argument system used for generating them is
+not specified by the Argennon protocol.

@@ -5,10 +5,10 @@
 
 Every block of the Argennon blockchain contains a list of transactions. This list is an ordered list and the
 effect of its contained transactions must be applied to the AscEE state sequentially as they appear in the ordered
-list. This ordering is solely chosen by the block proposer, and users should not have any assumptions about
-the ordering of transactions in a block.
+list.\footnote{This ordering is solely chosen by the block proposer, and users should not have any assumptions about
+the ordering of transactions in a block.}
 
-The fact that block transactions constitute a sequential list, does not mean they can not be executed and applied
+The fact that block transactions constitute a sequential list, does not imply they can not be executed and applied
 to the AscEE state concurrently. Many transactions are actually independent and the order of their execution does not
 matter. These transactions can be safely validated in parallel by validators.
 
