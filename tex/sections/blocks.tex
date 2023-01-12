@@ -170,20 +170,20 @@ for generating the appropriate arithmetization instead of the APM arithmetizatio
 
 For validating the previous block, instead of directly validating the contents of the block, a validator only
 verifies the block certificates. Each block of the Argennon blockchain has two certificates: the certificate of
-validators, $v \mhyphen cert$, and the certificate of the delegates, $d \mhyphen cert$. Verifying $d \mhyphen
+validators, $v \mhyphen cert$, and the certificate of delegates, $d \mhyphen cert$. Verifying $d \mhyphen
 cert_{h-1}$ is straightforward but verifying $v \mhyphen cert_{h-1}$ is more challenging. $v \mhyphen cert_{h-1}$ is an
-aggregate signature and validating it requires accessing the AscEE heap state at block $h-1-m$, where $m$ is the
+aggregate signature and validating it requires accessing the AscEE heap state at block~$h-1-m$, where $m$ is the
 total number of validator assemblies, to obtain public keys and stake values. Again, in addition to direct
 verification, a validator can use computational integrity proofs, received from the Argennon cloud, to perform
 cheaper verification of this certificate.
 
-The block at height $h$ includes a certificate of validators for block $h-k$ which is used to record the participation
+The block at height~$h$ includes a certificate of validators for block~$h-k$ which is used to record the participation
 of validators and facilitate reward calculation. This certificate needs to be validated based on stake and public key
-database at block $h-k-m$, and can be cheaply done by using computational proofs, obtained from the Argennon cloud.
+database at block~$h-k-m$, and can be cheaply done by using computational proofs, obtained from the Argennon cloud.
 Here $k$ is the maximum allowed length of the unvalidated part of the Argennon blockchain. (See
 Section~\ref{subsec:validators-committee})
 
-This type of block validation only validates the transition from block $h-1$ to block $h$, and the block is valid
+This type of block validation only validates the transition from block~$h-1$ to block~$h$, and the block is valid
 only if its previous block is valid. We
 call this type of block validation \emph{conditional block validation}, since the validity of the current block is
 conditioned on the validity of the previous block.
@@ -194,6 +194,6 @@ Section~\ref{subsec:validators-committee}, this property plays an important role
 
 In summary, a validator validates a block by verifying three computational integrity proofs: $\pi_{\tau}$ which proves
 the transition is correct, $\pi_{h-1}$ which proves the previous block has a correct certificate of validators and
-$\pi_{h-k}$ which proves the validity of the included certificate of validators of block $h-k$. It should be noted that
+$\pi_{h-k}$ which proves the validity of the included certificate of validators of block~$h-k$. It should be noted that
 these proofs are not part of the block contents and therefore the exact argument system used for generating them is
 not specified by the Argennon protocol.
