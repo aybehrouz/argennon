@@ -377,15 +377,16 @@ shown that the emergency recovery protocol has the following important propertie
 \end{itemize}
 
 A honest user during a round only votes a single proposal. This ensures that as long as more than $2/3$ of the total
-stake of the system is controlled by honest users, no two different proposals can get more than $2/3$ votes. Also, he
-either votes $p$-win or $draw$, so only one of $p$-win or $draw$ can get more than $2/3$ votes. Consequently, when a
+stake of the system is controlled by honest users, no two different proposals can get more than $2/3$ votes.
+As a result, we can not have 2/3 votes for both $p$-lock and $p'$-lock if $p \neq p'$. Also, a honest user
+either votes $p$-win or $draw$, so only one of $p$-win or $draw$ can get more than $2/3$ votes and when a
 user sees more than $2/3$ $p$-win votes, he can be sure that $draw$ has less than $2/3$ votes. Therefore, for going
 to the next round we will need 2/3 $p$-lock
 votes and all honest users will lock their vote on $p$ when they start the next round. As a result only $p$ can be
 confirmed by the agreement protocol.
 
-When a single honest user terminates the protocol, he can convince all other honest users to terminate their protocol
-by sending those 2/3 $p$-win votes that he has seen.
+Note that when a single honest user terminates the protocol, he can convince all other honest users to terminate
+their protocol by sending those 2/3 $p$-win votes that he has seen.
 
 If honest users can agree upon some proposal value, the agreement protocol will converge to that value. When a round
 ends and we go to the next round, all honest users will lock their vote on
