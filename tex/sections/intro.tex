@@ -4,16 +4,18 @@ vulnerable to a certain type of consensus attack, known as the \emph{bribery att
 tries to corrupt participants of a protocol by offering them money and seducing them to violate the protocol.
 
 At the time of writing of this document,
-the total mining reward for a Bitcoin block is around \$150,000. If we assume, in decision theoretic terminology,
-that the mining reward accurately defines the utility function of a Bitcoin miner, one could hire all hashing power
+the total mining reward for a Bitcoin block is around \$150,000, and the Bitcoin network approximately produces 5 blocks
+per hour. If we assume, in decision theoretic terminology, that the mining reward solely defines the utility
+function\footnote{In decision theory, the utility function measures the preference, worth or value of different
+alternatives for a decision maker.} of a Bitcoin miner, one should be able to hire all hashing power
 of the Bitcoin network for one hour by
 spending only \$750,000. The situation is not much different for PoS blockchains, as long as the total
-stake of the validator set is a relatively small value. By
-stake, we mean a real number measuring the total interest of a user in the system, we are not referring, in
-particular, to some locked amount of a user's money that is known as stake in some PoS protocols.
-This problem is more severe in blockchains that use randomly selected small sets of validators. These small sets
+stake\footnote{Here by stake, we mean a real number measuring the total interest of a user in the system, and we are
+not referring, in particular, to some locked amount of a user's money that is known as stake in some PoS protocols.}
+of the validator set is a relatively small value.
+This problem is even more severe in blockchains that use randomly selected small sets of validators. These small sets
 usually have low total stake and could be easily bribed and corrupted. Selecting these random sets
-by hidden random procedures would not help, since the validator himself knows he has been selected, before casting
+by hidden random procedures would not help, since the validator himself knows he has been selected before casting
 his vote.
 
 It appears that the only solution to this important vulnerability is to effectively participate all the stakeholders
@@ -26,9 +28,9 @@ state and executing transactions according to the protocol rules. The
 ledger state, even for small blockchains, could be several
 hundreds of gigabytes, and executing transactions could easily become costly when a blockchain is acting as a
 smart contract platform. This computational and storage overhead, in practice, could prevent most of
-ordinary users from any type of participation in the process of securing a blockchain.
+ordinary users from any type of participation in the consensus protocol of a blockchain.
 
-Although a fully decentralized blockchain based on the participation of every user looks appealing, it is not as perfect
+A fully decentralized blockchain based on the participation of every user looks appealing, though it is not as perfect
 as it might seem. The consensus protocol of a blockchain relies on a network of computers, not humans. Ordinary users
 use simple and similar computer systems. That means, they all have similar vulnerabilities and weaknesses which could be
 used by an adversary to catastrophically attack the consensus protocol. For instance, if a malware, probably using a
