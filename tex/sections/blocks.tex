@@ -38,8 +38,8 @@ The Argennon network uses a parallel algorithm to produce block certificates and
 to satisfy certain properties:
 \begin{itemize}
     \item \textbf{Associative aggregation:} the signature aggregation operator is associative.
-    \item \textbf{Efficient cancellation:} if $S$ is the predefined set of users that we need their aggregate
-    signature, verifying an aggregate signature of $S-U$ can be done in time $O(T+|U|)$, if the aggregate
+    \item \textbf{Efficient cancellation:} if $S$ is a predefined and fixed set of users and $U$ is an arbitrary subset
+    of~$S$, verifying an aggregate signature of $S-U$ can be done in time $O(T+|U|)$, if the aggregate
     signature of $S$ can be verified in $O(T)$.
 \end{itemize}
 
@@ -172,7 +172,7 @@ For validating the previous block, instead of directly validating the contents o
 verifies the block certificates. Each block of the Argennon blockchain has two certificates: the certificate of
 validators, $v \mhyphen cert$, and the certificate of delegates, $d \mhyphen cert$. Verifying $d \mhyphen
 cert_{h-1}$ is straightforward but verifying $v \mhyphen cert_{h-1}$ is more challenging. $v \mhyphen cert_{h-1}$ is an
-aggregate signature and validating it requires accessing the AscEE heap state at block~$h-1-m$, where $m$ is the
+aggregate signature and validating it requires accessing the staking database at block~$h-1-m$, where $m$ is the
 total number of validator assemblies, to obtain public keys and stake values. Again, in addition to direct
 verification, a validator can use computational integrity proofs, received from the Argennon cloud, to perform
 cheaper verification of this certificate.
