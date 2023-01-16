@@ -226,10 +226,11 @@ agreement} protocol.
 \subsubsection{Emergency Forking}
 
 The reserve committee of delegates is able to fork the Argennon blockchain, if it receives a valid fork request
-from the validators.
-This fork needs to be confirmed by validators and can not discard more than one block that has been certified by
-validators.
+from validators.
 A valid fork request is an unexpired request signed by more than half of the total stake of validators.
+
+A fork created by the reserve committee needs to be confirmed by validators and can never discard more than one
+block which has received a certificate from validators.
 
 For forking at block $h$, the reserve committee of delegates
 makes a special \emph{fork block} which only contains a valid fork request, and its parent is the block $h$.
@@ -325,9 +326,9 @@ certificate from validators.
 
 \subsubsection{Emergency Agreement}
 
-The emergency agreement protocol is a resilient protocol for deciding between a set of proposals when no committee of
-delegates can be trusted. For initiating the protocol, a validator signs a message containing the subject
-of the agreement and a start time.
+The emergency agreement protocol is a resilient protocol for deciding between a set of proposals when the committee of
+delegates is not available or can not be trusted. For initiating the protocol, a validator signs a message containing
+the subject of the agreement and a start time.
 
 A validator enters the agreement protocol if he
 receives a request that is signed by more than half of the total stake
