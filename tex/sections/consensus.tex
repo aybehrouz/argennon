@@ -76,6 +76,50 @@ account is a member of \textbf{at least} one assembly.\footnote{An account can b
 The value of $m$ is determined by the ADAGs, but it can never be higher than $32$. This way, it is guaranteed
 that on average, any block of the Argennon blockchain is validated by at least $2\%$ of the total ARG supply.
 
+\subsubsection{Signing the Block Certificate}
+
+The delegates can generate blocks very fast. Consequently, the Argennon blockchain always has an
+unvalidated part which contains the blocks that have a certificate from the committee of delegates but have not
+yet received a certificate from the validators.
+
+As we mentioned before, the block with height $h$ needs a certificate from the assembly of
+validators with index $h$ modulo $m$. To decide about signing the certificate of a block which already has
+a certificate from the delegates, a validator checks the conditional
+validity of the block (See Section~\ref{subsec:block-validation}), and if the block is valid, he issues
+an ``accept'' signature. If the block is invalid, he initiates the recovery protocol. The validator will broadcast
+the signature \textbf{only after} he sees the certificate of the validator assembly of the previous block.
+Some validators may also require seeing a certificate from
+some community based committees. An honest validator never signs a certificate for two different blocks with the
+same height.
+
+Consequently, in Argennon the block validation by assemblies is performed in parallel, and validators
+do not wait for seeing the validators certificate of the previous block to start block validation. On the
+other hand, the block certificates are published and broadcast sequentially. A validator does not publish his vote,
+if the certificate of the validator assembly of the previous block has not been published yet. This ensures
+that an invalid fork made by malicious delegates can not receive any valid certificates from any validator assemblies.
+
+\subsubsection{Signature Aggregation}\label{subsubsec:sig-agg}
+
+The validators certificate of a block is an aggregate signature of members of the corresponding assembly of
+validators. Validator assemblies could include millions of users and calculating their aggregate
+signature requires an efficient distributed algorithm.
+
+In Argennon, signature aggregation is mostly performed by PVC servers. To distribute the aggregation workload
+between different servers, every validator assembly is divided into pre-determined groups, and each PVC
+server is responsible for signature aggregation of one group. To make sure that there is enough redundancy, the
+total number of groups should be less than the number of PVC servers and each group should be assigned to
+multiple PVC servers.
+
+Any member of a group knows all the servers that are responsible for signature aggregation of his group. When a member
+signs a block certificate, he sends his signature to all the severs that aggregate the signatures of his group.
+These PVC servers aggregate the signatures they receive and then send the aggregated signature to the delegates.
+Furthermore, the delegates aggregate these signatures to produce the final block certificate
+and then broadcast it to the PVC servers network.
+
+The role of the delegates in the signature aggregation algorithm is limited. The important part of the work is done by
+PVC servers and slightly modified versions of this algorithm can perform signature aggregation
+even if all the delegates are malicious, as long as there are enough honest PVC servers.
+
 \subsubsection{Activity Status}
 
 Every validator has a status which can be either \texttt{online} or \texttt{offline}.
@@ -124,28 +168,6 @@ status of validators becomes ineffective. This prevents the system from going in
 community will always be able to preserve the liveliness without waiting for the expiration of offline status of
 some accounts.
 
-\subsubsection{Signing the Block Certificate}
-
-The delegates can generate blocks very fast. Consequently, the Argennon blockchain always has an
-unvalidated part which contains the blocks that have a certificate from the committee of delegates but have not
-yet received a certificate from the validators.
-
-As we mentioned before, the block with height $h$ needs a certificate from the assembly of
-validators with index $h$ modulo $m$. To decide about signing the certificate of a block which already has
-a certificate from the delegates, a validator checks the conditional
-validity of the block (See Section~\ref{subsec:block-validation}), and if the block is valid, he issues
-an ``accept'' signature. If the block is invalid, he initiates the recovery protocol. The validator will broadcast
-the signature \textbf{only after} he sees the certificate of the validator assembly of the previous block.
-Some validators may also require seeing a certificate from
-some community based committees. An honest validator never signs a certificate for two different blocks with the
-same height.
-
-Consequently, in Argennon the block validation by assemblies is performed in parallel, and validators
-do not wait for seeing the validators certificate of the previous block to start block validation. On the
-other hand, the block certificates are published and broadcast sequentially. A validator does not publish his vote,
-if the certificate of the validator assembly of the previous block has not been published yet. This ensures
-that an invalid fork made by malicious delegates can not receive any valid certificates from any validator assemblies.
-
 \subsubsection{Analysis}
 
 We analyze the minimum amount of stake that is required for conducting different types of attacks against the Argennon
@@ -186,28 +208,6 @@ following inequality holds:
 \]
 So if $d>\frac{1}{9}s$, the minimum required stake for halting the blockchain is higher in the
 Argennon protocol and the value of $h$ does not matter.
-
-\subsubsection{Signature Aggregation}\label{subsubsec:sig-agg}
-
-The validators certificate of a block is an aggregate signature of members of the corresponding assembly of
-validators. Validator assemblies could include millions of users and calculating their aggregate
-signature requires an efficient distributed algorithm.
-
-In Argennon, signature aggregation is mostly performed by PVC servers. To distribute the aggregation workload
-between different servers, every validator assembly is divided into pre-determined groups, and each PVC
-server is responsible for signature aggregation of one group. To make sure that there is enough redundancy, the
-total number of groups should be less than the number of PVC servers and each group should be assigned to
-multiple PVC servers.
-
-Any member of a group knows all the servers that are responsible for signature aggregation of his group. When a member
-signs a block certificate, he sends his signature to all the severs that aggregate the signatures of his group.
-These PVC servers aggregate the signatures they receive and then send the aggregated signature to the delegates.
-Furthermore, the delegates aggregate these signatures to produce the final block certificate
-and then broadcast it to the PVC servers network.
-
-The role of the delegates in the signature aggregation algorithm is limited. The important part of the work is done by
-PVC servers and slightly modified versions of this algorithm can perform signature aggregation
-even if all the delegates are malicious, as long as there are enough honest PVC servers.
 
 \subsection{The Recovery Protocol}\label{subsec:recovery}
 
@@ -299,13 +299,17 @@ forks the blockchain at height $h_f-1$.}
     fork block at height $h_f-1$ gets certified by validators.
 \end{itemize}
 
-The reserve committee does not know the value of $h_{\max}$. However, if the reserve committee creates all fork blocks
-with heights~$h_0,h_0+1,h_0+2,\dots$ every fork block with height $h \geq h_{\max} + 2$ will surely get a certificate.
-If there is no block in the main chain with height~$h_{\max} + 1$, then the fork block with height~$h_{\max} +
-1$ will also get a certificate, otherwise the reserve committee should be able to eventually find the main block
-at $h_{\max}+1$ and generate a fork block with height~$h_{\max} + 2$ as its successor. This way, the reserve
-committee will always be able to create at least one fork block which gets certified and continue the chain after the
-fork block with the highest height.
+The reserve committee must be able to create at least one fork block which gets a certificate from validators.
+The reserve committee may not know the value of $h_{\max}$.\footnote{This could happen when the network is
+partitioned.} However, if the reserve committee creates all fork blocks
+with heights~$h_0,h_0+1,h_0+2,\dots$ for some $h_0 \leq h_{\max} + 2$,
+then every fork block with height~$h \geq h_{\max} +
+2$ will surely get a certificate. Obviously $h_v \leq h_{\max}$, so if the main chain contains a block with height
+$h_{\max} + 1$ the reserve committee should be able to eventually find this block and generate the fork block with
+height $h_{\max} + 2$, which will surely get a certificate.
+If there is no block in the main chain with height~$h_{\max} + 1$, then the fork block with
+height~$h_{\max} + 1$ can get a certificate. This way, the reserve committee will always be able to continue the chain
+after the certified fork block with the highest height.
 
 If two fork blocks at heights $h_0$ and $h_0+k$ are generated by the reserve committee and both blocks receive a
 certified from validators, we must have $h_0 > h_{\max}$, and there must exist fork blocks with heights
@@ -317,10 +321,14 @@ If a malicious reserve committee creates two fork blocks with the same height, e
 them can get a certificate, which makes the other one ineffective or validators get split between blocks
 and the chain will halt. In this case the emergency agreement protocol will start.
 
-During the emergency forking, at max one block with a validators certificate may be discarded. This happens when
-the malicious main committee of delegates has forked the main chain by producing blocks $b_1$ and $b_2$ at height
+During the emergency forking, no more than one block with a validators certificate can be discarded. A fork block
+with height~$h+1$ can not receive a certificate without a certified normal parent block with
+height~$h$ or $h-1$, or another certified fork block with height~$h$.
+
+One certified block may be discarded when
+the malicious main committee of delegates has forked the main chain by producing blocks $b_1$ and $b_2$ with heights
 $h$; the block $b_1$ has received a validators certificate and validators have not certified any blocks at height $h+1$.
-The reserve committee adds a fork block whose parent is block $b_2$, that will essentially discard $b_1$. Notice
+The reserve committee adds a fork block whose parent is block $b_2$, and that will essentially discard $b_1$. Notice
 that if a block at height $h+1$ had been certified by validators the fork block after $b_2$ could not have received a
 certificate from validators.
 
