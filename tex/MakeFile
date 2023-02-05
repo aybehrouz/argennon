@@ -5,3 +5,4 @@ pdf: ../pdf/A.pdf
 	pdflatex -output-directory=../pdf/ A.tex
 	rm ../pdf/A.pdf
 	pdflatex -output-directory=../pdf/ A.tex
+	pdflatex -output-directory=../pdf/ Selected.tex
