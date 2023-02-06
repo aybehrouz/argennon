@@ -87,7 +87,7 @@ and their digest is also correct:
 \[
     h(in_1,out_1,\dots,in_k,out_k) = digest_f
 \]
-where $f$ is known to both the prover and verifier.
+where $f$ and $h$ are both known to the prover and verifier.
 
 The circuit for verifying this assessment usually is straight forward. When the computation involves a large
 number of steps and the component is complex, this approach can reduce the cost of proof generation considerably. Memory
@@ -96,7 +96,6 @@ components are good candidates for being simplified by this method.
 Interestingly, this approach can reduce the number of computation steps as well. When we use an accumulator circuit
 instead of the component, $out$ will be available in the same computation step that $in$ is available. This will
 eliminate the computation step that is needed for generating $out$ by our component's circuit.
-
 %
 %\begin{tikzpicture}
 %    \draw (0,0) -- (4,0) -- (4,4) -- (0,4) -- (0,0);

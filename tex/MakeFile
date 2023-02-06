@@ -6,3 +6,5 @@ pdf: ../pdf/A.pdf
 	rm ../pdf/A.pdf
 	pdflatex -output-directory=../pdf/ A.tex
 	pdflatex -output-directory=../pdf/ Selected.tex
+	rm ../pdf/Selected.pdf
+	pdflatex -output-directory=../pdf/ Selected.tex
