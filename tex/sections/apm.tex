@@ -58,7 +58,7 @@ be noted that the APM does not use a different local memory for each application
 
 \section{Simplifying Complex Components}\label{sec:simplifying-complex-components}
 
-Assume that we have a complex component which has a considerable arithmetic circuit complexity. If this component
+Assume that we have a component which has a considerable arithmetic circuit complexity. If this complex component
 is needed in some arbitrary computation steps, we will need to repeat its circuit in every step of the computation. This
 will increase the complexity of proof generation considerably. Fortunately, there is a workaround. Instead of
 repeating the circuit of the component, we can use a simpler cryptographic accumulator circuit during the
@@ -87,15 +87,15 @@ and their digest is also correct:
 \[
     h(in_1,out_1,\dots,in_k,out_k) = digest_f
 \]
-where $f$ and $digest_f$ are known to the prover and verifier.
+where $f$ is known to both the prover and verifier.
 
 The circuit for verifying this assessment usually is straight forward. When the computation involves a large
 number of steps and the component is complex, this approach can reduce the cost of proof generation considerably. Memory
 components are good candidates for being simplified by this method.
 
 Interestingly, this approach can reduce the number of computation steps as well. When we use an accumulator circuit
-instead of the component, $out$ can be available in the same computation step that $in$ is available. This will
-eliminate the computation step that is needed for generating $out$ by the component's circuit.
+instead of the component, $out$ will be available in the same computation step that $in$ is available. This will
+eliminate the computation step that is needed for generating $out$ by our component's circuit.
 
 %
 %\begin{tikzpicture}
