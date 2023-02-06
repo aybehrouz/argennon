@@ -93,9 +93,9 @@ The circuit for verifying this assessment usually is straight forward. When the 
 number of steps and the component is complex, this approach can reduce the cost of proof generation considerably. Memory
 components are good candidates for being simplified by this method.
 
-Interestingly, this approach can reduce the number of computation steps as well. When we use a hash calculator circuit
-instead of the component, $out$ will be available in the same computation step that $in$ is available. This will
-eliminate the computation step that is needed for generating $out$ by our component's circuit.
+Interestingly, this approach can also reduce the number of computation steps. When we use a hash calculator circuit
+instead of our component, $out$ will be available in the same computation step that $in$ is available. This will
+eliminate the computation step that is needed for generating $out$ by the component's circuit.
 %
 %\begin{tikzpicture}
 %    \draw (0,0) -- (4,0) -- (4,4) -- (0,4) -- (0,0);
