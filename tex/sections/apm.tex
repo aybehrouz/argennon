@@ -58,15 +58,32 @@ be noted that the APM does not use a different local memory for each application
 
 \section{Simplifying Complex Components}\label{sec:simplifying-complex-components}
 
-Assume that we have a component which has a considerable arithmetic circuit complexity. If this complex component
-is needed in some arbitrary computation steps, we will need to repeat its circuit in every step of the computation. This
+Assume that we have a computing machine $M$, that accepts an input $in$ and produces an output $out$. We want to
+calculate the output that results from applying $M$ on an initial input for $n$ times. Note that
+$M$ may not be state-less:
+\[
+    M_n(in_1, out_1, out_2,\dots,out_{n-1}) \coloneqq out_n
+\]
+
+We assume that $M$ is composed of a number of subcomponents. Every subcomponent is like a computing machine and accepts
+an input and produces an output. Like $M$, subcomponents are not necessarily state-less. When $M$ receives an input,
+based on the input, a number of subcomponents gets activated, they generate their output from the input, and then
+their outputs are combined to produce the output of $M$.
+
+To build a verifying circuit for this computation, we need to construct a circuit for $M$ and then repeat this circuit
+$n$ times to compute $out_n$ at the final step of the computation.\footnote{Since $M$ is not state-less, we may have
+to feed inputs from steps, say, $i-1,i-2,\dots$ to step $i$.}
+
+Assume that we have a subcomponent that has a considerable arithmetic circuit complexity. Even if this subcomponent is
+active in only a few computation steps, We will still have to repeat its circuit in every step of the computation. This
 will increase the complexity of proof generation considerably. Fortunately, there is a workaround. Instead of
 repeating the circuit of the component, we can use a simpler cryptographic hash calculator circuit during the
-computation, and use a final verification circuit at the end to verify the functionality of the component.
+computation. At the end, to verify the functionality of the component, we use a final verification circuit.
 
-Every component accepts an input $in$ and produces an output $out$. As a result we can denote the component by a
-deterministic function that maps an input sequence with any arbitrary length $k$, to an output sequence with the same
-length:
+Every subcomponent accepts an input $in$ and produces an output $out$. If the component gets activated for $k$ steps, we
+can denote it by a deterministic function that maps an input sequence with length $k$, to an output sequence with the
+same length:\footnote{Note that subcomponents are not active in every step of the computation, so $in_i$ is \textbf{not}
+indicating the input of the component at the $i$th step of the computation.}
 \[
     f((in_1,in_2,\dots,in_k)) \coloneqq (out_1,out_2,\dots,out_k)
 \]
@@ -95,7 +112,7 @@ components are good candidates for being simplified by this method.
 
 Interestingly, this approach can also reduce the number of computation steps. When we use a hash calculator circuit
 instead of our component, $out$ will be available in the same computation step that $in$ is available. This will
-eliminate the computation step that is needed for generating $out$ by the component's circuit.
+eliminate one computation step that is needed for generating $out$ by the component's circuit.
 %
 %\begin{tikzpicture}
 %    \draw (0,0) -- (4,0) -- (4,4) -- (0,4) -- (0,0);
