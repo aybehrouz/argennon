@@ -60,7 +60,7 @@ be noted that the APM does not use a different local memory for each application
 
 Assume that we have a computing machine $M$, that accepts an input $in$ and produces an output $out$. We want to
 calculate the output that results from applying $M$ on an initial input for $n$ times. Note that
-$M$ may not be state-less:
+$M$ may or may not be state-less:
 \[
     M_n(in_1, out_1, out_2,\dots,out_{n-1}) \coloneqq out_n
 \]
@@ -74,11 +74,12 @@ To build a verifying circuit for this computation, we need to construct a circui
 $n$ times to compute $out_n$ at the final step of the computation.\footnote{Since $M$ is not state-less, we may have
 to feed inputs from steps, say, $i-1,i-2,\dots$ to step $i$.}
 
-Assume that we have a subcomponent that has a considerable arithmetic circuit complexity. Even if this subcomponent is
+Assume that $M$ contains a subcomponent that has a considerable arithmetic circuit complexity.
+Even if this subcomponent is
 active in only a few computation steps, We will still have to repeat its circuit in every step of the computation. This
 will increase the complexity of proof generation considerably. Fortunately, there is a workaround. Instead of
-repeating the circuit of the component, we can use a simpler cryptographic hash calculator circuit during the
-computation. At the end, to verify the functionality of the component, we use a final verification circuit.
+repeating the circuit of the subcomponent, we can use a simpler cryptographic hash calculator circuit during the
+computation. At the end, we use a final verification circuit to verify the functionality of the component.
 
 Every subcomponent accepts an input $in$ and produces an output $out$. If the component gets activated for $k$ steps, we
 can denote it by a deterministic function that maps an input sequence with length $k$, to an output sequence with the
@@ -95,7 +96,7 @@ hash calculator is active, it hashes its inputs, so at the end of the computatio
 \]
 where $k$ is the number of steps that our component must have been active.
 
-Now the prover needs to prove that he knows values $in_1,out_1,\dots,in_k,out_k$ such that they are correctly
+Now the prover needs to prove that he knows values $in_1,out_1,in_2,out_2,\dots,in_k,out_k$ such that they are correctly
 produced by the component:
 \[
     f((in_1,\dots,in_k)) = (out_1,\dots,out_k)
